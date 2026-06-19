@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shopping bag | Demo Supermarket</title>
+    <link rel="stylesheet" th:href="@{/css/catalog.css}">
+    <script defer th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+</head>
+<body>
+<header class="site-header">
+    <div class="site-header__inner">
+        <a class="brand" th:href="@{/}">Demo Supermarket</a>
+        <a class="header-link" th:href="@{/products}">Continue shopping</a>
+    </div>
+</header>
+
+<main class="catalog-shell cart-shell">
+    <section class="catalog-heading" aria-labelledby="cart-title">
+        <div>
+            <h1 id="cart-title">Shopping bag</h1>
+            <p>Use this private cart URL to return to your bag.</p>
+        </div>
+        <div class="cart-token">
+            <span>Cart URL token</span>
+            <strong th:text="${cart.publicToken}">token</strong>
+        </div>
+    </section>
+
+    <div class="cart-error" th:if="${cartError != null}" th:text="${cartError}">Quantity error</div>
+
+    <section class="empty-state" th:if="${cart.items.isEmpty()}">
+        <h2>Your bag is empty</h2>
+        <p>Add products from the catalog to start shopping.</p>
+    </section>
+
+    <section class="cart-layout" th:if="${!cart.items.isEmpty()}">
+        <div class="cart-lines" id="cart-lines">
+            <article class="cart-line" th:each="item : ${cart.items}">
+                <div>
+                    <h2 th:text="${item.product.name}">Product</h2>
+                    <p>
+                        <span th:text="${item.product.unitLabel}">Unit</span>
+                        <span aria-hidden="true"> &middot; </span>
+                        <span th:text="'€' + ${#numbers.formatDecimal(item.product.unitPrice, 1, 2)}">€0.00</span>
+                    </p>
+                </div>
+
+                <form
+                    class="quantity-form"
+                    th:action="@{/cart/{cartToken}/items/{itemId}(cartToken=${cart.publicToken}, itemId=${item.id})}"
+                    method="post"
+                    hx-trigger="change">
+                    <label th:for="'quantity-' + ${item.id}">Quantity</label>
+                    <input
+                        th:id="'quantity-' + ${item.id}"
+                        name="quantity"
+                        type="number"
+                        min="1"
+                        max="99"
+                        step="1"
+                        th:value="${item.quantity}">
+                    <button type="submit">Update</button>
+                </form>
+
+                <strong th:text="'€' + ${#numbers.formatDecimal(item.lineTotal, 1, 2)}">€0.00</strong>
+
+                <form
+                    th:action="@{/cart/{cartToken}/items/{itemId}/remove(cartToken=${cart.publicToken}, itemId=${item.id})}"
+                    method="post">
+                    <button class="link-button" type="submit">Remove</button>
+                </form>
+            </article>
+        </div>
+
+        <aside class="cart-summary" id="cart-summary">
+            <span>Subtotal</span>
+            <strong th:text="'€' + ${#numbers.formatDecimal(subtotal, 1, 2)}">€0.00</strong>
+        </aside>
+    </section>
+</main>
+</body>
+</html>

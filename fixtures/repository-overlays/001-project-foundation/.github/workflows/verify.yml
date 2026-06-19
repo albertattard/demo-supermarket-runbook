@@ -1,0 +1,25 @@
+name: Verify
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Oracle Java 25
+        uses: oracle-actions/setup-java@v1
+        with:
+          website: oracle.com
+          release: 25
+
+      - name: Verify
+        run: ./mvnw verify

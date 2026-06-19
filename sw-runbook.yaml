@@ -1,0 +1,237 @@
+entries:
+  - type: Heading
+    level: H1
+    title: Supermarket
+
+  - type: Command
+    commands: |
+      cp '../fixtures/README.md' .
+      cp '../fixtures/LICENSE' .
+
+  - type: Command
+    commands: |
+      git init
+      git add .
+      git commit -m 'Initial commit'
+
+  - type: Command
+    commands: |
+      if gh repo view 'demo-supermarket' >/dev/null 2>&1; then
+        gh repo delete 'demo-supermarket' --yes
+      fi
+
+  - type: Command
+    commands: |
+      gh repo create 'demo-supermarket' \
+        --private \
+        --source=. \
+        --remote=origin \
+        --push
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Create Spring Boot project foundation' \
+        --body-file '../fixtures/issues/001-project-foundation.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Seed catalog and product listing' \
+        --body-file '../fixtures/issues/002-seed-catalog-and-product-listing.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Persisted guest cart' \
+        --body-file '../fixtures/issues/003-persisted-guest-cart.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Guest checkout and order confirmation' \
+        --body-file '../fixtures/issues/004-guest-checkout-and-order-confirmation.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Security and demo users' \
+        --body-file '../fixtures/issues/005-security-and-demo-users.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Logistics order dashboard' \
+        --body-file '../fixtures/issues/006-logistics-order-dashboard.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Inventory catalog management' \
+        --body-file '../fixtures/issues/007-inventory-catalog-management.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Playwright E2E test suite' \
+        --body-file '../fixtures/issues/008-playwright-e2e-test-suite.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Validation and error handling' \
+        --body-file '../fixtures/issues/009-validation-and-error-handling.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Documentation and workshop backlog' \
+        --body-file '../fixtures/issues/010-documentation-and-workshop-backlog.md'
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'UI accessibility and responsive polish' \
+        --body-file '../fixtures/issues/011-ui-accessibility-and-responsive-polish.md'
+
+  - type: Command
+    commands: |
+      git switch --create '001-project-foundation'
+      rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
+      chmod +x mvnw
+      ./mvnw clean verify
+      git add .
+      git commit \
+        --message 'Create Spring Boot project foundation' \
+        --message 'Refs #1.' \
+        --message 'Establishes the baseline application structure requested by #1 so future supermarket features can be built on a runnable, verified Spring Boot project.'
+      git push --set-upstream origin '001-project-foundation'
+
+  - type: Command
+    commands: |
+      gh pr create \
+        --title 'Create Spring Boot project foundation' \
+        --body-file '../fixtures/pr/001-project-foundation.md' \
+      > '../fixtures/pr/001-project-foundation.out'
+
+  - type: Command
+    commands: |
+      pr_url="$(cat '../fixtures/pr/001-project-foundation.out')"
+      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+      gh pr checks "${pr_number}" --watch
+
+      while true; do
+        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+        case "${merge_state}" in
+          CLEAN|HAS_HOOKS|UNSTABLE)
+            break
+            ;;
+          BLOCKED|BEHIND|DIRTY|DRAFT)
+            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+            exit 1
+            ;;
+          *)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+        esac
+      done
+
+      gh pr merge "${pr_number}" --merge --delete-branch
+    timeout: 10 minutes
+
+  - type: Command
+    commands: |
+      git switch --create '002-seed-catalog-and-product-listing'
+      rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
+      ./mvnw clean verify
+      git add .
+      git commit \
+        --message 'Seed catalog categories and products' \
+        --message 'Refs #2.' \
+        --message 'Adds the initial customer-facing catalog requested by #2, including Flyway-seeded category and product data, active-product listing, category filtering, text search, euro pricing, and server-rendered responsive pages at / and /products.'
+      git push --set-upstream origin '002-seed-catalog-and-product-listing'
+
+  - type: Command
+    commands: |
+      gh pr create \
+        --title 'Seed catalog categories and products' \
+        --body-file '../fixtures/pr/002-seed-catalog-and-product-listing.md' \
+      > '../fixtures/pr/002-seed-catalog-and-product-listing.out'
+
+  - type: Command
+    commands: |
+      pr_url="$(cat '../fixtures/pr/002-seed-catalog-and-product-listing.out')"
+      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+      gh pr checks "${pr_number}" --watch
+
+      while true; do
+        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+        case "${merge_state}" in
+          CLEAN|HAS_HOOKS|UNSTABLE)
+            break
+            ;;
+          BLOCKED|BEHIND|DIRTY|DRAFT)
+            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+            exit 1
+            ;;
+          *)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+        esac
+      done
+
+      gh pr merge "${pr_number}" --merge --delete-branch
+    timeout: 10 minutes
+
+  - type: Command
+    commands: |
+      git switch --create '003-persisted-guest-cart'
+      rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
+      ./mvnw clean verify
+      git add .
+      git commit \
+        --message 'Implement persisted guest carts' \
+        --message 'Refs #3.' \
+        --message 'Adds the opaque-token guest cart requested by #3, including cart persistence, active cart URLs, product add actions, quantity updates with 1-99 bounds, line removal, subtotal calculation, and server-rendered cart pages.'
+      git push --set-upstream origin '003-persisted-guest-cart'
+
+  - type: Command
+    commands: |
+      gh pr create \
+        --title 'Implement persisted guest carts' \
+        --body-file '../fixtures/pr/003-persisted-guest-cart.md' \
+      > '../fixtures/pr/003-persisted-guest-cart.out'
+
+  - type: Command
+    commands: |
+      pr_url="$(cat '../fixtures/pr/003-persisted-guest-cart.out')"
+      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+      gh pr checks "${pr_number}" --watch
+
+      while true; do
+        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+        case "${merge_state}" in
+          CLEAN|HAS_HOOKS|UNSTABLE)
+            break
+            ;;
+          BLOCKED|BEHIND|DIRTY|DRAFT)
+            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+            exit 1
+            ;;
+          *)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+        esac
+      done
+
+      gh pr merge "${pr_number}" --merge --delete-branch
+    timeout: 10 minutes
