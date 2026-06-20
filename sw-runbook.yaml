@@ -3,10 +3,16 @@ entries:
     level: H1
     title: Supermarket
 
+  - type: Markdown
+    markdown: Copy the generated repository README and license into the working directory.
+
   - type: Command
     commands: |
       cp '../fixtures/README.md' .
       cp '../fixtures/LICENSE' .
+
+  - type: Markdown
+    markdown: Initialize Git and commit the seed documentation.
 
   - type: Command
     commands: |
@@ -14,11 +20,17 @@ entries:
       git add .
       git commit -m 'Initial commit'
 
+  - type: Markdown
+    markdown: Delete any existing generated `demo-supermarket` GitHub repository.
+
   - type: Command
     commands: |
       if gh repo view 'demo-supermarket' >/dev/null 2>&1; then
         gh repo delete 'demo-supermarket' --yes
       fi
+
+  - type: Markdown
+    markdown: Create the private GitHub repository and push the initial commit.
 
   - type: Command
     commands: |
@@ -28,11 +40,17 @@ entries:
         --remote=origin \
         --push
 
+  - type: Markdown
+    markdown: Create the project foundation issue.
+
   - type: Command
     commands: |
       gh issue create \
         --title 'Create Spring Boot project foundation' \
         --body-file '../fixtures/issues/001-project-foundation.md'
+
+  - type: Markdown
+    markdown: Create the catalog and product listing issue.
 
   - type: Command
     commands: |
@@ -40,11 +58,17 @@ entries:
         --title 'Seed catalog and product listing' \
         --body-file '../fixtures/issues/002-seed-catalog-and-product-listing.md'
 
+  - type: Markdown
+    markdown: Create the persisted guest cart issue.
+
   - type: Command
     commands: |
       gh issue create \
         --title 'Persisted guest cart' \
         --body-file '../fixtures/issues/003-persisted-guest-cart.md'
+
+  - type: Markdown
+    markdown: Create the guest checkout and order confirmation issue.
 
   - type: Command
     commands: |
@@ -52,11 +76,17 @@ entries:
         --title 'Guest checkout and order confirmation' \
         --body-file '../fixtures/issues/004-guest-checkout-and-order-confirmation.md'
 
+  - type: Markdown
+    markdown: Create the security and demo users issue.
+
   - type: Command
     commands: |
       gh issue create \
         --title 'Security and demo users' \
         --body-file '../fixtures/issues/005-security-and-demo-users.md'
+
+  - type: Markdown
+    markdown: Create the logistics order dashboard issue.
 
   - type: Command
     commands: |
@@ -64,11 +94,17 @@ entries:
         --title 'Logistics order dashboard' \
         --body-file '../fixtures/issues/006-logistics-order-dashboard.md'
 
+  - type: Markdown
+    markdown: Create the inventory catalog management issue.
+
   - type: Command
     commands: |
       gh issue create \
         --title 'Inventory catalog management' \
         --body-file '../fixtures/issues/007-inventory-catalog-management.md'
+
+  - type: Markdown
+    markdown: Create the Playwright end-to-end test suite issue.
 
   - type: Command
     commands: |
@@ -76,11 +112,17 @@ entries:
         --title 'Playwright E2E test suite' \
         --body-file '../fixtures/issues/008-playwright-e2e-test-suite.md'
 
+  - type: Markdown
+    markdown: Create the validation and error handling issue.
+
   - type: Command
     commands: |
       gh issue create \
         --title 'Validation and error handling' \
         --body-file '../fixtures/issues/009-validation-and-error-handling.md'
+
+  - type: Markdown
+    markdown: Create the documentation and workshop backlog issue.
 
   - type: Command
     commands: |
@@ -88,11 +130,17 @@ entries:
         --title 'Documentation and workshop backlog' \
         --body-file '../fixtures/issues/010-documentation-and-workshop-backlog.md'
 
+  - type: Markdown
+    markdown: Create the UI accessibility and responsive polish issue.
+
   - type: Command
     commands: |
       gh issue create \
         --title 'UI accessibility and responsive polish' \
         --body-file '../fixtures/issues/011-ui-accessibility-and-responsive-polish.md'
+
+  - type: Markdown
+    markdown: Build, verify, commit, and push the project foundation branch.
 
   - type: Command
     commands: |
@@ -107,12 +155,18 @@ entries:
         --message 'Establishes the baseline application structure requested by #1 so future supermarket features can be built on a runnable, verified Spring Boot project.'
       git push --set-upstream origin '001-project-foundation'
 
+  - type: Markdown
+    markdown: Open the project foundation pull request.
+
   - type: Command
     commands: |
       gh pr create \
         --title 'Create Spring Boot project foundation' \
         --body-file '../fixtures/pr/001-project-foundation.md' \
       > '../fixtures/pr/001-project-foundation.out'
+
+  - type: Markdown
+    markdown: Wait for project foundation checks, then merge the pull request.
 
   - type: Command
     commands: |
@@ -142,6 +196,44 @@ entries:
       gh pr merge "${pr_number}" --merge --delete-branch
     timeout: 10 minutes
 
+  - type: Markdown
+    markdown: Protect `main` so later changes must merge through passing pull requests.
+
+  - type: Command
+    commands: |
+      owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
+
+      gh api \
+        --method PUT \
+        "repos/${owner}/demo-supermarket/branches/main/protection" \
+        --input - <<'JSON'
+      {
+        "required_status_checks": {
+          "strict": true,
+          "contexts": [
+            "verify"
+          ]
+        },
+        "enforce_admins": true,
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews": true,
+          "require_code_owner_reviews": false
+        },
+        "restrictions": null,
+        "required_linear_history": false,
+        "allow_force_pushes": false,
+        "allow_deletions": false,
+        "block_creations": false,
+        "required_conversation_resolution": true,
+        "lock_branch": false,
+        "allow_fork_syncing": false
+      }
+      JSON
+
+  - type: Markdown
+    markdown: Build, verify, commit, and push the catalog branch.
+
   - type: Command
     commands: |
       git switch --create '002-seed-catalog-and-product-listing'
@@ -154,12 +246,18 @@ entries:
         --message 'Adds the initial customer-facing catalog requested by #2, including Flyway-seeded category and product data, active-product listing, category filtering, text search, euro pricing, and server-rendered responsive pages at / and /products.'
       git push --set-upstream origin '002-seed-catalog-and-product-listing'
 
+  - type: Markdown
+    markdown: Open the catalog pull request.
+
   - type: Command
     commands: |
       gh pr create \
         --title 'Seed catalog categories and products' \
         --body-file '../fixtures/pr/002-seed-catalog-and-product-listing.md' \
       > '../fixtures/pr/002-seed-catalog-and-product-listing.out'
+
+  - type: Markdown
+    markdown: Wait for catalog checks, then merge the pull request.
 
   - type: Command
     commands: |
@@ -189,6 +287,9 @@ entries:
       gh pr merge "${pr_number}" --merge --delete-branch
     timeout: 10 minutes
 
+  - type: Markdown
+    markdown: Build, verify, commit, and push the guest cart branch.
+
   - type: Command
     commands: |
       git switch --create '003-persisted-guest-cart'
@@ -201,12 +302,18 @@ entries:
         --message 'Adds the opaque-token guest cart requested by #3, including cart persistence, active cart URLs, product add actions, quantity updates with 1-99 bounds, line removal, subtotal calculation, and server-rendered cart pages.'
       git push --set-upstream origin '003-persisted-guest-cart'
 
+  - type: Markdown
+    markdown: Open the guest cart pull request.
+
   - type: Command
     commands: |
       gh pr create \
         --title 'Implement persisted guest carts' \
         --body-file '../fixtures/pr/003-persisted-guest-cart.md' \
       > '../fixtures/pr/003-persisted-guest-cart.out'
+
+  - type: Markdown
+    markdown: Wait for guest cart checks, then merge the pull request.
 
   - type: Command
     commands: |
