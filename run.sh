@@ -3,8 +3,10 @@
 set -e
 
 TARGET='/tmp/demo-supermarket'
+REPOSITORY="${TARGET}/repository"
 
 rm -rf   "${TARGET}"
-mkdir -p "${TARGET}"
+mkdir -p "${REPOSITORY}"
+cp -R    './fixtures' "${TARGET}/"
 
-sw run --working-directory "${TARGET}" --verbose
+sw run --working-directory "${REPOSITORY}" --verbose

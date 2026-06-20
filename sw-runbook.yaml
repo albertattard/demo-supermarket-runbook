@@ -4,15 +4,15 @@ entries:
     title: Supermarket
 
   - type: Markdown
-    markdown: Copy the generated repository README and license into the working directory.
+    contents: Copy the repository README and license into the working directory.
 
   - type: Command
     commands: |
       cp '../fixtures/README.md' .
-      cp '../fixtures/LICENSE' .
+      cp '../fixtures/LICENSE'   .
 
   - type: Markdown
-    markdown: Initialize Git and commit the seed documentation.
+    contents: Initialize Git and commit the seed documentation.
 
   - type: Command
     commands: |
@@ -21,7 +21,7 @@ entries:
       git commit -m 'Initial commit'
 
   - type: Markdown
-    markdown: Delete any existing generated `demo-supermarket` GitHub repository.
+    contents: Delete any existing generated `demo-supermarket` GitHub repository.
 
   - type: Command
     commands: |
@@ -30,174 +30,18 @@ entries:
       fi
 
   - type: Markdown
-    markdown: Create the private GitHub repository and push the initial commit.
+    contents: Create the public GitHub repository and push the initial commit.
 
   - type: Command
     commands: |
       gh repo create 'demo-supermarket' \
-        --private \
+        --public \
         --source=. \
         --remote=origin \
         --push
 
   - type: Markdown
-    markdown: Create the project foundation issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Create Spring Boot project foundation' \
-        --body-file '../fixtures/issues/001-project-foundation.md'
-
-  - type: Markdown
-    markdown: Create the catalog and product listing issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Seed catalog and product listing' \
-        --body-file '../fixtures/issues/002-seed-catalog-and-product-listing.md'
-
-  - type: Markdown
-    markdown: Create the persisted guest cart issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Persisted guest cart' \
-        --body-file '../fixtures/issues/003-persisted-guest-cart.md'
-
-  - type: Markdown
-    markdown: Create the guest checkout and order confirmation issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Guest checkout and order confirmation' \
-        --body-file '../fixtures/issues/004-guest-checkout-and-order-confirmation.md'
-
-  - type: Markdown
-    markdown: Create the security and demo users issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Security and demo users' \
-        --body-file '../fixtures/issues/005-security-and-demo-users.md'
-
-  - type: Markdown
-    markdown: Create the logistics order dashboard issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Logistics order dashboard' \
-        --body-file '../fixtures/issues/006-logistics-order-dashboard.md'
-
-  - type: Markdown
-    markdown: Create the inventory catalog management issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Inventory catalog management' \
-        --body-file '../fixtures/issues/007-inventory-catalog-management.md'
-
-  - type: Markdown
-    markdown: Create the Playwright end-to-end test suite issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Playwright E2E test suite' \
-        --body-file '../fixtures/issues/008-playwright-e2e-test-suite.md'
-
-  - type: Markdown
-    markdown: Create the validation and error handling issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Validation and error handling' \
-        --body-file '../fixtures/issues/009-validation-and-error-handling.md'
-
-  - type: Markdown
-    markdown: Create the documentation and workshop backlog issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Documentation and workshop backlog' \
-        --body-file '../fixtures/issues/010-documentation-and-workshop-backlog.md'
-
-  - type: Markdown
-    markdown: Create the UI accessibility and responsive polish issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'UI accessibility and responsive polish' \
-        --body-file '../fixtures/issues/011-ui-accessibility-and-responsive-polish.md'
-
-  - type: Markdown
-    markdown: Build, verify, commit, and push the project foundation branch.
-
-  - type: Command
-    commands: |
-      git switch --create '001-project-foundation'
-      rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
-      chmod +x mvnw
-      ./mvnw clean verify
-      git add .
-      git commit \
-        --message 'Create Spring Boot project foundation' \
-        --message 'Refs #1.' \
-        --message 'Establishes the baseline application structure requested by #1 so future supermarket features can be built on a runnable, verified Spring Boot project.'
-      git push --set-upstream origin '001-project-foundation'
-
-  - type: Markdown
-    markdown: Open the project foundation pull request.
-
-  - type: Command
-    commands: |
-      gh pr create \
-        --title 'Create Spring Boot project foundation' \
-        --body-file '../fixtures/pr/001-project-foundation.md' \
-      > '../fixtures/pr/001-project-foundation.out'
-
-  - type: Markdown
-    markdown: Wait for project foundation checks, then merge the pull request.
-
-  - type: Command
-    commands: |
-      pr_url="$(cat '../fixtures/pr/001-project-foundation.out')"
-      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-      gh pr checks "${pr_number}" --watch
-
-      while true; do
-        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-        case "${merge_state}" in
-          CLEAN|HAS_HOOKS|UNSTABLE)
-            break
-            ;;
-          BLOCKED|BEHIND|DIRTY|DRAFT)
-            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-            exit 1
-            ;;
-          *)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-        esac
-      done
-
-      gh pr merge "${pr_number}" --merge --delete-branch
-    timeout: 10 minutes
-
-  - type: Markdown
-    markdown: Protect `main` so later changes must merge through passing pull requests.
+    contents: Protect `main` so later changes must merge through passing pull requests.
 
   - type: Command
     commands: |
@@ -232,39 +76,141 @@ entries:
       JSON
 
   - type: Markdown
-    markdown: Build, verify, commit, and push the catalog branch.
+    contents: Create the project foundation issue.
 
   - type: Command
     commands: |
-      git switch --create '002-seed-catalog-and-product-listing'
-      rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
+      gh issue create \
+        --title 'Create Spring Boot project foundation' \
+        --body-file '../fixtures/issues/001-project-foundation.md'
+
+  - type: Markdown
+    contents: Create the catalog and product listing issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Seed catalog and product listing' \
+        --body-file '../fixtures/issues/002-seed-catalog-and-product-listing.md'
+
+  - type: Markdown
+    contents: Create the persisted guest cart issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Persisted guest cart' \
+        --body-file '../fixtures/issues/003-persisted-guest-cart.md'
+
+  - type: Markdown
+    contents: Create the guest checkout and order confirmation issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Guest checkout and order confirmation' \
+        --body-file '../fixtures/issues/004-guest-checkout-and-order-confirmation.md'
+
+  - type: Markdown
+    contents: Create the security and demo users issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Security and demo users' \
+        --body-file '../fixtures/issues/005-security-and-demo-users.md'
+
+  - type: Markdown
+    contents: Create the logistics order dashboard issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Logistics order dashboard' \
+        --body-file '../fixtures/issues/006-logistics-order-dashboard.md'
+
+  - type: Markdown
+    contents: Create the inventory catalog management issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Inventory catalog management' \
+        --body-file '../fixtures/issues/007-inventory-catalog-management.md'
+
+  - type: Markdown
+    contents: Create the Playwright end-to-end test suite issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Playwright E2E test suite' \
+        --body-file '../fixtures/issues/008-playwright-e2e-test-suite.md'
+
+  - type: Markdown
+    contents: Create the validation and error handling issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Validation and error handling' \
+        --body-file '../fixtures/issues/009-validation-and-error-handling.md'
+
+  - type: Markdown
+    contents: Create the documentation and workshop backlog issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Documentation and workshop backlog' \
+        --body-file '../fixtures/issues/010-documentation-and-workshop-backlog.md'
+
+  - type: Markdown
+    contents: Create the UI accessibility and responsive polish issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'UI accessibility and responsive polish' \
+        --body-file '../fixtures/issues/011-ui-accessibility-and-responsive-polish.md'
+
+  - type: Markdown
+    contents: Build, verify, commit, and push the project foundation branch.
+
+  - type: Command
+    commands: |
+      git switch --create '001-project-foundation'
+      rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
+      chmod +x mvnw
       ./mvnw clean verify
       git add .
       git commit \
-        --message 'Seed catalog categories and products' \
-        --message 'Refs #2.' \
-        --message 'Adds the initial customer-facing catalog requested by #2, including Flyway-seeded category and product data, active-product listing, category filtering, text search, euro pricing, and server-rendered responsive pages at / and /products.'
-      git push --set-upstream origin '002-seed-catalog-and-product-listing'
+        --message 'Create Spring Boot project foundation' \
+        --message 'Refs #1.' \
+        --message 'Establishes the baseline application structure requested by #1 so future supermarket features can be built on a runnable, verified Spring Boot project.'
+      git push --set-upstream origin '001-project-foundation'
 
   - type: Markdown
-    markdown: Open the catalog pull request.
+    contents: Open the project foundation pull request.
 
   - type: Command
     commands: |
       gh pr create \
-        --title 'Seed catalog categories and products' \
-        --body-file '../fixtures/pr/002-seed-catalog-and-product-listing.md' \
-      > '../fixtures/pr/002-seed-catalog-and-product-listing.out'
+        --title 'Create Spring Boot project foundation' \
+        --body-file '../fixtures/pr/001-project-foundation.md' \
+      > '../fixtures/pr/001-project-foundation.out'
 
   - type: Markdown
-    markdown: Wait for catalog checks, then merge the pull request.
+    contents: Wait for project foundation checks, then merge the pull request.
 
   - type: Command
     commands: |
-      pr_url="$(cat '../fixtures/pr/002-seed-catalog-and-product-listing.out')"
+      pr_url="$(cat '../fixtures/pr/001-project-foundation.out')"
       pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-      gh pr checks "${pr_number}" --watch
+      if ! gh pr checks "${pr_number}" --watch; then
+        echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
+      fi
 
       while true; do
         merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
@@ -273,7 +219,16 @@ entries:
           CLEAN|HAS_HOOKS|UNSTABLE)
             break
             ;;
-          BLOCKED|BEHIND|DIRTY|DRAFT)
+          BLOCKED)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+          BEHIND)
+            echo "Updating pull request #${pr_number} branch before merging."
+            gh pr update-branch "${pr_number}"
+            sleep 10
+            ;;
+          DIRTY|DRAFT)
             echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
             exit 1
             ;;
@@ -288,7 +243,74 @@ entries:
     timeout: 10 minutes
 
   - type: Markdown
-    markdown: Build, verify, commit, and push the guest cart branch.
+    contents: Build, verify, commit, and push the catalog branch.
+
+  - type: Command
+    commands: |
+      git switch --create '002-seed-catalog-and-product-listing'
+      rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
+      ./mvnw clean verify
+      git add .
+      git commit \
+        --message 'Seed catalog categories and products' \
+        --message 'Refs #2.' \
+        --message 'Adds the initial customer-facing catalog requested by #2, including Flyway-seeded category and product data, active-product listing, category filtering, text search, euro pricing, and server-rendered responsive pages at / and /products.'
+      git push --set-upstream origin '002-seed-catalog-and-product-listing'
+
+  - type: Markdown
+    contents: Open the catalog pull request.
+
+  - type: Command
+    commands: |
+      gh pr create \
+        --title 'Seed catalog categories and products' \
+        --body-file '../fixtures/pr/002-seed-catalog-and-product-listing.md' \
+      > '../fixtures/pr/002-seed-catalog-and-product-listing.out'
+
+  - type: Markdown
+    contents: Wait for catalog checks, then merge the pull request.
+
+  - type: Command
+    commands: |
+      pr_url="$(cat '../fixtures/pr/002-seed-catalog-and-product-listing.out')"
+      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+      if ! gh pr checks "${pr_number}" --watch; then
+        echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
+      fi
+
+      while true; do
+        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+        case "${merge_state}" in
+          CLEAN|HAS_HOOKS|UNSTABLE)
+            break
+            ;;
+          BLOCKED)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+          BEHIND)
+            echo "Updating pull request #${pr_number} branch before merging."
+            gh pr update-branch "${pr_number}"
+            sleep 10
+            ;;
+          DIRTY|DRAFT)
+            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+            exit 1
+            ;;
+          *)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+        esac
+      done
+
+      gh pr merge "${pr_number}" --merge --delete-branch
+    timeout: 10 minutes
+
+  - type: Markdown
+    contents: Build, verify, commit, and push the guest cart branch.
 
   - type: Command
     commands: |
@@ -303,7 +325,7 @@ entries:
       git push --set-upstream origin '003-persisted-guest-cart'
 
   - type: Markdown
-    markdown: Open the guest cart pull request.
+    contents: Open the guest cart pull request.
 
   - type: Command
     commands: |
@@ -313,14 +335,16 @@ entries:
       > '../fixtures/pr/003-persisted-guest-cart.out'
 
   - type: Markdown
-    markdown: Wait for guest cart checks, then merge the pull request.
+    contents: Wait for guest cart checks, then merge the pull request.
 
   - type: Command
     commands: |
       pr_url="$(cat '../fixtures/pr/003-persisted-guest-cart.out')"
       pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-      gh pr checks "${pr_number}" --watch
+      if ! gh pr checks "${pr_number}" --watch; then
+        echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
+      fi
 
       while true; do
         merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
@@ -329,7 +353,16 @@ entries:
           CLEAN|HAS_HOOKS|UNSTABLE)
             break
             ;;
-          BLOCKED|BEHIND|DIRTY|DRAFT)
+          BLOCKED)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+          BEHIND)
+            echo "Updating pull request #${pr_number} branch before merging."
+            gh pr update-branch "${pr_number}"
+            sleep 10
+            ;;
+          DIRTY|DRAFT)
             echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
             exit 1
             ;;
