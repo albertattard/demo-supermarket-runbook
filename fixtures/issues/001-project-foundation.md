@@ -55,7 +55,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - Configure Surefire to exclude `@Tag("e2e")` tests from the `test` phase.
 - Configure Failsafe or equivalent Maven lifecycle wiring to run only `@Tag("e2e")` tests during the `integration-test` and `verify` phases.
 - Start the Spring Boot application before E2E tests on port `18080`.
-- Use an `e2e` Spring profile for Maven-driven E2E runs.
+- Pass the E2E server port to the application through command-line arguments or system properties.
 - Use `/actuator/health` as the E2E readiness check.
 - Add a minimal Playwright smoke test that opens `/` and verifies the initial home page renders.
 - Add Maven Wrapper pinned to Apache Maven 3.9.16.
@@ -105,7 +105,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - `/`, `/actuator/health`, and static assets required by the home page, including `/css/**`, `/js/**`, `/images/**`, and `/webjars/**`, are accessible without authentication.
 - The home page makes clear that catalog functionality is not implemented yet.
 - The E2E Maven lifecycle starts the Spring Boot application before browser tests and stops it after the tests complete.
-- The E2E Maven lifecycle starts the application with the `e2e` profile on port `18080`.
+- The E2E Maven lifecycle starts the application on port `18080` without requiring a dedicated `application-e2e.yml` file.
 - E2E tests wait for `/actuator/health` before opening browser pages.
 - Playwright installs and runs Chromium headless locally and in GitHub Actions.
 - The initial E2E smoke test opens `/` and verifies the home page renders.
