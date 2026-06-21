@@ -5,8 +5,10 @@
 Copy the repository README and license into the working directory.
 
 ```shell
-cp '../fixtures/README.md' .
-cp '../fixtures/LICENSE'   .
+cp '../fixtures/README.md'      .
+cp '../fixtures/LICENSE'        .
+cp '../fixtures/.gitattributes' .
+cp '../fixtures/.gitignore'     .
 ```
 
 Initialize Git and commit the seed documentation.
@@ -77,272 +79,79 @@ gh issue create \
   --body-file '../fixtures/issues/001-project-foundation.md'
 ```
 
-Create the catalog and product listing issue.
-
-```shell
-gh issue create \
-  --title 'Seed catalog and product listing' \
-  --body-file '../fixtures/issues/002-seed-catalog-and-product-listing.md'
-```
-
-Create the persisted guest cart issue.
-
-```shell
-gh issue create \
-  --title 'Persisted guest cart' \
-  --body-file '../fixtures/issues/003-persisted-guest-cart.md'
-```
-
-Create the guest checkout and order confirmation issue.
-
-```shell
-gh issue create \
-  --title 'Guest checkout and order confirmation' \
-  --body-file '../fixtures/issues/004-guest-checkout-and-order-confirmation.md'
-```
-
-Create the security and demo users issue.
-
-```shell
-gh issue create \
-  --title 'Security and demo users' \
-  --body-file '../fixtures/issues/005-security-and-demo-users.md'
-```
-
-Create the logistics order dashboard issue.
-
-```shell
-gh issue create \
-  --title 'Logistics order dashboard' \
-  --body-file '../fixtures/issues/006-logistics-order-dashboard.md'
-```
-
-Create the inventory catalog management issue.
-
-```shell
-gh issue create \
-  --title 'Inventory catalog management' \
-  --body-file '../fixtures/issues/007-inventory-catalog-management.md'
-```
-
-Create the Playwright end-to-end test suite issue.
-
-```shell
-gh issue create \
-  --title 'Playwright E2E test suite' \
-  --body-file '../fixtures/issues/008-playwright-e2e-test-suite.md'
-```
-
-Create the validation and error handling issue.
-
-```shell
-gh issue create \
-  --title 'Validation and error handling' \
-  --body-file '../fixtures/issues/009-validation-and-error-handling.md'
-```
-
-Create the documentation and workshop backlog issue.
-
-```shell
-gh issue create \
-  --title 'Documentation and workshop backlog' \
-  --body-file '../fixtures/issues/010-documentation-and-workshop-backlog.md'
-```
-
-Create the UI accessibility and responsive polish issue.
-
-```shell
-gh issue create \
-  --title 'UI accessibility and responsive polish' \
-  --body-file '../fixtures/issues/011-ui-accessibility-and-responsive-polish.md'
-```
-
-Build, verify, commit, and push the project foundation branch.
-
-```shell
+~~~shell
 git switch --create '001-project-foundation'
-rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
-chmod +x mvnw
-./mvnw clean verify
-git add .
-git commit \
-  --message 'Create Spring Boot project foundation' \
-  --message 'Refs #1.' \
-  --message 'Establishes the baseline application structure requested by #1 so future supermarket features can be built on a runnable, verified Spring Boot project.'
-git push --set-upstream origin '001-project-foundation'
+
+codex exec \
+  --ephemeral \
+  --sandbox workspace-write \
+  --output-last-message ../codex-logs/001-project-foundation.md \
+  - <<EOF > ../codex-logs/001-project-foundation.log 2>&1
+Review and implement [https://github.com/albertattard/demo-supermarket/issues/1](https://github.com/albertattard/demo-supermarket/issues/1). Do not assume but instead ask me for any clarifications.
+
+When writing functional tests, use explicit test harness classes to isolate lifecycle and infrastructure concerns from the test scenario.
+
+The test method should describe only the business/user workflow. It should not contain process startup logic, Docker commands, browser creation, port allocation, retry loops, readiness polling, log forwarding, cleanup code, or low-level browser/page setup.
+
+Create focused harnesses with clear ownership:
+
+1. Application harness
+  - Owns the lifecycle of the application under test.
+  - Allocates or accepts a local port.
+  - Starts the app as an external process, packaged artifact, or container.
+  - Builds and exposes the base URL.
+  - Waits until the app is ready using a real readiness signal.
+  - Detects early startup failure and reports useful diagnostics.
+  - Optionally forwards application logs into test output.
+  - Implements `Closeable`/`AutoCloseable`.
+  - Cleans up reliably even if tests fail.
+
+2. Browser/client harness
+  - Owns the lifecycle of the browser, HTTP client, or external test client.
+  - Creates isolated sessions/pages/contexts for each scenario.
+  - Accepts callbacks/lambdas so tests can run against a high-level application facade.
+  - Hides client configuration such as headless mode, browser channel, timeouts, base URL, and teardown.
+  - Implements `Closeable`/`AutoCloseable`.
+
+3. Domain/page facade
+  - Provides high-level workflow entry points such as `openHomePage()`, `openAdminArea()`, or `startCheckout()`.
+  - Returns page objects or workflow objects.
+  - Keeps low-level selectors, URLs, waiting, and parsing outside the test method.
+
+The test class should wire the harnesses in `@BeforeAll`/`@AfterAll` or equivalent lifecycle hooks. Cleanup must collect and rethrow failures carefully so both the browser/client and application are given a chance to close.
+
+Prefer this shape:
+
+```java
+class ApplicationFunctionalTest {
+
+    private static ApplicationHarness application;
+    private static BrowserHarness browser;
+
+    @BeforeAll
+    static void start() throws Exception {
+        application = new ApplicationHarness();
+        application.start();
+        browser = new PlaywrightBrowserHarness(application.baseUrl());
+    }
+
+    @AfterAll
+    static void stop() throws Exception {
+        closeAll(browser, application);
+    }
+
+    @Test
+    void userCanCompleteImportantWorkflow() throws Exception {
+        browser.openApplication(app -> app
+                .openSomePage()
+                .performAction()
+                .shouldShowExpectedResult());
+    }
+}
 ```
 
-Open the project foundation pull request.
+Do not inline harness responsibilities into the test. If the test starts to contain operational code, extract it into a harness. The goal is for tests to remain readable while the harnesses make startup, readiness, client lifecycle, diagnostics, and cleanup deterministic and reusable.
+EOF
+~~~
 
-```shell
-gh pr create \
-  --title 'Create Spring Boot project foundation' \
-  --body-file '../fixtures/pr/001-project-foundation.md' \
-> '../fixtures/pr/001-project-foundation.out'
-```
-
-Wait for project foundation checks, then merge the pull request.
-
-```shell
-pr_url="$(cat '../fixtures/pr/001-project-foundation.out')"
-pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-if ! gh pr checks "${pr_number}" --watch; then
-  echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-fi
-
-while true; do
-  merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-  case "${merge_state}" in
-    CLEAN|HAS_HOOKS|UNSTABLE)
-      break
-      ;;
-    BLOCKED)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-    BEHIND)
-      echo "Updating pull request #${pr_number} branch before merging."
-      gh pr update-branch "${pr_number}"
-      sleep 10
-      ;;
-    DIRTY|DRAFT)
-      echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-      exit 1
-      ;;
-    *)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-  esac
-done
-
-gh pr merge "${pr_number}" --merge --delete-branch
-```
-
-Build, verify, commit, and push the catalog branch.
-
-```shell
-git switch --create '002-seed-catalog-and-product-listing'
-rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
-./mvnw clean verify
-git add .
-git commit \
-  --message 'Seed catalog categories and products' \
-  --message 'Refs #2.' \
-  --message 'Adds the initial customer-facing catalog requested by #2, including Flyway-seeded category and product data, active-product listing, category filtering, text search, euro pricing, and server-rendered responsive pages at / and /products.'
-git push --set-upstream origin '002-seed-catalog-and-product-listing'
-```
-
-Open the catalog pull request.
-
-```shell
-gh pr create \
-  --title 'Seed catalog categories and products' \
-  --body-file '../fixtures/pr/002-seed-catalog-and-product-listing.md' \
-> '../fixtures/pr/002-seed-catalog-and-product-listing.out'
-```
-
-Wait for catalog checks, then merge the pull request.
-
-```shell
-pr_url="$(cat '../fixtures/pr/002-seed-catalog-and-product-listing.out')"
-pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-if ! gh pr checks "${pr_number}" --watch; then
-  echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-fi
-
-while true; do
-  merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-  case "${merge_state}" in
-    CLEAN|HAS_HOOKS|UNSTABLE)
-      break
-      ;;
-    BLOCKED)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-    BEHIND)
-      echo "Updating pull request #${pr_number} branch before merging."
-      gh pr update-branch "${pr_number}"
-      sleep 10
-      ;;
-    DIRTY|DRAFT)
-      echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-      exit 1
-      ;;
-    *)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-  esac
-done
-
-gh pr merge "${pr_number}" --merge --delete-branch
-```
-
-Build, verify, commit, and push the guest cart branch.
-
-```shell
-git switch --create '003-persisted-guest-cart'
-rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
-./mvnw clean verify
-git add .
-git commit \
-  --message 'Implement persisted guest carts' \
-  --message 'Refs #3.' \
-  --message 'Adds the opaque-token guest cart requested by #3, including cart persistence, active cart URLs, product add actions, quantity updates with 1-99 bounds, line removal, subtotal calculation, and server-rendered cart pages.'
-git push --set-upstream origin '003-persisted-guest-cart'
-```
-
-Open the guest cart pull request.
-
-```shell
-gh pr create \
-  --title 'Implement persisted guest carts' \
-  --body-file '../fixtures/pr/003-persisted-guest-cart.md' \
-> '../fixtures/pr/003-persisted-guest-cart.out'
-```
-
-Wait for guest cart checks, then merge the pull request.
-
-```shell
-pr_url="$(cat '../fixtures/pr/003-persisted-guest-cart.out')"
-pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-if ! gh pr checks "${pr_number}" --watch; then
-  echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-fi
-
-while true; do
-  merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-  case "${merge_state}" in
-    CLEAN|HAS_HOOKS|UNSTABLE)
-      break
-      ;;
-    BLOCKED)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-    BEHIND)
-      echo "Updating pull request #${pr_number} branch before merging."
-      gh pr update-branch "${pr_number}"
-      sleep 10
-      ;;
-    DIRTY|DRAFT)
-      echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-      exit 1
-      ;;
-    *)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-  esac
-done
-
-gh pr merge "${pr_number}" --merge --delete-branch
-```
+> Breakpoint reached: Stop here

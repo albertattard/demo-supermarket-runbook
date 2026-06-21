@@ -8,8 +8,11 @@ entries:
 
   - type: Command
     commands: |
-      cp '../fixtures/README.md' .
-      cp '../fixtures/LICENSE'   .
+      cp '../fixtures/README.md'      .
+      cp '../fixtures/LICENSE'        .
+      cp '../fixtures/.editorconfig'  .
+      cp '../fixtures/.gitattributes' .
+      cp '../fixtures/.gitignore'     .
 
   - type: Markdown
     contents: Initialize Git and commit the seed documentation.
@@ -92,15 +95,6 @@ entries:
       gh issue create \
         --title 'Seed catalog and product listing' \
         --body-file '../fixtures/issues/002-seed-catalog-and-product-listing.md'
-
-  - type: Markdown
-    contents: Create the Playwright end-to-end test suite issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Playwright E2E test suite' \
-        --body-file '../fixtures/issues/003-playwright-e2e-test-suite.md'
 
   - type: Markdown
     contents: Create the persisted guest cart issue.
@@ -241,6 +235,8 @@ entries:
 
       gh pr merge "${pr_number}" --merge --delete-branch
     timeout: 10 minutes
+
+  - type: Breakpoint
 
   - type: Markdown
     contents: Build, verify, commit, and push the catalog branch.
