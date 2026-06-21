@@ -19,6 +19,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - Flyway owns schema creation from the beginning, even if the initial migration only establishes the migration baseline.
 - Browser-based E2E testing is introduced in this issue with a minimal smoke test. Later UI stories should extend the E2E suite for the workflows they add.
 - The public customer-facing pages introduced in early stories do not require login.
+- Routes not explicitly made public should require authentication by default.
 
 ## Scope
 
@@ -48,6 +49,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - Keep the home page deliberately small; it exists as an initial smoke-test target until the catalog issue replaces `/` with the product catalog.
 - Add a minimal local CSS file used by the home page.
 - Configure Spring Security so `/`, `/actuator/health`, and static assets required by the home page are accessible without authentication.
+- Configure Spring Security so every other route requires authentication by default.
 - Configure Java Playwright, not Node Playwright.
 - Install the Playwright Chromium browser binary automatically as part of `./mvnw verify`.
 - Run Playwright browsers headless.
@@ -103,6 +105,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - `/actuator/health` returns HTTP 200 when the app is running.
 - `/` returns HTTP 200 and renders a minimal server-side home page.
 - `/`, `/actuator/health`, and static assets required by the home page, including `/css/**`, `/js/**`, `/images/**`, and `/webjars/**`, are accessible without authentication.
+- Routes other than the explicitly permitted public routes require authentication by default.
 - The home page makes clear that catalog functionality is not implemented yet.
 - The E2E Maven lifecycle starts the Spring Boot application before browser tests and stops it after the tests complete.
 - The E2E Maven lifecycle starts the application on port `18080` without requiring a dedicated `application-e2e.yml` file.
@@ -116,6 +119,6 @@ Engineers working on later issues should be able to clone the repository, run th
 - Maven Wrapper files are committed, documented, and pinned to Apache Maven 3.9.16.
 - `.gitignore` excludes build outputs, IDE metadata, and local runtime files that should not be committed.
 - `.editorconfig` defines consistent formatting basics for the repository.
-- README explains the project purpose, stack, and how to run/test it.
+- README explains the project purpose, stack, how to run/test it, and that the first `./mvnw verify` run may download the Playwright Chromium browser binary.
 - `docs/README.md` records the key architectural decisions made so far.
 - The application does not require Node, npm, Docker, or an external database to run locally.
