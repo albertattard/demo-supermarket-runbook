@@ -78,6 +78,9 @@ assumed to already exist.
 
 - `./mvnw test` succeeds.
 - `./mvnw verify` succeeds.
+- End-to-end tests cover browsing the catalog at `/` and `/products`.
+- End-to-end tests cover category filtering, text search, combined filtering,
+  preserved filter values, and the empty state.
 - Flyway creates category and product tables.
 - Flyway seeds 4-6 categories and 12-20 products.
 - Seeded products cover multiple categories and include realistic names,
