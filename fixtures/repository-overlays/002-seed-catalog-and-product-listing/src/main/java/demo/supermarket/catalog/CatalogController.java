@@ -6,27 +6,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
-public class CatalogController {
+class CatalogController {
 
     private final CatalogService catalogService;
 
-    CatalogController(CatalogService catalogService) {
+    CatalogController(final CatalogService catalogService) {
         this.catalogService = catalogService;
     }
 
     @GetMapping({ "/", "/products" })
     String catalog(
-        @RequestParam(name = "category", required = false) Long categoryId,
-        @RequestParam(name = "q", required = false) String query,
-        Model model
-    ) {
-        var catalog = catalogService.findCatalog(new CatalogSearch(categoryId, query));
-
-        model.addAttribute("categories", catalog.categories());
-        model.addAttribute("products", catalog.products());
-        model.addAttribute("selectedCategoryId", catalog.selectedCategoryId());
-        model.addAttribute("query", catalog.query());
-
+            @RequestParam(name = "category", required = false) final Long categoryId,
+            @RequestParam(name = "q", required = false) final String search,
+            final Model model) {
+        model.addAttribute("catalog", catalogService.findCatalog(categoryId, search));
         return "catalog";
     }
 }

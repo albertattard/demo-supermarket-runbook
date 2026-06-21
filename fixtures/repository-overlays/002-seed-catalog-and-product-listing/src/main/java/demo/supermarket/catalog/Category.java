@@ -9,30 +9,30 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "categories")
-public class Category {
+class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)
-    private int displayOrder;
+    private boolean active;
 
     protected Category() {
     }
 
-    public Long getId() {
+    Long getId() {
         return id;
     }
 
-    public String getName() {
+    String getName() {
         return name;
     }
 
-    public int getDisplayOrder() {
-        return displayOrder;
+    boolean isActive() {
+        return active;
     }
 }

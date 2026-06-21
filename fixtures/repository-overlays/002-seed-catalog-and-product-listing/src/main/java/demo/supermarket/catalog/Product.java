@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "products")
-public class Product {
+class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,56 +24,56 @@ public class Product {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, length = 500)
+    @Column(nullable = false, length = 1000)
     private String description;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "unit_label", nullable = false)
     private String unitLabel;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
     @Column(nullable = false)
     private boolean active;
 
-    @Column(length = 255)
+    @Column(name = "image_path")
     private String imagePath;
 
     protected Product() {
     }
 
-    public Long getId() {
+    Long getId() {
         return id;
     }
 
-    public Category getCategory() {
+    Category getCategory() {
         return category;
     }
 
-    public String getName() {
+    String getName() {
         return name;
     }
 
-    public String getDescription() {
+    String getDescription() {
         return description;
     }
 
-    public String getUnitLabel() {
+    String getUnitLabel() {
         return unitLabel;
     }
 
-    public BigDecimal getUnitPrice() {
+    BigDecimal getUnitPrice() {
         return unitPrice;
     }
 
-    public boolean isActive() {
+    boolean isActive() {
         return active;
     }
 
-    public String getImagePath() {
+    String getImagePath() {
         return imagePath;
     }
 }

@@ -1,0 +1,57 @@
+package demo.supermarket.catalog;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest
+class CatalogServiceTest {
+
+    @Autowired
+    private CatalogService catalogService;
+
+    @Test
+    void treatsPercentageAsLiteralSearchText() {
+        final CatalogView catalog = catalogService.findCatalog(null, "%");
+
+        assertThat(catalog.search()).isEqualTo("%");
+        assertThat(catalog.products()).isEmpty();
+    }
+
+    @Test
+    void treatsUnderscoreAsLiteralSearchText() {
+        final CatalogView catalog = catalogService.findCatalog(null, "_");
+
+        assertThat(catalog.search()).isEqualTo("_");
+        assertThat(catalog.products()).isEmpty();
+    }
+
+    @Test
+    void treatsBackslashAsLiteralSearchText() {
+        final CatalogView catalog = catalogService.findCatalog(null, "\\");
+
+        assertThat(catalog.search()).isEqualTo("\\");
+        assertThat(catalog.products()).isEmpty();
+    }
+
+    @Test
+    void searchesByNameOrDescriptionCaseInsensitivelyAfterTrimming() {
+        final CatalogView catalog = catalogService.findCatalog(null, "  TOMATOES  ");
+
+        assertThat(catalog.search()).isEqualTo("TOMATOES");
+        assertThat(catalog.products())
+                .extracting(CatalogProduct::name)
+                .containsExactly("Cherry Tomatoes", "Italian Chopped Tomatoes");
+    }
+
+    @Test
+    void combinesCategoryAndSearchFilters() {
+        final CatalogView catalog = catalogService.findCatalog(4L, "tomatoes");
+
+        assertThat(catalog.products())
+                .extracting(CatalogProduct::name)
+                .containsExactly("Italian Chopped Tomatoes");
+    }
+}

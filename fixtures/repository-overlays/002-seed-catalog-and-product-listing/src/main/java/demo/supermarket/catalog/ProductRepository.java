@@ -9,18 +9,17 @@ import org.springframework.data.repository.query.Param;
 interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("""
-        select p
-        from Product p
-        join fetch p.category c
-        where p.active = true
-          and (:categoryId is null or c.id = :categoryId)
-          and (:searchTerm is null
-               or lower(p.name) like concat('%', :searchTerm, '%')
-               or lower(p.description) like concat('%', :searchTerm, '%'))
-        order by c.displayOrder asc, p.name asc
-        """)
-    List<Product> findActiveForCatalog(
-        @Param("categoryId") Long categoryId,
-        @Param("searchTerm") String searchTerm
-    );
+            select product
+            from Product product
+            join fetch product.category category
+            where product.active = true
+              and category.active = true
+              and (:categoryId is null or category.id = :categoryId)
+              and (:searchPattern is null
+                    or lower(product.name) like :searchPattern escape '\\'
+                    or lower(product.description) like :searchPattern escape '\\')
+            order by category.name asc, product.name asc""")
+    List<Product> findActiveCatalogProducts(
+            @Param("categoryId") Long categoryId,
+            @Param("searchPattern") String searchPattern);
 }
