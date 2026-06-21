@@ -94,13 +94,22 @@ entries:
         --body-file '../fixtures/issues/002-seed-catalog-and-product-listing.md'
 
   - type: Markdown
+    contents: Create the Playwright end-to-end test suite issue.
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Playwright E2E test suite' \
+        --body-file '../fixtures/issues/003-playwright-e2e-test-suite.md'
+
+  - type: Markdown
     contents: Create the persisted guest cart issue.
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Persisted guest cart' \
-        --body-file '../fixtures/issues/003-persisted-guest-cart.md'
+        --body-file '../fixtures/issues/004-persisted-guest-cart.md'
 
   - type: Markdown
     contents: Create the guest checkout and order confirmation issue.
@@ -109,7 +118,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Guest checkout and order confirmation' \
-        --body-file '../fixtures/issues/004-guest-checkout-and-order-confirmation.md'
+        --body-file '../fixtures/issues/005-guest-checkout-and-order-confirmation.md'
 
   - type: Markdown
     contents: Create the security and demo users issue.
@@ -118,7 +127,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Security and demo users' \
-        --body-file '../fixtures/issues/005-security-and-demo-users.md'
+        --body-file '../fixtures/issues/006-security-and-demo-users.md'
 
   - type: Markdown
     contents: Create the logistics order dashboard issue.
@@ -127,7 +136,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Logistics order dashboard' \
-        --body-file '../fixtures/issues/006-logistics-order-dashboard.md'
+        --body-file '../fixtures/issues/007-logistics-order-dashboard.md'
 
   - type: Markdown
     contents: Create the inventory catalog management issue.
@@ -136,16 +145,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Inventory catalog management' \
-        --body-file '../fixtures/issues/007-inventory-catalog-management.md'
-
-  - type: Markdown
-    contents: Create the Playwright end-to-end test suite issue.
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Playwright E2E test suite' \
-        --body-file '../fixtures/issues/008-playwright-e2e-test-suite.md'
+        --body-file '../fixtures/issues/008-inventory-catalog-management.md'
 
   - type: Markdown
     contents: Create the validation and error handling issue.
