@@ -8,10 +8,9 @@ decision, and consequences.
 
 ## Decisions
 
-1. [Spring Boot and Maven](adr/0001-spring-boot-and-maven.md)
-2. [Java 25](adr/0002-java-25.md)
-3. [Package and Application Entry Point](adr/0003-package-and-application-entry-point.md)
-4. [Server-Rendered Web Baseline](adr/0004-server-rendered-web-baseline.md)
-5. [Persistence Baseline](adr/0005-persistence-baseline.md)
-6. [Security Baseline](adr/0006-security-baseline.md)
-7. [Operational Baseline](adr/0007-operational-baseline.md)
+1. [Spring Boot and Maven](adrs/ADR-001-spring-boot-and-maven.md)
+2. [Java 25](adrs/ADR-002-java-25.md)
+3. [Server-Rendered Web Baseline](adrs/ADR-003-server-rendered-web-baseline.md)
+4. [Persistence Baseline](adrs/ADR-004-persistence-baseline.md)
+5. [Security Baseline](adrs/ADR-005-security-baseline.md)
+6. [Operational Baseline](adrs/ADR-006-operational-baseline.md)

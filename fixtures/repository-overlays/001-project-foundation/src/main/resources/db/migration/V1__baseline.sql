@@ -1,2 +1,1 @@
--- Baseline migration placeholder.
--- Business schema changes will be introduced by future feature issues.
+select 1;
