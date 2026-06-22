@@ -307,8 +307,6 @@ entries:
       gh pr merge "${pr_number}" --merge --delete-branch
     timeout: 10 minutes
 
-  - type: Breakpoint
-
   - type: Markdown
     contents: Build, verify, commit, and push the guest cart branch.
 
@@ -321,7 +319,8 @@ entries:
       git commit \
         --message 'Implement persisted guest carts' \
         --message 'Refs #3.' \
-        --message 'Adds the opaque-token guest cart requested by #3, including cart persistence, active cart URLs, product add actions, quantity updates with 1-99 bounds, line removal, subtotal calculation, and server-rendered cart pages.'
+        --message 'Adds opaque token-based guest carts with persisted cart and cart item state, public product slugs for cart mutations, catalog add-to-cart flows, active-cart rendering, quantity updates, line removal, subtotal calculation, and customer-facing not-found handling.' \
+        --message 'Covers cart creation, token reopening, product slug mutations, stale-page behavior, quantity bounds, unknown tokens, public routes, and the catalog-to-cart journey with controller, service, concurrency, and Playwright tests.'
       git push --set-upstream origin '003-persisted-guest-cart'
 
   - type: Markdown
