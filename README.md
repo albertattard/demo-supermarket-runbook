@@ -172,14 +172,14 @@ Open the project foundation pull request.
 ```shell
 gh pr create \
   --title 'Create Spring Boot project foundation' \
-  --body-file '../fixtures/pr/001-project-foundation.md' \
-> '../fixtures/pr/001-project-foundation.out'
+  --body-file '../fixtures/pr/PR-001-project-foundation.md' \
+> '../fixtures/pr/PR-001-project-foundation.out'
 ```
 
 Wait for project foundation checks, then merge the pull request.
 
 ```shell
-pr_url="$(cat '../fixtures/pr/001-project-foundation.out')"
+pr_url="$(cat '../fixtures/pr/PR-001-project-foundation.out')"
 pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
 if ! gh pr checks "${pr_number}" --watch; then
@@ -238,14 +238,14 @@ Open the catalog pull request.
 ```shell
 gh pr create \
   --title 'Seed catalog categories and products' \
-  --body-file '../fixtures/pr/002-seed-catalog-and-product-listing.md' \
-> '../fixtures/pr/002-seed-catalog-and-product-listing.out'
+  --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' \
+> '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
 ```
 
 Wait for catalog checks, then merge the pull request.
 
 ```shell
-pr_url="$(cat '../fixtures/pr/002-seed-catalog-and-product-listing.out')"
+pr_url="$(cat '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out')"
 pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
 if ! gh pr checks "${pr_number}" --watch; then
@@ -302,14 +302,14 @@ Open the guest cart pull request.
 ```shell
 gh pr create \
   --title 'Implement persisted guest carts' \
-  --body-file '../fixtures/pr/003-persisted-guest-cart.md' \
-> '../fixtures/pr/003-persisted-guest-cart.out'
+  --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' \
+> '../fixtures/pr/PR-003-persisted-guest-cart.out'
 ```
 
 Wait for guest cart checks, then merge the pull request.
 
 ```shell
-pr_url="$(cat '../fixtures/pr/003-persisted-guest-cart.out')"
+pr_url="$(cat '../fixtures/pr/PR-003-persisted-guest-cart.out')"
 pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
 if ! gh pr checks "${pr_number}" --watch; then
