@@ -35,22 +35,23 @@ insert into categories (id, name, active) values
     (6, 'Seasonal', false);
 
 insert into products (category_id, name, description, unit_label, unit_price, active, image_path) values
-    (1, 'Sourdough Country Loaf', 'Slow-fermented wheat and rye loaf with a crisp crust.', '500 g loaf', 3.95, true, null),
-    (1, 'Wholegrain Bread Rolls', 'Soft seeded rolls baked with oats, linseed, and sunflower seeds.', 'pack of 6', 2.49, true, null),
-    (1, 'Butter Croissants', 'Flaky all-butter croissants baked fresh for breakfast.', 'pack of 4', 4.20, true, null),
-    (2, 'Organic Whole Milk', 'Pasteurised organic cow milk from regional farms.', '1 L carton', 1.69, true, null),
-    (2, 'Greek Style Yogurt', 'Thick natural yogurt with a creamy texture and mild tang.', '500 g tub', 2.35, true, null),
-    (2, 'Mature Cheddar', 'Rich aged cheddar with a firm texture and rounded flavour.', '200 g block', 3.25, true, null),
-    (3, 'Bananas', 'Sweet ripe bananas suitable for snacking, baking, or smoothies.', '1 kg bunch', 1.79, true, null),
-    (3, 'Cherry Tomatoes', 'Juicy red cherry tomatoes for salads, pasta, and lunch boxes.', '250 g punnet', 2.29, true, null),
-    (3, 'Baby Spinach', 'Washed tender spinach leaves ready for salads and cooking.', '125 g bag', 1.95, true, null),
-    (4, 'Italian Chopped Tomatoes', 'Sun-ripened tomatoes chopped in juice for sauces and stews.', '400 g tin', 0.95, true, null),
-    (4, 'Extra Virgin Olive Oil', 'Cold-extracted olive oil with a peppery finish.', '500 ml bottle', 6.80, true, null),
-    (4, 'Basmati Rice', 'Long-grain aromatic rice for curries, pilafs, and sides.', '1 kg bag', 3.10, true, null),
-    (5, 'Recycled Kitchen Towels', 'Absorbent two-ply kitchen towels made with recycled paper.', '2 rolls', 2.75, true, null),
-    (5, 'Lemon Dish Soap', 'Concentrated dishwashing liquid with a fresh lemon scent.', '500 ml bottle', 1.85, true, null),
-    (5, 'Compostable Bin Liners', 'Tie-handle liners for small kitchen food waste bins.', '20 liners', 3.60, true, null),
-    (6, 'Mulled Apple Punch', 'Spiced apple drink for winter gatherings.', '750 ml bottle', 2.95, true, null),
-    (4, 'Discontinued Breakfast Cereal', 'Archived cereal retained for catalog migration checks.', '375 g box', 2.40, false, null);
+    (1, 'Sourdough Country Loaf', 'Slow-fermented wheat and rye loaf with a crisp crust.', '500 g loaf', 3.95, true, '/images/products/sourdough-country-loaf.png'),
+    (1, 'Wholegrain Bread Rolls', 'Soft seeded rolls baked with oats, linseed, and sunflower seeds.', 'pack of 6', 2.49, true, '/images/products/wholegrain-bread-rolls.png'),
+    (1, 'Butter Croissants', 'Flaky all-butter croissants baked fresh for breakfast.', 'pack of 4', 4.20, true, '/images/products/butter-croissants.png'),
+    (2, 'Organic Whole Milk', 'Pasteurised organic cow milk from regional farms.', '1 L carton', 1.69, true, '/images/products/organic-whole-milk.png'),
+    (2, 'Greek Style Yogurt', 'Thick natural yogurt with a creamy texture and mild tang.', '500 g tub', 2.35, true, '/images/products/greek-style-yogurt.png'),
+    (2, 'Mature Cheddar', 'Rich aged cheddar with a firm texture and rounded flavour.', '200 g block', 3.25, true, '/images/products/mature-cheddar.png'),
+    (3, 'Bananas', 'Sweet ripe bananas suitable for snacking, baking, or smoothies.', '1 kg bunch', 1.79, true, '/images/products/bananas.png'),
+    (3, 'Cherry Tomatoes', 'Juicy red cherry tomatoes for salads, pasta, and lunch boxes.', '250 g punnet', 2.29, true, '/images/products/cherry-tomatoes.png'),
+    (3, 'Baby Spinach', 'Washed tender spinach leaves ready for salads and cooking.', '125 g bag', 1.95, true, '/images/products/baby-spinach.png'),
+    (4, 'Italian Chopped Tomatoes', 'Sun-ripened tomatoes chopped in juice for sauces and stews.', '400 g tin', 0.95, true, '/images/products/italian-chopped-tomatoes.png'),
+    (4, 'Extra Virgin Olive Oil', 'Cold-extracted olive oil with a peppery finish.', '500 ml bottle', 6.80, true, '/images/products/extra-virgin-olive-oil.png'),
+    (4, 'Basmati Rice', 'Long-grain aromatic rice for curries, pilafs, and sides.', '1 kg bag', 3.10, true, '/images/products/basmati-rice.png'),
+    (5, 'Recycled Kitchen Towels', 'Absorbent two-ply kitchen towels made with recycled paper.', '2 rolls', 2.75, true, '/images/products/recycled-kitchen-towels.png'),
+    (5, 'Lemon Dish Soap', 'Concentrated dishwashing liquid with a fresh lemon scent.', '500 ml bottle', 1.85, true, '/images/products/lemon-dish-soap.png'),
+    (5, 'Compostable Bin Liners', 'Tie-handle liners for small kitchen food waste bins.', '20 liners', 3.60, true, '/images/products/compostable-bin-liners.png'),
+    (5, 'Plain Cotton Tote Bag', 'Reusable shopping tote for carrying groceries home.', '1 bag', 1.50, true, null),
+    (6, 'Mulled Apple Punch', 'Spiced apple drink for winter gatherings.', '750 ml bottle', 2.95, true, '/images/products/mulled-apple-punch.png'),
+    (4, 'Discontinued Breakfast Cereal', 'Archived cereal retained for catalog migration checks.', '375 g box', 2.40, false, '/images/products/discontinued-breakfast-cereal.png');
 
 alter table categories alter column id restart with 7;
