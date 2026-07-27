@@ -7,7 +7,6 @@ REPOSITORY="${TARGET}/repository"
 
 rm -rf   "${TARGET}"
 mkdir -p "${REPOSITORY}"
-mkdir -p "${TARGET}/codex-logs"
 cp -R    './fixtures' "${TARGET}/"
 
 sw run --working-directory "${REPOSITORY}" --verbose

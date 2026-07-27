@@ -99,6 +99,20 @@ entries:
     indent: 3
 
   - type: Markdown
+    contents: Invite others to collaborate.
+    indent: 3
+
+  - type: Command
+    commands: |
+      owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
+
+      gh api \
+        --method PUT \
+        "repos/${owner}/demo-supermarket/collaborators/KristofBaetz" \
+        --raw-field permission=push
+    indent: 3
+
+  - type: Markdown
     contents: 2. Create the project issues.
 
   - type: Markdown
@@ -591,10 +605,74 @@ entries:
 
   - type: Markdown
     contents: |
-      In Codex, invoke `$review-issue-readiness` for issue 4: guest checkout and
-      order confirmation. Resolve any required clarifications before proceeding.
-      The outcome must be an explicit readiness recommendation, not an implicit
-      assumption that the issue is implementable.
+      Capture the output that Codex produces outside the repository so that these do not impact the subsequent interactions with Codex. 
+
+  - type: Command
+    commands: |
+      mkdir '../codex'
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      Use the Codex CLI to invoke `$review-issue-readiness` for issue 4: guest checkout and order confirmation. Resolve any required clarifications before proceeding. The outcome must be an explicit readiness recommendation, not an implicit assumption that the issue is implementable.
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox read-only \
+        --model gpt-5.6-luna \
+        --config 'model_reasoning_effort="low"' \
+        --output-last-message '../codex/codex-review-issue-readiness-issue-004.md' \
+        - <<'EOF' > '../codex/codex-review-issue-readiness-issue-004.log' 2>&1
+      Use $review-issue-readiness to assess whether this issue is ready to implement: https://github.com/albertattard/demo-supermarket/issues/4
+      EOF
+    timeout: 2 minutes
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      Note that the issue is incomplete and requires some grooming before moving forward as indicated in the response.  
+
+  - type: DisplayFile
+    path: ../codex/codex-review-issue-readiness-issue-004.md
+
+  - type: Markdown
+    contents: |
+      This is just the first iteration. [Issue 4](https://github.com/albertattard/demo-supermarket/issues/4) is not yet ready and requires further grooming. This process can be made interactive and you can answer the model's questions and update the issue in the process.
+      
+      The fixtures contain a groom issue which will address all issues which you can use. Update the issue.
+
+  - type: Command
+    commands: |
+      gh issue edit 4 \
+        --repo albertattard/demo-supermarket \
+        --body-file '../fixtures/issues/ISSUE-004-guest-checkout-and-order-confirmation-groomed.md'
+
+  - type: Markdown
+    contents: |
+      Verify that now the issue is properly groomed and we can proceed with the implementation.
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox read-only \
+        --model gpt-5.6-luna \
+        --config 'model_reasoning_effort="low"' \
+        --output-last-message '../codex/codex-review-issue-readiness-issue-004-groomed.md' \
+        - <<'EOF' > '../codex/codex-review-issue-readiness-issue-004-groomed.log' 2>&1
+      Use $review-issue-readiness to assess whether this issue is ready to implement: https://github.com/albertattard/demo-supermarket/issues/4
+      EOF
+    timeout: 2 minutes
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      According to the skill and model, [Issue 4](https://github.com/albertattard/demo-supermarket/issues/4) is now ready to be worked on.   
+
+  - type: DisplayFile
+    path: ../codex/codex-review-issue-readiness-issue-004-groomed.md
 
   - type: Heading
     level: H2
@@ -602,13 +680,9 @@ entries:
 
   - type: Markdown
     contents: |
-      Introduce a second skill that implements a ready issue and explain how Git
-      worktrees isolate parallel work. For issue 4, assign each implementation
-      agent a distinct brief or evaluation focus; asking several agents to solve an
-      identical prompt would mostly produce redundant candidates.
+      Introduce a second skill that implements a ready issue and explain how Git worktrees isolate parallel work. For issue 4, assign each implementation agent a distinct brief or evaluation focus; asking several agents to solve an identical prompt would mostly produce redundant candidates.
 
-      TODO: Add the implementation skill, worktree setup, distinct agent briefs,
-      and one branch or pull request per candidate implementation.
+      TODO: Add the implementation skill, worktree setup, distinct agent briefs, and one branch or pull request per candidate implementation.
 
   - type: Heading
     level: H2
@@ -616,10 +690,6 @@ entries:
 
   - type: Markdown
     contents: |
-      Introduce an independent review skill that examines every candidate in its
-      isolated worktree. It must compare the implementations against issue 4's
-      acceptance criteria, automated-test coverage, maintainability, and
-      regressions, then recommend exactly one candidate for merge.
+      Introduce an independent review skill that examines every candidate in its isolated worktree. It must compare the implementations against issue 4's acceptance criteria, automated-test coverage, maintainability, and regressions, then recommend exactly one candidate for merge.
 
-      TODO: Add the review skill, review commands, selected-candidate merge, and
-      cleanup of unselected worktrees and branches.
+      TODO: Add the review skill, review commands, selected-candidate merge, and cleanup of unselected worktrees and branches.
