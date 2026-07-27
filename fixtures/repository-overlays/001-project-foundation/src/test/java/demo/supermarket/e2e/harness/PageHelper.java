@@ -2,8 +2,9 @@ package demo.supermarket.e2e.harness;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import com.microsoft.playwright.options.AriaRole;
+
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 final class PageHelper {
 

@@ -1,11 +1,10 @@
 package demo.supermarket.e2e;
 
+import demo.supermarket.e2e.harness.E2eHarness;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import demo.supermarket.e2e.harness.E2eHarness;
 
 @Tag("e2e")
 class HomePageTest {
@@ -27,8 +26,8 @@ class HomePageTest {
     @Test
     void opensTheInitialHomePage() {
         harness.homePage(homePage -> homePage
-                .openCatalog()
-                .shouldShowApplicationName()
-                .shouldShowCatalogIsNotImplementedYet());
+            .openCatalog()
+            .shouldShowApplicationName()
+            .shouldShowCatalogIsNotImplementedYet());
     }
 }

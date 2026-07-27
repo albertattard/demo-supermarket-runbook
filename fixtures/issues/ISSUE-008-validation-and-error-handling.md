@@ -1,10 +1,8 @@
 ## Goal
 
-Improve validation and user-facing error handling across catalog, cart,
-checkout, logistics, and inventory workflows.
+Improve validation and user-facing error handling across catalog, cart, checkout, logistics, and inventory workflows.
 
-The baseline should remain simple, but invalid input and invalid business
-actions should be handled clearly.
+The baseline should remain simple, but invalid input and invalid business actions should be handled clearly.
 
 ## Scope
 
@@ -38,6 +36,5 @@ actions should be handled clearly.
 - `./mvnw verify` succeeds.
 - Invalid forms redisplay with field errors.
 - Business rule failures show clear page-level messages.
-- HTMX validation failures update the relevant fragment without requiring a full
-  page reload where HTMX is used.
+- HTMX validation failures update the relevant fragment without requiring a full page reload where HTMX is used.
 - Backend tests cover representative validation and business-rule failures.

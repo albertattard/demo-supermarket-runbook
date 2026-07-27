@@ -1,10 +1,12 @@
 package demo.supermarket.e2e.harness;
 
-import java.util.regex.Pattern;
+import module java.base;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
 import com.microsoft.playwright.options.AriaRole;
 
 public final class HomePage {
@@ -31,7 +33,8 @@ public final class HomePage {
     }
 
     public HomePage shouldShowSeededCatalogProduct() {
-        helper.shouldShowText("Sourdough Country Loaf");
+        helper.shouldShowHeading("Burger buns");
+        helper.shouldShowText("Burger buns in a convenient 300 g pack.");
         return this;
     }
 
@@ -63,9 +66,9 @@ public final class HomePage {
 
     public HomePage addProductToCart(final String product) {
         page.locator(".product-card")
-                .filter(new Locator.FilterOptions().setHasText(product))
-                .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Add to cart"))
-                .click();
+            .filter(new Locator.FilterOptions().setHasText(product))
+            .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Add to cart"))
+            .click();
         return this;
     }
 
@@ -81,22 +84,22 @@ public final class HomePage {
 
     public HomePage increaseProductQuantity(final String product) {
         productCard(product)
-                .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Increase " + product))
-                .click();
+            .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Increase " + product))
+            .click();
         return this;
     }
 
     public HomePage decreaseProductQuantity(final String product) {
         productCard(product)
-                .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Decrease " + product))
-                .click();
+            .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Decrease " + product))
+            .click();
         return this;
     }
 
     public HomePage removeProductFromCatalog(final String product) {
         productCard(product)
-                .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Remove " + product))
-                .click();
+            .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Remove " + product))
+            .click();
         return this;
     }
 
@@ -118,8 +121,8 @@ public final class HomePage {
 
     public HomePage removeLine(final String product) {
         cartLine(product)
-                .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Remove"))
-                .click();
+            .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Remove"))
+            .click();
         return this;
     }
 
@@ -147,7 +150,7 @@ public final class HomePage {
 
     public HomePage shouldShowAddToCart(final String product) {
         assertThat(productCard(product).getByRole(AriaRole.BUTTON,
-                new Locator.GetByRoleOptions().setName("Add to cart"))).isVisible();
+            new Locator.GetByRoleOptions().setName("Add to cart"))).isVisible();
         return this;
     }
 
@@ -174,11 +177,11 @@ public final class HomePage {
 
     private Locator productCard(final String product) {
         return page.locator(".product-card")
-                .filter(new Locator.FilterOptions().setHasText(product));
+            .filter(new Locator.FilterOptions().setHasText(product));
     }
 
     private Locator cartLine(final String product) {
         return page.locator(".cart-line")
-                .filter(new Locator.FilterOptions().setHasText(product));
+            .filter(new Locator.FilterOptions().setHasText(product));
     }
 }

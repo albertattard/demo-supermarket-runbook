@@ -1,23 +1,20 @@
 package demo.supermarket.catalog;
 
-import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.util.Locale;
+import module java.base;
 
 public record CatalogProduct(
-        String slug,
-        String name,
-        String description,
-        String categoryName,
-        String unitLabel,
-        BigDecimal unitPrice,
-        String imagePath) {
+    String slug,
+    String name,
+    String description,
+    String categoryName,
+    String unitLabel,
+    BigDecimal unitPrice,
+    String imagePath) {
 
     public String displayImagePath() {
-        if (imagePath == null || imagePath.isBlank()) {
-            return "/images/product-placeholder.svg";
-        }
-        return imagePath;
+        return imagePath == null || imagePath.isBlank()
+            ? "/images/product-placeholder.svg"
+            : imagePath;
     }
 
     public String displayUnitPrice() {

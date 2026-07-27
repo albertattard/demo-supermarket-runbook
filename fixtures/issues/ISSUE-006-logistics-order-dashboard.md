@@ -1,10 +1,8 @@
 ## Goal
 
-Implement the logistics order dashboard and fulfillment-specific status
-transitions.
+Implement the logistics order dashboard and fulfillment-specific status transitions.
 
-Logistics users should be able to find orders, inspect details, and move them
-through valid workflow states.
+Logistics users should be able to find orders, inspect details, and move them through valid workflow states.
 
 ## Scope
 
@@ -16,8 +14,7 @@ through valid workflow states.
   - `DELIVERY`
 - Support filtering by status.
 - Support searching by human-friendly order code.
-- Display customer contact details, fulfillment details, order items, and
-  totals.
+- Display customer contact details, fulfillment details, order items, and totals.
 - Implement backend status transition validation.
 - Valid common transition:
   - `PLACED -> PREPARING`

@@ -2,8 +2,7 @@
 
 Add simple username/password security for logistics and inventory users.
 
-Customers remain unauthenticated guests, while internal role areas require
-login.
+Customers remain unauthenticated guests, while internal role areas require login.
 
 ## Scope
 

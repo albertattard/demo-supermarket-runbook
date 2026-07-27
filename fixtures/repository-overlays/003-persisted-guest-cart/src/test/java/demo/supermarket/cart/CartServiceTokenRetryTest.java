@@ -1,9 +1,6 @@
 package demo.supermarket.cart;
 
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.Queue;
-
+import module java.base;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,35 +27,35 @@ class CartServiceTokenRetryTest {
     @Test
     void startCartRetriesWhenGeneratedTokenAlreadyExists() {
         tokenGenerator.useTokens(
-                RECOVERED_DUPLICATE_TOKEN,
-                RECOVERED_DUPLICATE_TOKEN,
-                RECOVERED_FRESH_TOKEN);
+            RECOVERED_DUPLICATE_TOKEN,
+            RECOVERED_DUPLICATE_TOKEN,
+            RECOVERED_FRESH_TOKEN);
 
-        final CartView existingCart = cartService.startCart("sourdough-country-loaf");
+        final CartView existingCart = cartService.startCart("sourdough-country-loaf-500g");
         assertThat(existingCart.token()).isEqualTo(RECOVERED_DUPLICATE_TOKEN);
 
-        final CartView retriedCart = cartService.startCart("sourdough-country-loaf");
+        final CartView retriedCart = cartService.startCart("sourdough-country-loaf-500g");
 
         assertThat(retriedCart.token()).isEqualTo(RECOVERED_FRESH_TOKEN);
-        assertThat(retriedCart.quantityFor("sourdough-country-loaf")).isEqualTo(1);
-        assertThat(cartService.getActiveCart(RECOVERED_FRESH_TOKEN).quantityFor("sourdough-country-loaf")).isEqualTo(1);
+        assertThat(retriedCart.quantityFor("sourdough-country-loaf-500g")).isEqualTo(1);
+        assertThat(cartService.getActiveCart(RECOVERED_FRESH_TOKEN).quantityFor("sourdough-country-loaf-500g")).isEqualTo(1);
     }
 
     @Test
     void startCartFailsWhenGeneratedTokensKeepColliding() {
         tokenGenerator.useTokens(EXHAUSTED_DUPLICATE_TOKEN);
-        cartService.startCart("sourdough-country-loaf");
+        cartService.startCart("sourdough-country-loaf-500g");
 
         tokenGenerator.useTokens(
-                EXHAUSTED_DUPLICATE_TOKEN,
-                EXHAUSTED_DUPLICATE_TOKEN,
-                EXHAUSTED_DUPLICATE_TOKEN,
-                EXHAUSTED_DUPLICATE_TOKEN,
-                EXHAUSTED_DUPLICATE_TOKEN);
+            EXHAUSTED_DUPLICATE_TOKEN,
+            EXHAUSTED_DUPLICATE_TOKEN,
+            EXHAUSTED_DUPLICATE_TOKEN,
+            EXHAUSTED_DUPLICATE_TOKEN,
+            EXHAUSTED_DUPLICATE_TOKEN);
 
-        assertThatThrownBy(() -> cartService.startCart("sourdough-country-loaf"))
-                .isInstanceOf(CartTokenCreationException.class)
-                .hasMessage("Unable to create a unique cart token.");
+        assertThatThrownBy(() -> cartService.startCart("sourdough-country-loaf-500g"))
+            .isInstanceOf(CartTokenCreationException.class)
+            .hasMessage("Unable to create a unique cart token.");
     }
 
     @TestConfiguration

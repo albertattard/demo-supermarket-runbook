@@ -21,7 +21,8 @@ public final class HomePage {
     }
 
     public HomePage shouldShowSeededCatalogProduct() {
-        helper.shouldShowText("Sourdough Country Loaf");
+        helper.shouldShowHeading("Burger buns");
+        helper.shouldShowText("Burger buns in a convenient 300 g pack.");
         return this;
     }
 

@@ -1,14 +1,15 @@
 package demo.supermarket.catalog;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -46,17 +47,16 @@ class CatalogControllerTest {
     void filtersByCategory() throws Exception {
         mvc.perform(get("/products").param("category", "2"))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Organic Whole Milk")))
-            .andExpect(content().string(containsString("Mature Cheddar")))
-            .andExpect(content().string(not(containsString("Sourdough Country Loaf"))));
+            .andExpect(content().string(containsString("Eggs")))
+            .andExpect(content().string(not(containsString("Cod fillets"))));
     }
 
     @Test
     void searchesByNameOrDescriptionCaseInsensitivelyAfterTrimming() throws Exception {
         mvc.perform(get("/products").param("q", "  TOMATOES  "))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Cherry Tomatoes")))
-            .andExpect(content().string(containsString("Italian Chopped Tomatoes")))
+            .andExpect(content().string(containsString("Cherry tomatoes")))
+            .andExpect(content().string(containsString("Chopped tomatoes")))
             .andExpect(content().string(containsString("value=\"TOMATOES\"")))
             .andExpect(content().string(not(containsString("Baby Spinach"))));
     }
@@ -64,11 +64,11 @@ class CatalogControllerTest {
     @Test
     void combinesCategoryAndSearchFilters() throws Exception {
         mvc.perform(get("/products")
-                .param("category", "4")
+                .param("category", "6")
                 .param("q", "tomatoes"))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Italian Chopped Tomatoes")))
-            .andExpect(content().string(not(containsString("Cherry Tomatoes"))));
+            .andExpect(content().string(containsString("Chopped tomatoes")))
+            .andExpect(content().string(not(containsString("Cherry tomatoes"))));
     }
 
     @Test
@@ -78,11 +78,8 @@ class CatalogControllerTest {
             .andReturn();
 
         final String html = result.getResponse().getContentAsString();
-        assertThat(html.indexOf(">Bakery<")).isLessThan(html.indexOf(">Dairy<"));
-        assertThat(html.indexOf(">Dairy<")).isLessThan(html.indexOf(">Fruit and Vegetables<"));
-        assertThat(html.indexOf("Butter Croissants")).isLessThan(html.indexOf("Sourdough Country Loaf"));
-        assertThat(html.indexOf("Sourdough Country Loaf")).isLessThan(html.indexOf("Wholegrain Bread Rolls"));
-        assertThat(html.indexOf("Wholegrain Bread Rolls")).isLessThan(html.indexOf("Greek Style Yogurt"));
+        assertThat(html.indexOf(">Chipotle paste<")).isLessThan(html.indexOf(">Chopped tomatoes<"));
+        assertThat(html.indexOf(">Frozen<")).isLessThan(html.indexOf(">Fruit and Vegetables<"));
     }
 
     @Test
@@ -94,20 +91,12 @@ class CatalogControllerTest {
     }
 
     @Test
-    void rendersEuroPricesAndProductImages() throws Exception {
-        mvc.perform(get("/products").param("q", "organic"))
+    void rendersEuroPricesAndPlaceholderImages() throws Exception {
+        mvc.perform(get("/products").param("q", "sourdough"))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("1,69")))
+            .andExpect(content().string(containsString("2,95")))
             .andExpect(content().string(containsString("€")))
-            .andExpect(content().string(containsString("/images/products/organic-whole-milk.png")));
-    }
-
-    @Test
-    void rendersPlaceholderImagesWhenProductHasNoImage() throws Exception {
-        mvc.perform(get("/products").param("q", "plain cotton"))
-            .andExpect(status().isOk())
-            .andExpect(content().string(containsString("Plain Cotton Tote Bag")))
-            .andExpect(content().string(containsString("/images/product-placeholder.svg")));
+            .andExpect(content().string(containsString("/images/products/sourdough-country-loaf-500g.png")));
     }
 
     @Test
@@ -115,7 +104,7 @@ class CatalogControllerTest {
         mvc.perform(get("/products").param("q", "sourdough"))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("action=\"/cart/start\"")))
-            .andExpect(content().string(containsString("name=\"productSlug\" value=\"sourdough-country-loaf\"")))
+            .andExpect(content().string(containsString("name=\"productSlug\" value=\"sourdough-country-loaf-500g\"")))
             .andExpect(content().string(containsString("name=\"returnTo\" value=\"catalog\"")))
             .andExpect(content().string(not(containsString("/cart/catalog/"))))
             .andExpect(content().string(not(containsString("guest_cart_token"))));

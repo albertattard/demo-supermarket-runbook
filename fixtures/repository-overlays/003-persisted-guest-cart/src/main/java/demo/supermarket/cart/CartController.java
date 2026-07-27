@@ -1,18 +1,13 @@
 package demo.supermarket.cart;
 
+import demo.supermarket.catalog.CatalogService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.View;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.view.RedirectView;
-
-import demo.supermarket.catalog.CatalogService;
 
 @Controller
 class CartController {
@@ -27,8 +22,8 @@ class CartController {
 
     @PostMapping("/cart/start")
     View startCart(
-            @RequestParam(name = "productSlug", required = false) final String productSlug,
-            @RequestParam(name = "returnTo", required = false) final String returnTo) {
+        @RequestParam(name = "productSlug", required = false) final String productSlug,
+        @RequestParam(name = "returnTo", required = false) final String returnTo) {
         final CartView cart = cartService.startCart(productSlug);
         if (ReturnTarget.from(returnTo).isCatalog()) {
             return redirectToCartCatalog(cart.token());
@@ -38,53 +33,53 @@ class CartController {
 
     @GetMapping("/cart/{cartToken}")
     String showCart(
-            @PathVariable final String cartToken,
-            @RequestHeader(name = "HX-Request", required = false) final String hxRequest,
-            final Model model) {
+        @PathVariable("cartToken") final String cartToken,
+        @RequestHeader(name = "HX-Request", required = false) final String hxRequest,
+        final Model model) {
         model.addAttribute("cart", cartService.getActiveCart(cartToken));
         return cartView(hxRequest);
     }
 
     @PostMapping("/cart/{cartToken}/items")
     Object addItem(
-            @PathVariable final String cartToken,
-            @RequestParam("productSlug") final String productSlug,
-            @RequestParam(name = "returnTo", required = false) final String returnTo,
-            @RequestHeader(name = "HX-Request", required = false) final String hxRequest,
-            final Model model) {
+        @PathVariable("cartToken") final String cartToken,
+        @RequestParam("productSlug") final String productSlug,
+        @RequestParam(name = "returnTo", required = false) final String returnTo,
+        @RequestHeader(name = "HX-Request", required = false) final String hxRequest,
+        final Model model) {
         return quantityMutationResponse(
-                () -> cartService.addProduct(cartToken, productSlug),
-                cartToken,
-                productSlug,
-                ReturnTarget.from(returnTo),
-                hxRequest,
-                model);
+            () -> cartService.addProduct(cartToken, productSlug),
+            cartToken,
+            productSlug,
+            ReturnTarget.from(returnTo),
+            hxRequest,
+            model);
     }
 
     @PostMapping("/cart/{cartToken}/items/{productSlug}")
     Object updateItem(
-            @PathVariable final String cartToken,
-            @PathVariable final String productSlug,
-            @RequestParam("quantity") final String quantity,
-            @RequestParam(name = "returnTo", required = false) final String returnTo,
-            @RequestHeader(name = "HX-Request", required = false) final String hxRequest,
-            final Model model) {
+        @PathVariable("cartToken") final String cartToken,
+        @PathVariable("productSlug") final String productSlug,
+        @RequestParam("quantity") final String quantity,
+        @RequestParam(name = "returnTo", required = false) final String returnTo,
+        @RequestHeader(name = "HX-Request", required = false) final String hxRequest,
+        final Model model) {
         return quantityMutationResponse(
-                () -> cartService.updateQuantity(cartToken, productSlug, quantity),
-                cartToken,
-                productSlug,
-                ReturnTarget.from(returnTo),
-                hxRequest,
-                model);
+            () -> cartService.updateQuantity(cartToken, productSlug, quantity),
+            cartToken,
+            productSlug,
+            ReturnTarget.from(returnTo),
+            hxRequest,
+            model);
     }
 
     @PostMapping("/cart/{cartToken}/items/{productSlug}/remove")
     Object removeItem(
-            @PathVariable final String cartToken,
-            @PathVariable final String productSlug,
-            @RequestParam(name = "returnTo", required = false) final String returnTo,
-            @RequestHeader(name = "HX-Request", required = false) final String hxRequest,
-            final Model model) {
+        @PathVariable("cartToken") final String cartToken,
+        @PathVariable("productSlug") final String productSlug,
+        @RequestParam(name = "returnTo", required = false) final String returnTo,
+        @RequestHeader(name = "HX-Request", required = false) final String hxRequest,
+        final Model model) {
         final CartView cart = cartService.removeProduct(cartToken, productSlug);
         return mutationResponse(cart, cartToken, productSlug, ReturnTarget.from(returnTo), hxRequest, model);
     }
@@ -114,12 +109,12 @@ class CartController {
     }
 
     private Object mutationResponse(
-            final CartView cart,
-            final String cartToken,
-            final String productSlug,
-            final ReturnTarget returnTarget,
-            final String hxRequest,
-            final Model model) {
+        final CartView cart,
+        final String cartToken,
+        final String productSlug,
+        final ReturnTarget returnTarget,
+        final String hxRequest,
+        final Model model) {
         if (returnTarget.isCatalog()) {
             if (isHtmx(hxRequest)) {
                 return catalogCartMutation(cart, productSlug, model);
@@ -133,12 +128,12 @@ class CartController {
     }
 
     private Object quantityMutationResponse(
-            final QuantityMutation mutation,
-            final String cartToken,
-            final String productSlug,
-            final ReturnTarget returnTarget,
-            final String hxRequest,
-            final Model model) {
+        final QuantityMutation mutation,
+        final String cartToken,
+        final String productSlug,
+        final ReturnTarget returnTarget,
+        final String hxRequest,
+        final Model model) {
         try {
             return mutationResponse(mutation.apply(), cartToken, productSlug, returnTarget, hxRequest, model);
         } catch (final InvalidQuantityException ex) {
@@ -153,12 +148,12 @@ class CartController {
     }
 
     private ModelAndView invalidQuantityResponse(
-            final String cartToken,
-            final String productSlug,
-            final ReturnTarget returnTarget,
-            final String hxRequest,
-            final String message,
-            final Model model) {
+        final String cartToken,
+        final String productSlug,
+        final ReturnTarget returnTarget,
+        final String hxRequest,
+        final String message,
+        final Model model) {
         final CartView cart = cartService.getActiveCart(cartToken);
         model.addAttribute("cart", cart);
         if (returnTarget.isCatalog()) {

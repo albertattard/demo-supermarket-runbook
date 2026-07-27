@@ -1,10 +1,8 @@
 ## Goal
 
-Document the project decisions, local workflow, CI behavior, and future workshop
-backlog.
+Document the project decisions, local workflow, CI behavior, and future workshop backlog.
 
-The documentation should make the repository usable as a baseline for
-AI-assisted development.
+The documentation should make the repository usable as a baseline for AI-assisted development.
 
 ## Scope
 
@@ -55,7 +53,6 @@ AI-assisted development.
 - README accurately reflects implemented behavior.
 - `docs/README.md` records the important decisions and rationale.
 - Documentation clearly states that H2 data resets on restart.
-- Documentation clearly states that payment and production deployment are out of
-  scope.
+- Documentation clearly states that payment and production deployment are out of scope.
 - Documentation includes sample backlog items with acceptance criteria.
 - No `AGENTS.md` file is added.

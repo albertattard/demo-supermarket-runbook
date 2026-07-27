@@ -1,10 +1,8 @@
 ## Goal
 
-Apply basic UI, accessibility, and responsive polish across the server-rendered
-pages.
+Apply basic UI, accessibility, and responsive polish across the server-rendered pages.
 
-The application should be usable for workshop demos without introducing a
-frontend framework.
+The application should be usable for workshop demos without introducing a frontend framework.
 
 ## Scope
 
@@ -15,8 +13,7 @@ frontend framework.
 - Ensure form labels are associated with inputs.
 - Ensure buttons and links have clear text.
 - Ensure validation messages are visible and understandable.
-- Ensure critical flows do not depend on custom JavaScript beyond HTMX
-  enhancement.
+- Ensure critical flows do not depend on custom JavaScript beyond HTMX enhancement.
 - Keep the UI simple and supermarket-appropriate.
 - Avoid Bootstrap, Tailwind, React, Angular, Vue, or frontend build tooling.
 
@@ -33,8 +30,7 @@ frontend framework.
 
 - `./mvnw test` succeeds.
 - `./mvnw verify` succeeds.
-- Catalog, cart, checkout, logistics, and inventory pages are usable at mobile
-  and desktop widths.
+- Catalog, cart, checkout, logistics, and inventory pages are usable at mobile and desktop widths.
 - Forms have associated labels.
 - Validation messages are visible near the relevant fields or action.
 - HTMX-enhanced actions still have server-side validation.

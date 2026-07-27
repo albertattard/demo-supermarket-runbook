@@ -1,16 +1,7 @@
 package demo.supermarket.catalog;
 
-import java.math.BigDecimal;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import module java.base;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "products")
@@ -42,8 +33,7 @@ class Product {
     @Column(name = "image_path")
     private String imagePath;
 
-    protected Product() {
-    }
+    protected Product() {}
 
     Long getId() {
         return id;

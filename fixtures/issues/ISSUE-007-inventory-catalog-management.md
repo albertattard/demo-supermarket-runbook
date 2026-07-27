@@ -2,8 +2,7 @@
 
 Implement inventory user screens for managing products and categories.
 
-Inventory users maintain the catalog but do not manage orders, delivery postal
-codes, or users.
+Inventory users maintain the catalog but do not manage orders, delivery postal codes, or users.
 
 ## Scope
 

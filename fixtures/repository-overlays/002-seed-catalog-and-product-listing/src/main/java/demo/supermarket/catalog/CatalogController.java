@@ -14,11 +14,10 @@ class CatalogController {
         this.catalogService = catalogService;
     }
 
-    @GetMapping({ "/", "/products" })
-    String catalog(
-            @RequestParam(name = "category", required = false) final Long categoryId,
-            @RequestParam(name = "q", required = false) final String search,
-            final Model model) {
+    @GetMapping({"/", "/products"})
+    String catalog(@RequestParam(name = "category", required = false) final Long categoryId,
+                   @RequestParam(name = "q", required = false) final String search,
+                   final Model model) {
         model.addAttribute("catalog", catalogService.findCatalog(categoryId, search));
         return "catalog";
     }

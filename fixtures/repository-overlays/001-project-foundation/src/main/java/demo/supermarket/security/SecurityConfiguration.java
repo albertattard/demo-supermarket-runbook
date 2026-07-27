@@ -12,18 +12,18 @@ class SecurityConfiguration {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .authorizeHttpRequests(authorize -> authorize
-                    .requestMatchers(
-                            "/",
-                            "/actuator/health",
-                            "/css/**",
-                            "/js/**",
-                            "/images/**",
-                            "/webjars/**"
-                    ).permitAll()
-                    .anyRequest().authenticated()
-                )
-                .httpBasic(Customizer.withDefaults())
-                .build();
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(
+                    "/",
+                    "/actuator/health",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**",
+                    "/webjars/**"
+                ).permitAll()
+                .anyRequest().authenticated()
+            )
+            .httpBasic(Customizer.withDefaults())
+            .build();
     }
 }

@@ -1,7 +1,6 @@
 package demo.supermarket.catalog;
 
-import java.util.List;
-
+import module java.base;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 interface CategoryRepository extends JpaRepository<Category, Long> {

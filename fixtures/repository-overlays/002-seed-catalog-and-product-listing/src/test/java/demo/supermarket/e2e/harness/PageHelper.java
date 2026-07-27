@@ -2,8 +2,9 @@ package demo.supermarket.e2e.harness;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import com.microsoft.playwright.options.AriaRole;
+
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 final class PageHelper {
 
@@ -48,7 +49,7 @@ final class PageHelper {
     }
 
     void selectOptionByLabel(final String label, final String optionLabel) {
-        page.getByLabel(label).selectOption(new String[] { optionLabel });
+        page.getByLabel(label).selectOption(new String[]{optionLabel});
     }
 
     void shouldHaveInputValue(final String label, final String value) {

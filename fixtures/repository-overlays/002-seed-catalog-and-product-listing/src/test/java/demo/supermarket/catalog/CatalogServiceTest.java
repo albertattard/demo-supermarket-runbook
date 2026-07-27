@@ -42,16 +42,16 @@ class CatalogServiceTest {
 
         assertThat(catalog.search()).isEqualTo("TOMATOES");
         assertThat(catalog.products())
-                .extracting(CatalogProduct::name)
-                .containsExactly("Cherry Tomatoes", "Italian Chopped Tomatoes");
+            .extracting(CatalogProduct::name)
+            .containsExactly("Cherry tomatoes", "Chopped tomatoes");
     }
 
     @Test
     void combinesCategoryAndSearchFilters() {
-        final CatalogView catalog = catalogService.findCatalog(4L, "tomatoes");
+        final CatalogView catalog = catalogService.findCatalog(6L, "tomatoes");
 
         assertThat(catalog.products())
-                .extracting(CatalogProduct::name)
-                .containsExactly("Italian Chopped Tomatoes");
+            .extracting(CatalogProduct::name)
+            .containsExactly("Chopped tomatoes");
     }
 }
