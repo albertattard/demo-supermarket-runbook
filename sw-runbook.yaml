@@ -203,9 +203,24 @@ entries:
       pr_url="$(cat '../fixtures/pr/PR-001-project-foundation.out')"
       pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-      if ! gh pr checks "${pr_number}" --watch; then
-        echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-      fi
+      while true; do
+        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+          printf '%s\n' "${checks_output}"
+          break
+        fi
+
+        case "${checks_output}" in
+          *"no checks reported"*)
+            echo "Waiting for checks to be reported for pull request #${pr_number}."
+            sleep 5
+            ;;
+          *)
+            printf '%s\n' "${checks_output}" >&2
+            echo "Required checks failed for pull request #${pr_number}." >&2
+            exit 1
+            ;;
+        esac
+      done
 
       while true; do
         merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
@@ -254,6 +269,7 @@ entries:
         --message 'Adds the initial customer-facing catalog requested by #2, including Flyway-seeded category and product data, active-product listing, category filtering, escaped text search, euro pricing, and server-rendered responsive pages at / and /products.' \
         --message 'Adds schema constraints for core catalog invariants and covers search/filter behavior with service, controller, and Playwright tests.'
       git push --set-upstream origin '002-seed-catalog-and-product-listing'
+    timeout: 5 minutes
 
   - type: Markdown
     contents: Open the catalog pull request.
@@ -273,9 +289,24 @@ entries:
       pr_url="$(cat '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out')"
       pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-      if ! gh pr checks "${pr_number}" --watch; then
-        echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-      fi
+      while true; do
+        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+          printf '%s\n' "${checks_output}"
+          break
+        fi
+
+        case "${checks_output}" in
+          *"no checks reported"*)
+            echo "Waiting for checks to be reported for pull request #${pr_number}."
+            sleep 5
+            ;;
+          *)
+            printf '%s\n' "${checks_output}" >&2
+            echo "Required checks failed for pull request #${pr_number}." >&2
+            exit 1
+            ;;
+        esac
+      done
 
       while true; do
         merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
@@ -341,9 +372,24 @@ entries:
       pr_url="$(cat '../fixtures/pr/PR-003-persisted-guest-cart.out')"
       pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-      if ! gh pr checks "${pr_number}" --watch; then
-        echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-      fi
+      while true; do
+        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+          printf '%s\n' "${checks_output}"
+          break
+        fi
+
+        case "${checks_output}" in
+          *"no checks reported"*)
+            echo "Waiting for checks to be reported for pull request #${pr_number}."
+            sleep 5
+            ;;
+          *)
+            printf '%s\n' "${checks_output}" >&2
+            echo "Required checks failed for pull request #${pr_number}." >&2
+            exit 1
+            ;;
+        esac
+      done
 
       while true; do
         merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"

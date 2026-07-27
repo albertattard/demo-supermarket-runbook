@@ -182,9 +182,24 @@ Wait for project foundation checks, then merge the pull request.
 pr_url="$(cat '../fixtures/pr/PR-001-project-foundation.out')"
 pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-if ! gh pr checks "${pr_number}" --watch; then
-  echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-fi
+while true; do
+  if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+    printf '%s\n' "${checks_output}"
+    break
+  fi
+
+  case "${checks_output}" in
+    *"no checks reported"*)
+      echo "Waiting for checks to be reported for pull request #${pr_number}."
+      sleep 5
+      ;;
+    *)
+      printf '%s\n' "${checks_output}" >&2
+      echo "Required checks failed for pull request #${pr_number}." >&2
+      exit 1
+      ;;
+  esac
+done
 
 while true; do
   merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
@@ -248,9 +263,24 @@ Wait for catalog checks, then merge the pull request.
 pr_url="$(cat '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out')"
 pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-if ! gh pr checks "${pr_number}" --watch; then
-  echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-fi
+while true; do
+  if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+    printf '%s\n' "${checks_output}"
+    break
+  fi
+
+  case "${checks_output}" in
+    *"no checks reported"*)
+      echo "Waiting for checks to be reported for pull request #${pr_number}."
+      sleep 5
+      ;;
+    *)
+      printf '%s\n' "${checks_output}" >&2
+      echo "Required checks failed for pull request #${pr_number}." >&2
+      exit 1
+      ;;
+  esac
+done
 
 while true; do
   merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
@@ -312,9 +342,24 @@ Wait for guest cart checks, then merge the pull request.
 pr_url="$(cat '../fixtures/pr/PR-003-persisted-guest-cart.out')"
 pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-if ! gh pr checks "${pr_number}" --watch; then
-  echo "Checks are not ready yet; waiting for pull request #${pr_number} to become mergeable."
-fi
+while true; do
+  if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+    printf '%s\n' "${checks_output}"
+    break
+  fi
+
+  case "${checks_output}" in
+    *"no checks reported"*)
+      echo "Waiting for checks to be reported for pull request #${pr_number}."
+      sleep 5
+      ;;
+    *)
+      printf '%s\n' "${checks_output}" >&2
+      echo "Required checks failed for pull request #${pr_number}." >&2
+      exit 1
+      ;;
+  esac
+done
 
 while true; do
   merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
