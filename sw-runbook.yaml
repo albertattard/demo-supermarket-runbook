@@ -3,8 +3,19 @@ entries:
     level: H1
     title: Supermarket
 
+  - type: Heading
+    level: H2
+    title: Project boostrap
+
+  - type: Markdown
+    contents: Start by bootstrapping the project and creating the repository, issues, and start by implementing the first three issues. No AI is involved in the project bootstrapping. All the needed resources are found in the `fixtures` directory which is outside of this repository.
+
+  - type: Markdown
+    contents: 1. Create the repository
+
   - type: Markdown
     contents: Copy the repository README and license into the working directory.
+    indent: 3
 
   - type: Command
     commands: |
@@ -13,27 +24,33 @@ entries:
       cp '../fixtures/.editorconfig'  .
       cp '../fixtures/.gitattributes' .
       cp '../fixtures/.gitignore'     .
+    indent: 3
 
   - type: Markdown
     contents: Initialize Git and commit the seed documentation.
+    indent: 3
 
   - type: Command
     commands: |
       git init
       git add .
       git commit -m 'Initial commit'
+    indent: 3
 
   - type: Markdown
     contents: Delete any existing generated `demo-supermarket` GitHub repository.
+    indent: 3
 
   - type: Command
     commands: |
       if gh repo view 'demo-supermarket' >/dev/null 2>&1; then
         gh repo delete 'demo-supermarket' --yes
       fi
+    indent: 3
 
   - type: Markdown
     contents: Create the public GitHub repository and push the initial commit.
+    indent: 3
 
   - type: Command
     commands: |
@@ -42,9 +59,11 @@ entries:
         --source=. \
         --remote=origin \
         --push
+    indent: 3
 
   - type: Markdown
     contents: Protect `main` so later changes must merge through passing pull requests.
+    indent: 3
 
   - type: Command
     commands: |
@@ -77,99 +96,127 @@ entries:
         "allow_fork_syncing": false
       }
       JSON
+    indent: 3
+
+  - type: Markdown
+    contents: 2. Create the project issues.
 
   - type: Markdown
     contents: Create the project foundation issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Create Spring Boot project foundation' \
         --body-file '../fixtures/issues/ISSUE-001-project-foundation.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the catalog and product listing issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Seed catalog and product listing' \
         --body-file '../fixtures/issues/ISSUE-002-seed-catalog-and-product-listing.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the persisted guest cart issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Persisted guest cart' \
         --body-file '../fixtures/issues/ISSUE-003-persisted-guest-cart.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the guest checkout and order confirmation issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Guest checkout and order confirmation' \
         --body-file '../fixtures/issues/ISSUE-004-guest-checkout-and-order-confirmation.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the security and demo users issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Security and demo users' \
         --body-file '../fixtures/issues/ISSUE-005-security-and-demo-users.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the logistics order dashboard issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Logistics order dashboard' \
         --body-file '../fixtures/issues/ISSUE-006-logistics-order-dashboard.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the inventory catalog management issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Inventory catalog management' \
         --body-file '../fixtures/issues/ISSUE-007-inventory-catalog-management.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the validation and error handling issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Validation and error handling' \
         --body-file '../fixtures/issues/ISSUE-008-validation-and-error-handling.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the documentation and workshop backlog issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'Documentation and workshop backlog' \
         --body-file '../fixtures/issues/ISSUE-009-documentation-and-workshop-backlog.md'
+    indent: 3
 
   - type: Markdown
     contents: Create the UI accessibility and responsive polish issue.
+    indent: 3
 
   - type: Command
     commands: |
       gh issue create \
         --title 'UI accessibility and responsive polish' \
         --body-file '../fixtures/issues/ISSUE-010-ui-accessibility-and-responsive-polish.md'
+    indent: 3
+
+  - type: Markdown
+    contents: 3. Address the first three issues
 
   - type: Markdown
     contents: Build, verify, commit, and push the project foundation branch.
+    indent: 3
 
   - type: Command
     commands: |
@@ -184,9 +231,11 @@ entries:
         --message 'Adds the Maven Spring Boot baseline with MVC, Thymeleaf, Security, JPA, Flyway, H2, Actuator, HTMX WebJar support, Playwright E2E wiring, CI, and initial project documentation.'
       git push --set-upstream origin '001-project-foundation'
     timeout: 1 minute
+    indent: 3
 
   - type: Markdown
     contents: Open the project foundation pull request.
+    indent: 3
 
   - type: Command
     commands: |
@@ -194,9 +243,11 @@ entries:
         --title 'Create Spring Boot project foundation' \
         --body-file '../fixtures/pr/PR-001-project-foundation.md' \
       > '../fixtures/pr/PR-001-project-foundation.out'
+    indent: 3
 
   - type: Markdown
     contents: Wait for project foundation checks, then merge the pull request.
+    indent: 3
 
   - type: Command
     commands: |
@@ -251,9 +302,11 @@ entries:
 
       gh pr merge "${pr_number}" --merge --delete-branch
     timeout: 10 minutes
+    indent: 3
 
   - type: Markdown
     contents: Build, verify, commit, and push the catalog branch.
+    indent: 3
 
   - type: Command
     commands: |
@@ -270,9 +323,11 @@ entries:
         --message 'Adds schema constraints for core catalog invariants and covers search/filter behavior with service, controller, and Playwright tests.'
       git push --set-upstream origin '002-seed-catalog-and-product-listing'
     timeout: 5 minutes
+    indent: 3
 
   - type: Markdown
     contents: Open the catalog pull request.
+    indent: 3
 
   - type: Command
     commands: |
@@ -280,9 +335,11 @@ entries:
         --title 'Seed catalog categories and products' \
         --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' \
       > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
+    indent: 3
 
   - type: Markdown
     contents: Wait for catalog checks, then merge the pull request.
+    indent: 3
 
   - type: Command
     commands: |
@@ -337,9 +394,11 @@ entries:
 
       gh pr merge "${pr_number}" --merge --delete-branch
     timeout: 10 minutes
+    indent: 3
 
   - type: Markdown
     contents: Build, verify, commit, and push the guest cart branch.
+    indent: 3
 
   - type: Command
     commands: |
@@ -353,9 +412,11 @@ entries:
         --message 'Adds opaque token-based guest carts with persisted cart and cart item state, public product slugs for cart mutations, catalog add-to-cart flows, active-cart rendering, quantity updates, line removal, subtotal calculation, and customer-facing not-found handling.' \
         --message 'Covers cart creation, token reopening, product slug mutations, stale-page behavior, quantity bounds, unknown tokens, public routes, and the catalog-to-cart journey with controller, service, concurrency, and Playwright tests.'
       git push --set-upstream origin '003-persisted-guest-cart'
+    indent: 3
 
   - type: Markdown
     contents: Open the guest cart pull request.
+    indent: 3
 
   - type: Command
     commands: |
@@ -363,9 +424,11 @@ entries:
         --title 'Implement persisted guest carts' \
         --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' \
       > '../fixtures/pr/PR-003-persisted-guest-cart.out'
+    indent: 3
 
   - type: Markdown
     contents: Wait for guest cart checks, then merge the pull request.
+    indent: 3
 
   - type: Command
     commands: |
@@ -420,3 +483,143 @@ entries:
 
       gh pr merge "${pr_number}" --merge --delete-branch
     timeout: 10 minutes
+    indent: 3
+
+  - type: Heading
+    level: H2
+    title: Introduce the issue-readiness skill
+
+  - type: Markdown
+    contents: |
+      Build and merge a repository-local skill that assesses whether a GitHub issue
+      is sufficiently clear to implement. The skill should identify missing
+      acceptance criteria, assumptions, dependencies, and test expectations before
+      an implementation agent starts work.
+
+  - type: Markdown
+    contents: Build, verify, commit, and push the issue-readiness skill branch.
+    indent: 3
+
+  - type: Command
+    commands: |
+      git switch --create '011-create-review-issue-readiness-skill'
+      rsync --archive '../fixtures/repository-overlays/011-create-review-issue-readiness-skill/' .
+      ./mvnw clean verify
+      git add .
+      git commit \
+        --message 'Add issue-readiness review skill' \
+        --message 'Refs #11.' \
+        --message 'Adds a repository-local skill for assessing GitHub issue implementation readiness, including staged clarification and explicit readiness recommendations.' \
+        --message 'Includes discoverable skill metadata and documentation for invoking the skill before implementation begins.'
+      git push --set-upstream origin '011-create-review-issue-readiness-skill'
+    indent: 3
+
+  - type: Markdown
+    contents: Open the issue-readiness skill pull request.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh pr create \
+        --title 'Add issue-readiness review skill' \
+        --body-file '../fixtures/pr/PR-011-create-review-issue-readiness-skill.md' \
+      > '../fixtures/pr/PR-011-create-review-issue-readiness-skill.out'
+    indent: 3
+
+  - type: Markdown
+    contents: Wait for issue-readiness skill checks, then merge the pull request.
+    indent: 3
+
+  - type: Command
+    commands: |
+      pr_url="$(cat '../fixtures/pr/PR-011-create-review-issue-readiness-skill.out')"
+      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+      while true; do
+        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+          printf '%s\n' "${checks_output}"
+          break
+        fi
+
+        case "${checks_output}" in
+          *"no checks reported"*)
+            echo "Waiting for checks to be reported for pull request #${pr_number}."
+            sleep 5
+            ;;
+          *)
+            printf '%s\n' "${checks_output}" >&2
+            echo "Required checks failed for pull request #${pr_number}." >&2
+            exit 1
+            ;;
+        esac
+      done
+
+      while true; do
+        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+        case "${merge_state}" in
+          CLEAN|HAS_HOOKS|UNSTABLE)
+            break
+            ;;
+          BLOCKED)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+          BEHIND)
+            echo "Updating pull request #${pr_number} branch before merging."
+            gh pr update-branch "${pr_number}"
+            sleep 10
+            ;;
+          DIRTY|DRAFT)
+            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+            exit 1
+            ;;
+          *)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+        esac
+      done
+
+      gh pr merge "${pr_number}" --merge --delete-branch
+    timeout: 10 minutes
+    indent: 3
+
+  - type: Heading
+    level: H2
+    title: Use the issue-readiness skill to review issue 4
+
+  - type: Markdown
+    contents: |
+      In Codex, invoke `$review-issue-readiness` for issue 4: guest checkout and
+      order confirmation. Resolve any required clarifications before proceeding.
+      The outcome must be an explicit readiness recommendation, not an implicit
+      assumption that the issue is implementable.
+
+  - type: Heading
+    level: H2
+    title: Introduce implementation agents and Git worktrees
+
+  - type: Markdown
+    contents: |
+      Introduce a second skill that implements a ready issue and explain how Git
+      worktrees isolate parallel work. For issue 4, assign each implementation
+      agent a distinct brief or evaluation focus; asking several agents to solve an
+      identical prompt would mostly produce redundant candidates.
+
+      TODO: Add the implementation skill, worktree setup, distinct agent briefs,
+      and one branch or pull request per candidate implementation.
+
+  - type: Heading
+    level: H2
+    title: Review competing implementations of issue 4
+
+  - type: Markdown
+    contents: |
+      Introduce an independent review skill that examines every candidate in its
+      isolated worktree. It must compare the implementations against issue 4's
+      acceptance criteria, automated-test coverage, maintainability, and
+      regressions, then recommend exactly one candidate for merge.
+
+      TODO: Add the review skill, review commands, selected-candidate merge, and
+      cleanup of unselected worktrees and branches.

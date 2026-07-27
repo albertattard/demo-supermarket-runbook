@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Issue Readiness"
+  short_description: "Assess whether an issue is implementation-ready"
+  default_prompt: "Use $review-issue-readiness to assess this GitHub issue before implementation."

@@ -2,329 +2,420 @@
 
 # Supermarket
 
-Copy the repository README and license into the working directory.
+## Project boostrap
+
+Start by bootstrapping the project and creating the repository, issues, and start by implementing the first three issues. No AI is involved in the project bootstrapping. All the needed resources are found in the `fixtures` directory which is outside of this repository.
+
+1. Create the repository
+
+   Copy the repository README and license into the working directory.
+
+   ```shell
+   cp '../fixtures/README.md'      .
+   cp '../fixtures/LICENSE'        .
+   cp '../fixtures/.editorconfig'  .
+   cp '../fixtures/.gitattributes' .
+   cp '../fixtures/.gitignore'     .
+   ```
+
+   Initialize Git and commit the seed documentation.
+
+   ```shell
+   git init
+   git add .
+   git commit -m 'Initial commit'
+   ```
+
+   Delete any existing generated `demo-supermarket` GitHub repository.
+
+   ```shell
+   if gh repo view 'demo-supermarket' >/dev/null 2>&1; then
+     gh repo delete 'demo-supermarket' --yes
+   fi
+   ```
+
+   Create the public GitHub repository and push the initial commit.
+
+   ```shell
+   gh repo create 'demo-supermarket' \
+     --public \
+     --source=. \
+     --remote=origin \
+     --push
+   ```
+
+   Protect `main` so later changes must merge through passing pull requests.
+
+   ```shell
+   owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
+
+   gh api \
+     --method PUT \
+     "repos/${owner}/demo-supermarket/branches/main/protection" \
+     --input - <<'JSON'
+   {
+     "required_status_checks": {
+       "strict": true,
+       "contexts": [
+         "verify"
+       ]
+     },
+     "enforce_admins": true,
+     "required_pull_request_reviews": {
+       "required_approving_review_count": 0,
+       "dismiss_stale_reviews": true,
+       "require_code_owner_reviews": false
+     },
+     "restrictions": null,
+     "required_linear_history": false,
+     "allow_force_pushes": false,
+     "allow_deletions": false,
+     "block_creations": false,
+     "required_conversation_resolution": true,
+     "lock_branch": false,
+     "allow_fork_syncing": false
+   }
+   JSON
+   ```
+
+2. Create the project issues.
+
+   Create the project foundation issue.
+
+   ```shell
+   gh issue create \
+     --title 'Create Spring Boot project foundation' \
+     --body-file '../fixtures/issues/ISSUE-001-project-foundation.md'
+   ```
+
+   Create the catalog and product listing issue.
+
+   ```shell
+   gh issue create \
+     --title 'Seed catalog and product listing' \
+     --body-file '../fixtures/issues/ISSUE-002-seed-catalog-and-product-listing.md'
+   ```
+
+   Create the persisted guest cart issue.
+
+   ```shell
+   gh issue create \
+     --title 'Persisted guest cart' \
+     --body-file '../fixtures/issues/ISSUE-003-persisted-guest-cart.md'
+   ```
+
+   Create the guest checkout and order confirmation issue.
+
+   ```shell
+   gh issue create \
+     --title 'Guest checkout and order confirmation' \
+     --body-file '../fixtures/issues/ISSUE-004-guest-checkout-and-order-confirmation.md'
+   ```
+
+   Create the security and demo users issue.
+
+   ```shell
+   gh issue create \
+     --title 'Security and demo users' \
+     --body-file '../fixtures/issues/ISSUE-005-security-and-demo-users.md'
+   ```
+
+   Create the logistics order dashboard issue.
+
+   ```shell
+   gh issue create \
+     --title 'Logistics order dashboard' \
+     --body-file '../fixtures/issues/ISSUE-006-logistics-order-dashboard.md'
+   ```
+
+   Create the inventory catalog management issue.
+
+   ```shell
+   gh issue create \
+     --title 'Inventory catalog management' \
+     --body-file '../fixtures/issues/ISSUE-007-inventory-catalog-management.md'
+   ```
+
+   Create the validation and error handling issue.
+
+   ```shell
+   gh issue create \
+     --title 'Validation and error handling' \
+     --body-file '../fixtures/issues/ISSUE-008-validation-and-error-handling.md'
+   ```
+
+   Create the documentation and workshop backlog issue.
+
+   ```shell
+   gh issue create \
+     --title 'Documentation and workshop backlog' \
+     --body-file '../fixtures/issues/ISSUE-009-documentation-and-workshop-backlog.md'
+   ```
+
+   Create the UI accessibility and responsive polish issue.
+
+   ```shell
+   gh issue create \
+     --title 'UI accessibility and responsive polish' \
+     --body-file '../fixtures/issues/ISSUE-010-ui-accessibility-and-responsive-polish.md'
+   ```
+
+3. Address the first three issues
+
+   Build, verify, commit, and push the project foundation branch.
+
+   ```shell
+   git switch --create '001-project-foundation'
+   rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
+   chmod +x mvnw
+   ./mvnw clean verify
+   git add .
+   git commit \
+     --message 'Create Spring Boot project foundation' \
+     --message 'Refs #1.' \
+     --message 'Adds the Maven Spring Boot baseline with MVC, Thymeleaf, Security, JPA, Flyway, H2, Actuator, HTMX WebJar support, Playwright E2E wiring, CI, and initial project documentation.'
+   git push --set-upstream origin '001-project-foundation'
+   ```
+
+   Open the project foundation pull request.
+
+   ```shell
+   gh pr create \
+     --title 'Create Spring Boot project foundation' \
+     --body-file '../fixtures/pr/PR-001-project-foundation.md' \
+   > '../fixtures/pr/PR-001-project-foundation.out'
+   ```
+
+   Wait for project foundation checks, then merge the pull request.
+
+   ```shell
+   pr_url="$(cat '../fixtures/pr/PR-001-project-foundation.out')"
+   pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+   while true; do
+     if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+       printf '%s\n' "${checks_output}"
+       break
+     fi
+
+     case "${checks_output}" in
+       *"no checks reported"*)
+         echo "Waiting for checks to be reported for pull request #${pr_number}."
+         sleep 5
+         ;;
+       *)
+         printf '%s\n' "${checks_output}" >&2
+         echo "Required checks failed for pull request #${pr_number}." >&2
+         exit 1
+         ;;
+     esac
+   done
+
+   while true; do
+     merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+     case "${merge_state}" in
+       CLEAN|HAS_HOOKS|UNSTABLE)
+         break
+         ;;
+       BLOCKED)
+         echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+         sleep 10
+         ;;
+       BEHIND)
+         echo "Updating pull request #${pr_number} branch before merging."
+         gh pr update-branch "${pr_number}"
+         sleep 10
+         ;;
+       DIRTY|DRAFT)
+         echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+         exit 1
+         ;;
+       *)
+         echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+         sleep 10
+         ;;
+     esac
+   done
+
+   gh pr merge "${pr_number}" --merge --delete-branch
+   ```
+
+   Build, verify, commit, and push the catalog branch.
+
+   ```shell
+   git switch --create '002-seed-catalog-and-product-listing'
+   rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
+   rm -f src/main/java/demo/supermarket/home/HomeController.java
+   rm -f src/main/resources/templates/home.html
+   ./mvnw clean verify
+   git add .
+   git commit \
+     --message 'Seed catalog categories and products' \
+     --message 'Refs #2.' \
+     --message 'Adds the initial customer-facing catalog requested by #2, including Flyway-seeded category and product data, active-product listing, category filtering, escaped text search, euro pricing, and server-rendered responsive pages at / and /products.' \
+     --message 'Adds schema constraints for core catalog invariants and covers search/filter behavior with service, controller, and Playwright tests.'
+   git push --set-upstream origin '002-seed-catalog-and-product-listing'
+   ```
+
+   Open the catalog pull request.
+
+   ```shell
+   gh pr create \
+     --title 'Seed catalog categories and products' \
+     --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' \
+   > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
+   ```
+
+   Wait for catalog checks, then merge the pull request.
+
+   ```shell
+   pr_url="$(cat '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out')"
+   pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+   while true; do
+     if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+       printf '%s\n' "${checks_output}"
+       break
+     fi
+
+     case "${checks_output}" in
+       *"no checks reported"*)
+         echo "Waiting for checks to be reported for pull request #${pr_number}."
+         sleep 5
+         ;;
+       *)
+         printf '%s\n' "${checks_output}" >&2
+         echo "Required checks failed for pull request #${pr_number}." >&2
+         exit 1
+         ;;
+     esac
+   done
+
+   while true; do
+     merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+     case "${merge_state}" in
+       CLEAN|HAS_HOOKS|UNSTABLE)
+         break
+         ;;
+       BLOCKED)
+         echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+         sleep 10
+         ;;
+       BEHIND)
+         echo "Updating pull request #${pr_number} branch before merging."
+         gh pr update-branch "${pr_number}"
+         sleep 10
+         ;;
+       DIRTY|DRAFT)
+         echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+         exit 1
+         ;;
+       *)
+         echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+         sleep 10
+         ;;
+     esac
+   done
+
+   gh pr merge "${pr_number}" --merge --delete-branch
+   ```
+
+   Build, verify, commit, and push the guest cart branch.
+
+   ```shell
+   git switch --create '003-persisted-guest-cart'
+   rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
+   ./mvnw clean verify
+   git add .
+   git commit \
+     --message 'Implement persisted guest carts' \
+     --message 'Refs #3.' \
+     --message 'Adds opaque token-based guest carts with persisted cart and cart item state, public product slugs for cart mutations, catalog add-to-cart flows, active-cart rendering, quantity updates, line removal, subtotal calculation, and customer-facing not-found handling.' \
+     --message 'Covers cart creation, token reopening, product slug mutations, stale-page behavior, quantity bounds, unknown tokens, public routes, and the catalog-to-cart journey with controller, service, concurrency, and Playwright tests.'
+   git push --set-upstream origin '003-persisted-guest-cart'
+   ```
+
+   Open the guest cart pull request.
+
+   ```shell
+   gh pr create \
+     --title 'Implement persisted guest carts' \
+     --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' \
+   > '../fixtures/pr/PR-003-persisted-guest-cart.out'
+   ```
+
+   Wait for guest cart checks, then merge the pull request.
+
+   ```shell
+   pr_url="$(cat '../fixtures/pr/PR-003-persisted-guest-cart.out')"
+   pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+   while true; do
+     if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+       printf '%s\n' "${checks_output}"
+       break
+     fi
+
+     case "${checks_output}" in
+       *"no checks reported"*)
+         echo "Waiting for checks to be reported for pull request #${pr_number}."
+         sleep 5
+         ;;
+       *)
+         printf '%s\n' "${checks_output}" >&2
+         echo "Required checks failed for pull request #${pr_number}." >&2
+         exit 1
+         ;;
+     esac
+   done
+
+   while true; do
+     merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+     case "${merge_state}" in
+       CLEAN|HAS_HOOKS|UNSTABLE)
+         break
+         ;;
+       BLOCKED)
+         echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+         sleep 10
+         ;;
+       BEHIND)
+         echo "Updating pull request #${pr_number} branch before merging."
+         gh pr update-branch "${pr_number}"
+         sleep 10
+         ;;
+       DIRTY|DRAFT)
+         echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+         exit 1
+         ;;
+       *)
+         echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+         sleep 10
+         ;;
+     esac
+   done
+
+   gh pr merge "${pr_number}" --merge --delete-branch
+   ```
+
+## Skills
+
+TODO: Update section introduction
 
 ```shell
-cp '../fixtures/README.md'      .
-cp '../fixtures/LICENSE'        .
-cp '../fixtures/.editorconfig'  .
-cp '../fixtures/.gitattributes' .
-cp '../fixtures/.gitignore'     .
-```
-
-Initialize Git and commit the seed documentation.
-
-```shell
-git init
-git add .
-git commit -m 'Initial commit'
-```
-
-Delete any existing generated `demo-supermarket` GitHub repository.
-
-```shell
-if gh repo view 'demo-supermarket' >/dev/null 2>&1; then
-  gh repo delete 'demo-supermarket' --yes
-fi
-```
-
-Create the public GitHub repository and push the initial commit.
-
-```shell
-gh repo create 'demo-supermarket' \
-  --public \
-  --source=. \
-  --remote=origin \
-  --push
-```
-
-Protect `main` so later changes must merge through passing pull requests.
-
-```shell
-owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
-
-gh api \
-  --method PUT \
-  "repos/${owner}/demo-supermarket/branches/main/protection" \
-  --input - <<'JSON'
-{
-  "required_status_checks": {
-    "strict": true,
-    "contexts": [
-      "verify"
-    ]
-  },
-  "enforce_admins": true,
-  "required_pull_request_reviews": {
-    "required_approving_review_count": 0,
-    "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": false
-  },
-  "restrictions": null,
-  "required_linear_history": false,
-  "allow_force_pushes": false,
-  "allow_deletions": false,
-  "block_creations": false,
-  "required_conversation_resolution": true,
-  "lock_branch": false,
-  "allow_fork_syncing": false
-}
-JSON
-```
-
-Create the project foundation issue.
-
-```shell
-gh issue create \
-  --title 'Create Spring Boot project foundation' \
-  --body-file '../fixtures/issues/ISSUE-001-project-foundation.md'
-```
-
-Create the catalog and product listing issue.
-
-```shell
-gh issue create \
-  --title 'Seed catalog and product listing' \
-  --body-file '../fixtures/issues/ISSUE-002-seed-catalog-and-product-listing.md'
-```
-
-Create the persisted guest cart issue.
-
-```shell
-gh issue create \
-  --title 'Persisted guest cart' \
-  --body-file '../fixtures/issues/ISSUE-003-persisted-guest-cart.md'
-```
-
-Create the guest checkout and order confirmation issue.
-
-```shell
-gh issue create \
-  --title 'Guest checkout and order confirmation' \
-  --body-file '../fixtures/issues/ISSUE-004-guest-checkout-and-order-confirmation.md'
-```
-
-Create the security and demo users issue.
-
-```shell
-gh issue create \
-  --title 'Security and demo users' \
-  --body-file '../fixtures/issues/ISSUE-005-security-and-demo-users.md'
-```
-
-Create the logistics order dashboard issue.
-
-```shell
-gh issue create \
-  --title 'Logistics order dashboard' \
-  --body-file '../fixtures/issues/ISSUE-006-logistics-order-dashboard.md'
-```
-
-Create the inventory catalog management issue.
-
-```shell
-gh issue create \
-  --title 'Inventory catalog management' \
-  --body-file '../fixtures/issues/ISSUE-007-inventory-catalog-management.md'
-```
-
-Create the validation and error handling issue.
-
-```shell
-gh issue create \
-  --title 'Validation and error handling' \
-  --body-file '../fixtures/issues/ISSUE-008-validation-and-error-handling.md'
-```
-
-Create the documentation and workshop backlog issue.
-
-```shell
-gh issue create \
-  --title 'Documentation and workshop backlog' \
-  --body-file '../fixtures/issues/ISSUE-009-documentation-and-workshop-backlog.md'
-```
-
-Create the UI accessibility and responsive polish issue.
-
-```shell
-gh issue create \
-  --title 'UI accessibility and responsive polish' \
-  --body-file '../fixtures/issues/ISSUE-010-ui-accessibility-and-responsive-polish.md'
-```
-
-Build, verify, commit, and push the project foundation branch.
-
-```shell
-git switch --create '001-project-foundation'
-rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
-chmod +x mvnw
+git switch --create '011-create-review-issue-readiness-skill'
+rsync --archive '../fixtures/repository-overlays/011-create-review-issue-readiness-skill/' .
 ./mvnw clean verify
 git add .
 git commit \
-  --message 'Create Spring Boot project foundation' \
-  --message 'Refs #1.' \
-  --message 'Adds the Maven Spring Boot baseline with MVC, Thymeleaf, Security, JPA, Flyway, H2, Actuator, HTMX WebJar support, Playwright E2E wiring, CI, and initial project documentation.'
-git push --set-upstream origin '001-project-foundation'
-```
-
-Open the project foundation pull request.
-
-```shell
-gh pr create \
-  --title 'Create Spring Boot project foundation' \
-  --body-file '../fixtures/pr/PR-001-project-foundation.md' \
-> '../fixtures/pr/PR-001-project-foundation.out'
-```
-
-Wait for project foundation checks, then merge the pull request.
-
-```shell
-pr_url="$(cat '../fixtures/pr/PR-001-project-foundation.out')"
-pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-while true; do
-  if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
-    printf '%s\n' "${checks_output}"
-    break
-  fi
-
-  case "${checks_output}" in
-    *"no checks reported"*)
-      echo "Waiting for checks to be reported for pull request #${pr_number}."
-      sleep 5
-      ;;
-    *)
-      printf '%s\n' "${checks_output}" >&2
-      echo "Required checks failed for pull request #${pr_number}." >&2
-      exit 1
-      ;;
-  esac
-done
-
-while true; do
-  merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-  case "${merge_state}" in
-    CLEAN|HAS_HOOKS|UNSTABLE)
-      break
-      ;;
-    BLOCKED)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-    BEHIND)
-      echo "Updating pull request #${pr_number} branch before merging."
-      gh pr update-branch "${pr_number}"
-      sleep 10
-      ;;
-    DIRTY|DRAFT)
-      echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-      exit 1
-      ;;
-    *)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-  esac
-done
-
-gh pr merge "${pr_number}" --merge --delete-branch
-```
-
-Build, verify, commit, and push the catalog branch.
-
-```shell
-git switch --create '002-seed-catalog-and-product-listing'
-rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
-rm -f src/main/java/demo/supermarket/home/HomeController.java
-rm -f src/main/resources/templates/home.html
-./mvnw clean verify
-git add .
-git commit \
-  --message 'Seed catalog categories and products' \
-  --message 'Refs #2.' \
-  --message 'Adds the initial customer-facing catalog requested by #2, including Flyway-seeded category and product data, active-product listing, category filtering, escaped text search, euro pricing, and server-rendered responsive pages at / and /products.' \
-  --message 'Adds schema constraints for core catalog invariants and covers search/filter behavior with service, controller, and Playwright tests.'
-git push --set-upstream origin '002-seed-catalog-and-product-listing'
-```
-
-Open the catalog pull request.
-
-```shell
-gh pr create \
-  --title 'Seed catalog categories and products' \
-  --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' \
-> '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
-```
-
-Wait for catalog checks, then merge the pull request.
-
-```shell
-pr_url="$(cat '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out')"
-pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-while true; do
-  if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
-    printf '%s\n' "${checks_output}"
-    break
-  fi
-
-  case "${checks_output}" in
-    *"no checks reported"*)
-      echo "Waiting for checks to be reported for pull request #${pr_number}."
-      sleep 5
-      ;;
-    *)
-      printf '%s\n' "${checks_output}" >&2
-      echo "Required checks failed for pull request #${pr_number}." >&2
-      exit 1
-      ;;
-  esac
-done
-
-while true; do
-  merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-  case "${merge_state}" in
-    CLEAN|HAS_HOOKS|UNSTABLE)
-      break
-      ;;
-    BLOCKED)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-    BEHIND)
-      echo "Updating pull request #${pr_number} branch before merging."
-      gh pr update-branch "${pr_number}"
-      sleep 10
-      ;;
-    DIRTY|DRAFT)
-      echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-      exit 1
-      ;;
-    *)
-      echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-      sleep 10
-      ;;
-  esac
-done
-
-gh pr merge "${pr_number}" --merge --delete-branch
-```
-
-Build, verify, commit, and push the guest cart branch.
-
-```shell
-git switch --create '003-persisted-guest-cart'
-rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
-./mvnw clean verify
-git add .
-git commit \
-  --message 'Implement persisted guest carts' \
-  --message 'Refs #3.' \
-  --message 'Adds opaque token-based guest carts with persisted cart and cart item state, public product slugs for cart mutations, catalog add-to-cart flows, active-cart rendering, quantity updates, line removal, subtotal calculation, and customer-facing not-found handling.' \
-  --message 'Covers cart creation, token reopening, product slug mutations, stale-page behavior, quantity bounds, unknown tokens, public routes, and the catalog-to-cart journey with controller, service, concurrency, and Playwright tests.'
-git push --set-upstream origin '003-persisted-guest-cart'
+  --message 'Add issue-readiness review skill' \
+  --message 'Refs #11.' \
+  --message 'Adds a repository-local skill for assessing GitHub issue implementation readiness, including staged clarification and explicit readiness recommendations.' \
+  --message 'Includes discoverable skill metadata and documentation for invoking the skill before implementation begins.'
+git push --set-upstream origin '011-create-review-issue-readiness-skill'
 ```
 
 Open the guest cart pull request.
@@ -332,14 +423,14 @@ Open the guest cart pull request.
 ```shell
 gh pr create \
   --title 'Implement persisted guest carts' \
-  --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' \
-> '../fixtures/pr/PR-003-persisted-guest-cart.out'
+  --body-file '../fixtures/pr/PR-011-create-review-issue-readiness-skill.md' \
+> '../fixtures/pr/PR-011-create-review-issue-readiness-skill.out'
 ```
 
 Wait for guest cart checks, then merge the pull request.
 
 ```shell
-pr_url="$(cat '../fixtures/pr/PR-003-persisted-guest-cart.out')"
+pr_url="$(cat '../fixtures/pr/PR-011-create-review-issue-readiness-skill.out')"
 pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
 while true; do
@@ -390,3 +481,5 @@ done
 
 gh pr merge "${pr_number}" --merge --delete-branch
 ```
+
+> Breakpoint reached: Stop here
