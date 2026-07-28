@@ -149,14 +149,36 @@ entries:
     indent: 3
 
   - type: Markdown
-    contents: Create the guest checkout and order confirmation issue.
+    contents: Create the guest pickup checkout and confirmation issue.
     indent: 3
 
   - type: Command
     commands: |
       gh issue create \
-        --title 'Guest checkout and order confirmation' \
+        --title 'Guest pickup checkout and order confirmation' \
         --body-file '../fixtures/issues/ISSUE-004-guest-checkout-and-order-confirmation.md'
+    indent: 3
+
+  - type: Markdown
+    contents: Create the delivery checkout issue.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Delivery checkout' \
+        --body-file '../fixtures/issues/ISSUE-005-delivery-checkout.md'
+    indent: 3
+
+  - type: Markdown
+    contents: Create the checkout integrity and failure-handling issue.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Checkout integrity and failure handling' \
+        --body-file '../fixtures/issues/ISSUE-006-checkout-integrity-and-failure-handling.md'
     indent: 3
 
   - type: Markdown
@@ -167,7 +189,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Security and demo users' \
-        --body-file '../fixtures/issues/ISSUE-005-security-and-demo-users.md'
+        --body-file '../fixtures/issues/ISSUE-007-security-and-demo-users.md'
     indent: 3
 
   - type: Markdown
@@ -178,7 +200,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Logistics order dashboard' \
-        --body-file '../fixtures/issues/ISSUE-006-logistics-order-dashboard.md'
+        --body-file '../fixtures/issues/ISSUE-008-logistics-order-dashboard.md'
     indent: 3
 
   - type: Markdown
@@ -189,7 +211,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Inventory catalog management' \
-        --body-file '../fixtures/issues/ISSUE-007-inventory-catalog-management.md'
+        --body-file '../fixtures/issues/ISSUE-009-inventory-catalog-management.md'
     indent: 3
 
   - type: Markdown
@@ -200,7 +222,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Validation and error handling' \
-        --body-file '../fixtures/issues/ISSUE-008-validation-and-error-handling.md'
+        --body-file '../fixtures/issues/ISSUE-010-validation-and-error-handling.md'
     indent: 3
 
   - type: Markdown
@@ -211,7 +233,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Documentation and workshop backlog' \
-        --body-file '../fixtures/issues/ISSUE-009-documentation-and-workshop-backlog.md'
+        --body-file '../fixtures/issues/ISSUE-011-documentation-and-workshop-backlog.md'
     indent: 3
 
   - type: Markdown
@@ -222,7 +244,29 @@ entries:
     commands: |
       gh issue create \
         --title 'UI accessibility and responsive polish' \
-        --body-file '../fixtures/issues/ISSUE-010-ui-accessibility-and-responsive-polish.md'
+        --body-file '../fixtures/issues/ISSUE-012-ui-accessibility-and-responsive-polish.md'
+    indent: 3
+
+  - type: Markdown
+    contents: Create the issue-readiness skill issue.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Create review issue-readiness skill' \
+        --body-file '../fixtures/issues/ISSUE-013-create-review-issue-readiness-skill.md'
+    indent: 3
+
+  - type: Markdown
+    contents: Create the implementation skills issue.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Create issue implementation skills' \
+        --body-file '../fixtures/issues/ISSUE-014-create-implement-issue-skill.md'
     indent: 3
 
   - type: Markdown
@@ -244,7 +288,7 @@ entries:
         --message 'Refs #1.' \
         --message 'Adds the Maven Spring Boot baseline with MVC, Thymeleaf, Security, JPA, Flyway, H2, Actuator, HTMX WebJar support, Playwright E2E wiring, CI, and initial project documentation.'
       git push --set-upstream origin '001-project-foundation'
-    timeout: 1 minute
+    timeout: 5 minutes
     indent: 3
 
   - type: Markdown
@@ -256,7 +300,7 @@ entries:
       gh pr create \
         --title 'Create Spring Boot project foundation' \
         --body-file '../fixtures/pr/PR-001-project-foundation.md' \
-      > '../fixtures/pr/PR-001-project-foundation.out'
+        > '../fixtures/pr/PR-001-project-foundation.out'
     indent: 3
 
   - type: Markdown
@@ -275,7 +319,7 @@ entries:
         fi
 
         case "${checks_output}" in
-          *"no checks reported"*)
+          *"no checks reported"*|*"no required checks reported"*)
             echo "Waiting for checks to be reported for pull request #${pr_number}."
             sleep 5
             ;;
@@ -348,7 +392,7 @@ entries:
       gh pr create \
         --title 'Seed catalog categories and products' \
         --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' \
-      > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
+        > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
     indent: 3
 
   - type: Markdown
@@ -367,7 +411,7 @@ entries:
         fi
 
         case "${checks_output}" in
-          *"no checks reported"*)
+          *"no checks reported"*|*"no required checks reported"*)
             echo "Waiting for checks to be reported for pull request #${pr_number}."
             sleep 5
             ;;
@@ -437,7 +481,7 @@ entries:
       gh pr create \
         --title 'Implement persisted guest carts' \
         --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' \
-      > '../fixtures/pr/PR-003-persisted-guest-cart.out'
+        > '../fixtures/pr/PR-003-persisted-guest-cart.out'
     indent: 3
 
   - type: Markdown
@@ -456,7 +500,7 @@ entries:
         fi
 
         case "${checks_output}" in
-          *"no checks reported"*)
+          *"no checks reported"*|*"no required checks reported"*)
             echo "Waiting for checks to be reported for pull request #${pr_number}."
             sleep 5
             ;;
@@ -522,7 +566,7 @@ entries:
       git add .
       git commit \
         --message 'Add issue-readiness review skill' \
-        --message 'Refs #11.' \
+        --message 'Refs #13.' \
         --message 'Adds a repository-local skill for assessing GitHub issue implementation readiness, including staged clarification and explicit readiness recommendations.' \
         --message 'Includes discoverable skill metadata and documentation for invoking the skill before implementation begins.'
       git push --set-upstream origin '011-create-review-issue-readiness-skill'
@@ -537,7 +581,7 @@ entries:
       gh pr create \
         --title 'Add issue-readiness review skill' \
         --body-file '../fixtures/pr/PR-011-create-review-issue-readiness-skill.md' \
-      > '../fixtures/pr/PR-011-create-review-issue-readiness-skill.out'
+        > '../fixtures/pr/PR-011-create-review-issue-readiness-skill.out'
     indent: 3
 
   - type: Markdown
@@ -556,7 +600,7 @@ entries:
         fi
 
         case "${checks_output}" in
-          *"no checks reported"*)
+          *"no checks reported"*|*"no required checks reported"*)
             echo "Waiting for checks to be reported for pull request #${pr_number}."
             sleep 5
             ;;
@@ -614,7 +658,7 @@ entries:
 
   - type: Markdown
     contents: |
-      Use the Codex CLI to invoke `$review-issue-readiness` for issue 4: guest checkout and order confirmation. Resolve any required clarifications before proceeding. The outcome must be an explicit readiness recommendation, not an implicit assumption that the issue is implementable.
+      Use the Codex CLI to invoke `$review-issue-readiness` for issue 4: guest pickup checkout and order confirmation. Resolve any required clarifications before proceeding. The outcome must be an explicit readiness recommendation, not an implicit assumption that the issue is implementable.
 
   - type: Command
     commands: |
@@ -676,13 +720,168 @@ entries:
 
   - type: Heading
     level: H2
-    title: Introduce implementation agents and Git worktrees
+    title: Introduce the implementation skills
 
   - type: Markdown
     contents: |
-      Introduce a second skill that implements a ready issue and explain how Git worktrees isolate parallel work. For issue 4, assign each implementation agent a distinct brief or evaluation focus; asking several agents to solve an identical prompt would mostly produce redundant candidates.
+      Build and merge repository-local skills that implement a ready GitHub issue or orchestrate meaningful, isolated implementation candidates. The skills must distinguish issue facts from repository evidence, keep implementation within the issue's scope, add or update tests, run relevant verification, and report assumptions and remaining risks.
 
-      TODO: Add the implementation skill, worktree setup, distinct agent briefs, and one branch or pull request per candidate implementation.
+  - type: Markdown
+    contents: Build, verify, commit, and push the implementation skills branch.
+    indent: 3
+
+  - type: Command
+    commands: |
+      git switch --create '012-create-implementation-skills'
+      rsync --archive '../fixtures/repository-overlays/012-create-implement-issue-skill/' .
+      ./mvnw clean verify
+      git add .
+      git commit \
+        --message 'Add issue implementation skills' \
+        --message 'Refs #14.' \
+        --message 'Adds repository-local skills for focused issue implementation and orchestrating isolated implementation candidates with relevant tests, verification, and explicit reporting of assumptions and risks.' \
+        --message 'Includes discoverable skill metadata and documentation for invoking both workflows after issue readiness review.'
+      git push --set-upstream origin '012-create-implementation-skills'
+    indent: 3
+
+  - type: Markdown
+    contents: Open the implementation skills pull request.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh pr create \
+        --title 'Add issue implementation skills' \
+        --body-file '../fixtures/pr/PR-012-create-implement-issue-skill.md' \
+        > '../fixtures/pr/PR-012-create-implement-issue-skill.out'
+    indent: 3
+
+  - type: Markdown
+    contents: Wait for implementation skills checks, then merge the pull request.
+    indent: 3
+
+  - type: Command
+    commands: |
+      pr_url="$(cat '../fixtures/pr/PR-012-create-implement-issue-skill.out')"
+      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+      while true; do
+        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
+          printf '%s\n' "${checks_output}"
+          break
+        fi
+
+        case "${checks_output}" in
+          *"no checks reported"*|*"no required checks reported"*)
+            echo "Waiting for checks to be reported for pull request #${pr_number}."
+            sleep 5
+            ;;
+          *)
+            printf '%s\n' "${checks_output}" >&2
+            echo "Required checks failed for pull request #${pr_number}." >&2
+            exit 1
+            ;;
+        esac
+      done
+
+      while true; do
+        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+        case "${merge_state}" in
+          CLEAN|HAS_HOOKS|UNSTABLE)
+            break
+            ;;
+          BLOCKED)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+          BEHIND)
+            echo "Updating pull request #${pr_number} branch before merging."
+            gh pr update-branch "${pr_number}"
+            sleep 10
+            ;;
+          DIRTY|DRAFT)
+            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
+            exit 1
+            ;;
+          *)
+            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
+            sleep 10
+            ;;
+        esac
+      done
+
+      gh pr merge "${pr_number}" --merge --delete-branch
+    timeout: 10 minutes
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      Create two isolated worktrees from the same main-branch commit. The primary worktree holds the simplest design consistent with repository conventions; the alternative worktree holds a genuinely different viable design, or remains unchanged when no useful alternative exists.
+
+  - type: Command
+    commands: |
+      base_commit="$(git rev-parse HEAD)"
+
+      for candidate in primary alternative; do
+        branch="issue-4-${candidate}"
+        worktree="../demo-supermarket-issue-4-${candidate}"
+
+        if git show-ref --verify --quiet "refs/heads/${branch}" || [ -e "${worktree}" ]; then
+          echo "Candidate branch or worktree already exists: ${branch} / ${worktree}" >&2
+          exit 1
+        fi
+      done
+
+      git worktree add -b 'issue-4-primary'     '../demo-supermarket-issue-4-primary'     "${base_commit}"
+      git worktree add -b 'issue-4-alternative' '../demo-supermarket-issue-4-alternative' "${base_commit}"
+    indent: 3
+
+  - type: Markdown
+    contents: Use the orchestrator to coordinate the primary and alternative implementations in their prepared worktrees.
+    indent: 3
+
+  - type: Breakpoint
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox workspace-write \
+        --add-dir '../demo-supermarket-issue-4-primary' \
+        --add-dir '../demo-supermarket-issue-4-alternative' \
+        --add-dir '../.playwright-browsers' \
+        --model gpt-5.6-terra \
+        --config 'model_reasoning_effort="medium"' \
+        --output-last-message '../codex/codex-orchestrate-issue-implementations-004.md' \
+        - <<'EOF' > '../codex/codex-orchestrate-issue-implementations-004.log' 2>&1
+      Use $orchestrate-issue-implementations for https://github.com/albertattard/demo-supermarket/issues/4.
+      EOF
+    timeout: 30 minutes
+    indent: 3
+
+  - type: DisplayFile
+    path: ../codex/codex-orchestrate-issue-implementations-004.md
+
+  - type: Markdown
+    contents: Commit each candidate that changed. The alternative worktree may remain unchanged when no useful alternative exists.
+    indent: 3
+
+  - type: Command
+    commands: |
+      for candidate in primary alternative; do
+        worktree="../demo-supermarket-issue-4-${candidate}"
+
+        if [ -n "$(git -C "${worktree}" status --short)" ]; then
+          git -C "${worktree}" add .
+          git -C "${worktree}" commit \
+            --message "Implement guest pickup checkout and order confirmation (${candidate})" \
+            --message 'Refs #4.'
+        else
+          echo "No changes to commit for ${candidate}."
+        fi
+      done
+    indent: 3
 
   - type: Heading
     level: H2
