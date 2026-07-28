@@ -560,8 +560,9 @@ entries:
 
   - type: Command
     commands: |
-      git switch --create '011-create-review-issue-readiness-skill'
-      rsync --archive '../fixtures/repository-overlays/011-create-review-issue-readiness-skill/' .
+      set -e
+      git switch --create '013-create-review-issue-readiness-skill'
+      rsync --archive '../fixtures/repository-overlays/013-create-review-issue-readiness-skill/' .
       ./mvnw clean verify
       git add .
       git commit \
@@ -569,7 +570,7 @@ entries:
         --message 'Refs #13.' \
         --message 'Adds a repository-local skill for assessing GitHub issue implementation readiness, including staged clarification and explicit readiness recommendations.' \
         --message 'Includes discoverable skill metadata and documentation for invoking the skill before implementation begins.'
-      git push --set-upstream origin '011-create-review-issue-readiness-skill'
+      git push --set-upstream origin '013-create-review-issue-readiness-skill'
     indent: 3
 
   - type: Markdown
@@ -732,8 +733,9 @@ entries:
 
   - type: Command
     commands: |
-      git switch --create '012-create-implementation-skills'
-      rsync --archive '../fixtures/repository-overlays/012-create-implement-issue-skill/' .
+      set -e
+      git switch --create '014-create-implementation-skills'
+      rsync --archive '../fixtures/repository-overlays/014-create-implement-issue-skill/' .
       ./mvnw clean verify
       git add .
       git commit \
@@ -741,7 +743,7 @@ entries:
         --message 'Refs #14.' \
         --message 'Adds repository-local skills for focused issue implementation and orchestrating isolated implementation candidates with relevant tests, verification, and explicit reporting of assumptions and risks.' \
         --message 'Includes discoverable skill metadata and documentation for invoking both workflows after issue readiness review.'
-      git push --set-upstream origin '012-create-implementation-skills'
+      git push --set-upstream origin '014-create-implementation-skills'
     indent: 3
 
   - type: Markdown
