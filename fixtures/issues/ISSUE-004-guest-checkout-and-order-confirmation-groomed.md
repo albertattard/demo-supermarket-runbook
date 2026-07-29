@@ -8,7 +8,7 @@ Implement the first usable guest checkout: customers with an active cart can pla
 - Display the code in three groups of six characters separated by hyphens.
 - The database enforces case-insensitive uniqueness for the canonical code. Collision retry and its proof belong to story 6.
 - Confirmation is public: the high-entropy code is the sole access mechanism. Unknown codes return the existing customer-facing `404 Not Found` page.
-- The checkout request fields are `fullName`, `email`, and `phoneNumber`. This story proves the valid submission path; trimming, validation, and error handling belong to story 7.
+- The checkout request fields are `fullName`, `email`, and `phoneNumber`. Before snapshotting a successful checkout, trim leading and trailing whitespace from each value. This story proves the valid submission path; validation and error handling belong to story 7.
 - Checkout is a normal full-document form submission, not an HTMX interaction.
 
 ## Scope
@@ -19,7 +19,7 @@ Implement the first usable guest checkout: customers with an active cart can pla
 - Add a checkout form at `GET /cart/{cartToken}/checkout` for active, non-empty carts. Unknown or non-active carts retain the existing customer-facing `404` response.
 - Add `POST /cart/{cartToken}/checkout` for valid pickup orders from an active, non-empty cart.
 - On the existing cart page, display a Checkout link or button for an active, non-empty cart. It navigates to `GET /cart/{cartToken}/checkout`.
-- Bind `fullName`, `email`, and `phoneNumber` from the checkout form and persist their immutable snapshots for a valid submission.
+- Bind `fullName`, `email`, and `phoneNumber` from the checkout form. Before persistence, trim each value and persist the trimmed immutable snapshots for a valid submission.
 - Persist immutable snapshots of product name, unit label, unit price, quantity, line total, customer fields, fulfillment type, goods subtotal, delivery fee, and grand total. Use current persisted prices and two-decimal `BigDecimal` monetary values.
 - Pickup delivery fee is `0.00`.
 - Re-check active, non-empty cart state while creating the order. Order creation and marking the cart `CHECKED_OUT` are one transaction.
@@ -39,7 +39,7 @@ Implement the first usable guest checkout: customers with an active cart can pla
 - `./mvnw test` and `./mvnw verify` succeed.
 - A full-stack or end-to-end test completes pickup checkout from an active cart.
 - The cart page for an active, non-empty cart contains a Checkout link or button to `GET /cart/{cartToken}/checkout`.
-- The full-stack or end-to-end test submits valid `fullName`, `email`, and `phoneNumber` values as a normal form post.
+- The full-stack or end-to-end test submits whitespace-padded valid `fullName`, `email`, and `phoneNumber` values as a normal form post; the confirmation shows the trimmed values and they are persisted trimmed.
 - Pickup checkout creates one `PLACED` order with immutable snapshots and a `0.00` delivery fee. The migration rejects a duplicate `cart_id`, a lowercase-equivalent duplicate order code, and null snapshot or total values.
 - Valid checkout returns `303 See Other` to the 18-character canonical confirmation URL; the confirmation page shows the grouped code and all specified pickup information.
 - Repeated checkout creates no additional order and redirects to the original confirmation page.
