@@ -259,28 +259,6 @@ entries:
     indent: 3
 
   - type: Markdown
-    contents: Create the issue-readiness skill issue.
-    indent: 3
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Create review issue-readiness skill' \
-        --body-file '../fixtures/issues/ISSUE-014-create-review-issue-readiness-skill.md'
-    indent: 3
-
-  - type: Markdown
-    contents: Create the implementation skills issue.
-    indent: 3
-
-  - type: Command
-    commands: |
-      gh issue create \
-        --title 'Create issue implementation skills' \
-        --body-file '../fixtures/issues/ISSUE-015-create-implement-issue-skill.md'
-    indent: 3
-
-  - type: Markdown
     contents: 3. Address the first three issues
 
   - type: Markdown
@@ -419,12 +397,21 @@ entries:
       an implementation agent starts work.
 
   - type: Markdown
+    contents: Create the issue-readiness skill issue.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Create review issue-readiness skill' \
+        --body-file '../fixtures/issues/ISSUE-014-create-review-issue-readiness-skill.md'
+
+  - type: Markdown
     contents: Build, verify, commit, and push the issue-readiness skill branch.
     indent: 3
 
   - type: Command
     commands: |
-      set -e
       git switch --create '014-create-review-issue-readiness-skill'
       rsync --archive '../fixtures/repository-overlays/014-create-review-issue-readiness-skill/' .
       ./mvnw clean verify
@@ -543,12 +530,22 @@ entries:
       Build and merge repository-local skills that implement a ready GitHub issue or orchestrate meaningful, isolated implementation candidates. The skills must distinguish issue facts from repository evidence, keep implementation within the issue's scope, add or update tests, run relevant verification, and report assumptions and remaining risks.
 
   - type: Markdown
+    contents: Create the implementation skills issue.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Create issue implementation skills' \
+        --body-file '../fixtures/issues/ISSUE-015-create-implement-issue-skill.md'
+    indent: 3
+
+  - type: Markdown
     contents: Build, verify, commit, and push the implementation skills branch.
     indent: 3
 
   - type: Command
     commands: |
-      set -e
       git switch --create '015-create-implementation-skills'
       rsync --archive '../fixtures/repository-overlays/015-create-implement-issue-skill/' .
       ./mvnw clean verify
