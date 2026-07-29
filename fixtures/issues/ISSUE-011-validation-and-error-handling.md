@@ -1,6 +1,6 @@
 ## Goal
 
-Improve validation and user-facing error handling across catalog, cart, checkout, logistics, and inventory workflows.
+Improve validation and user-facing error handling across catalog, cart, logistics, and inventory workflows.
 
 The baseline should remain simple, but invalid input and invalid business actions should be handled clearly.
 
@@ -11,13 +11,9 @@ The baseline should remain simple, but invalid input and invalid business action
 - Show page-level business errors for invalid cart/order states.
 - Return updated Thymeleaf fragments with errors for HTMX requests.
 - Validate:
-  - empty cart checkout
-  - missing customer contact fields
-  - invalid email format
   - missing delivery address fields
   - unsupported delivery postal code
   - invalid cart quantity
-  - archived product in cart at checkout
   - invalid order status transition
   - invalid product/category forms
 - Keep error styling simple and accessible.
@@ -29,6 +25,7 @@ The baseline should remain simple, but invalid input and invalid business action
 - Internationalization
 - Formal WCAG audit
 - Custom exception hierarchy beyond what is useful
+- Pickup checkout validation and checkout-state failures (story 7)
 
 ## Acceptance Criteria
 

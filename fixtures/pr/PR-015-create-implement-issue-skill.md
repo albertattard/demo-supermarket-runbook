@@ -1,8 +1,8 @@
 ## Summary
 
-Adds the issue 14 implementation skills for Demo Supermarket.
+Adds the issue 15 implementation skills for Demo Supermarket.
 
-Closes #14.
+Closes #15.
 
 - Adds `$implement-issue` for focused implementation of a ready GitHub issue.
 - Adds `$orchestrate-issue-implementations` for coordinating a primary and an alternative implementation in prepared worktrees.

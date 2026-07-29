@@ -182,6 +182,17 @@ entries:
     indent: 3
 
   - type: Markdown
+    contents: Create the pickup checkout validation and failure-handling issue.
+    indent: 3
+
+  - type: Command
+    commands: |
+      gh issue create \
+        --title 'Pickup checkout validation and failure handling' \
+        --body-file '../fixtures/issues/ISSUE-007-pickup-checkout-validation-and-failure-handling.md'
+    indent: 3
+
+  - type: Markdown
     contents: Create the security and demo users issue.
     indent: 3
 
@@ -189,7 +200,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Security and demo users' \
-        --body-file '../fixtures/issues/ISSUE-007-security-and-demo-users.md'
+        --body-file '../fixtures/issues/ISSUE-008-security-and-demo-users.md'
     indent: 3
 
   - type: Markdown
@@ -200,7 +211,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Logistics order dashboard' \
-        --body-file '../fixtures/issues/ISSUE-008-logistics-order-dashboard.md'
+        --body-file '../fixtures/issues/ISSUE-009-logistics-order-dashboard.md'
     indent: 3
 
   - type: Markdown
@@ -211,7 +222,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Inventory catalog management' \
-        --body-file '../fixtures/issues/ISSUE-009-inventory-catalog-management.md'
+        --body-file '../fixtures/issues/ISSUE-010-inventory-catalog-management.md'
     indent: 3
 
   - type: Markdown
@@ -222,7 +233,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Validation and error handling' \
-        --body-file '../fixtures/issues/ISSUE-010-validation-and-error-handling.md'
+        --body-file '../fixtures/issues/ISSUE-011-validation-and-error-handling.md'
     indent: 3
 
   - type: Markdown
@@ -233,7 +244,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Documentation and workshop backlog' \
-        --body-file '../fixtures/issues/ISSUE-011-documentation-and-workshop-backlog.md'
+        --body-file '../fixtures/issues/ISSUE-012-documentation-and-workshop-backlog.md'
     indent: 3
 
   - type: Markdown
@@ -244,7 +255,7 @@ entries:
     commands: |
       gh issue create \
         --title 'UI accessibility and responsive polish' \
-        --body-file '../fixtures/issues/ISSUE-012-ui-accessibility-and-responsive-polish.md'
+        --body-file '../fixtures/issues/ISSUE-013-ui-accessibility-and-responsive-polish.md'
     indent: 3
 
   - type: Markdown
@@ -255,7 +266,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Create review issue-readiness skill' \
-        --body-file '../fixtures/issues/ISSUE-013-create-review-issue-readiness-skill.md'
+        --body-file '../fixtures/issues/ISSUE-014-create-review-issue-readiness-skill.md'
     indent: 3
 
   - type: Markdown
@@ -266,7 +277,7 @@ entries:
     commands: |
       gh issue create \
         --title 'Create issue implementation skills' \
-        --body-file '../fixtures/issues/ISSUE-014-create-implement-issue-skill.md'
+        --body-file '../fixtures/issues/ISSUE-015-create-implement-issue-skill.md'
     indent: 3
 
   - type: Markdown
@@ -414,16 +425,16 @@ entries:
   - type: Command
     commands: |
       set -e
-      git switch --create '013-create-review-issue-readiness-skill'
-      rsync --archive '../fixtures/repository-overlays/013-create-review-issue-readiness-skill/' .
+      git switch --create '014-create-review-issue-readiness-skill'
+      rsync --archive '../fixtures/repository-overlays/014-create-review-issue-readiness-skill/' .
       ./mvnw clean verify
       git add .
       git commit \
         --message 'Add issue-readiness review skill' \
-        --message 'Refs #13.' \
+        --message 'Refs #14.' \
         --message 'Adds a repository-local skill for assessing GitHub issue implementation readiness, including staged clarification and explicit readiness recommendations.' \
         --message 'Includes discoverable skill metadata and documentation for invoking the skill before implementation begins.'
-      git push --set-upstream origin '013-create-review-issue-readiness-skill'
+      git push --set-upstream origin '014-create-review-issue-readiness-skill'
     indent: 3
 
   - type: Markdown
@@ -434,8 +445,8 @@ entries:
     commands: |
       gh pr create \
         --title 'Add issue-readiness review skill' \
-        --body-file '../fixtures/pr/PR-013-create-review-issue-readiness-skill.md' \
-        > '../fixtures/pr/PR-013-create-review-issue-readiness-skill.out'
+        --body-file '../fixtures/pr/PR-014-create-review-issue-readiness-skill.md' \
+        > '../fixtures/pr/PR-014-create-review-issue-readiness-skill.out'
     indent: 3
 
   - type: Markdown
@@ -444,7 +455,7 @@ entries:
 
   - type: Command
     commands: |
-      ../tools/merge-pull-request.sh '../fixtures/pr/PR-013-create-review-issue-readiness-skill.out'
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-014-create-review-issue-readiness-skill.out'
     timeout: 10 minutes
     indent: 3
 
@@ -538,16 +549,16 @@ entries:
   - type: Command
     commands: |
       set -e
-      git switch --create '014-create-implementation-skills'
-      rsync --archive '../fixtures/repository-overlays/014-create-implement-issue-skill/' .
+      git switch --create '015-create-implementation-skills'
+      rsync --archive '../fixtures/repository-overlays/015-create-implement-issue-skill/' .
       ./mvnw clean verify
       git add .
       git commit \
         --message 'Add issue implementation skills' \
-        --message 'Refs #14.' \
+        --message 'Refs #15.' \
         --message 'Adds repository-local skills for focused issue implementation and orchestrating isolated implementation candidates with relevant tests, verification, and explicit reporting of assumptions and risks.' \
         --message 'Includes discoverable skill metadata and documentation for invoking both workflows after issue readiness review.'
-      git push --set-upstream origin '014-create-implementation-skills'
+      git push --set-upstream origin '015-create-implementation-skills'
     indent: 3
 
   - type: Markdown
@@ -558,8 +569,8 @@ entries:
     commands: |
       gh pr create \
         --title 'Add issue implementation skills' \
-        --body-file '../fixtures/pr/PR-014-create-implement-issue-skill.md' \
-        > '../fixtures/pr/PR-014-create-implement-issue-skill.out'
+        --body-file '../fixtures/pr/PR-015-create-implement-issue-skill.md' \
+        > '../fixtures/pr/PR-015-create-implement-issue-skill.out'
     indent: 3
 
   - type: Markdown
@@ -568,7 +579,7 @@ entries:
 
   - type: Command
     commands: |
-      ../tools/merge-pull-request.sh '../fixtures/pr/PR-014-create-implement-issue-skill.out'
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-015-create-implement-issue-skill.out'
     timeout: 10 minutes
     indent: 3
 
