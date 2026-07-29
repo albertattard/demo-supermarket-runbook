@@ -581,8 +581,8 @@ entries:
     commands: |
       gh pr create \
         --title 'Add issue-readiness review skill' \
-        --body-file '../fixtures/pr/PR-011-create-review-issue-readiness-skill.md' \
-        > '../fixtures/pr/PR-011-create-review-issue-readiness-skill.out'
+        --body-file '../fixtures/pr/PR-013-create-review-issue-readiness-skill.md' \
+        > '../fixtures/pr/PR-013-create-review-issue-readiness-skill.out'
     indent: 3
 
   - type: Markdown
@@ -591,7 +591,7 @@ entries:
 
   - type: Command
     commands: |
-      pr_url="$(cat '../fixtures/pr/PR-011-create-review-issue-readiness-skill.out')"
+      pr_url="$(cat '../fixtures/pr/PR-013-create-review-issue-readiness-skill.out')"
       pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
       while true; do
@@ -719,8 +719,6 @@ entries:
   - type: DisplayFile
     path: ../codex/codex-review-issue-readiness-issue-004-groomed.md
 
-  - type: Breakpoint
-
   - type: Heading
     level: H2
     title: Introduce the implementation skills
@@ -756,8 +754,8 @@ entries:
     commands: |
       gh pr create \
         --title 'Add issue implementation skills' \
-        --body-file '../fixtures/pr/PR-012-create-implement-issue-skill.md' \
-        > '../fixtures/pr/PR-012-create-implement-issue-skill.out'
+        --body-file '../fixtures/pr/PR-014-create-implement-issue-skill.md' \
+        > '../fixtures/pr/PR-014-create-implement-issue-skill.out'
     indent: 3
 
   - type: Markdown
@@ -766,7 +764,7 @@ entries:
 
   - type: Command
     commands: |
-      pr_url="$(cat '../fixtures/pr/PR-012-create-implement-issue-skill.out')"
+      pr_url="$(cat '../fixtures/pr/PR-014-create-implement-issue-skill.out')"
       pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
       while true; do
@@ -849,6 +847,8 @@ entries:
       Use $orchestrate-issue-implementations for https://github.com/albertattard/demo-supermarket/issues/4.
       ```
     indent: 3
+
+  - type: Breakpoint
 
   - type: Markdown
     contents: Commit each candidate that changed. The alternative worktree may remain unchanged when no useful alternative exists.
