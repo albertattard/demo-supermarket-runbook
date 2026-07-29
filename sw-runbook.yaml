@@ -104,12 +104,12 @@ entries:
 
   - type: Command
     commands: |
-      owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
+      # owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
 
-      gh api \
-        --method PUT \
-        "repos/${owner}/demo-supermarket/collaborators/KristofBaetz" \
-        --raw-field permission=push
+      # gh api \
+      #   --method PUT \
+      #   "repos/${owner}/demo-supermarket/collaborators/KristofBaetz" \
+      #   --raw-field permission=push
     indent: 3
 
   - type: Markdown
@@ -718,6 +718,8 @@ entries:
 
   - type: DisplayFile
     path: ../codex/codex-review-issue-readiness-issue-004-groomed.md
+
+  - type: Breakpoint
 
   - type: Heading
     level: H2
