@@ -81,12 +81,12 @@ Start by bootstrapping the project and creating the repository, issues, and star
    Invite others to collaborate.
 
    ```shell
-   owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
+   # owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
 
-   gh api \
-     --method PUT \
-     "repos/${owner}/demo-supermarket/collaborators/KristofBaetz" \
-     --raw-field permission=push
+   # gh api \
+   #   --method PUT \
+   #   "repos/${owner}/demo-supermarket/collaborators/KristofBaetz" \
+   #   --raw-field permission=push
    ```
 
 2. Create the project issues.
@@ -115,12 +115,28 @@ Start by bootstrapping the project and creating the repository, issues, and star
      --body-file '../fixtures/issues/ISSUE-003-persisted-guest-cart.md'
    ```
 
-   Create the guest checkout and order confirmation issue.
+   Create the guest pickup checkout and confirmation issue.
 
    ```shell
    gh issue create \
-     --title 'Guest checkout and order confirmation' \
+     --title 'Guest pickup checkout and order confirmation' \
      --body-file '../fixtures/issues/ISSUE-004-guest-checkout-and-order-confirmation.md'
+   ```
+
+   Create the delivery checkout issue.
+
+   ```shell
+   gh issue create \
+     --title 'Delivery checkout' \
+     --body-file '../fixtures/issues/ISSUE-005-delivery-checkout.md'
+   ```
+
+   Create the checkout integrity and failure-handling issue.
+
+   ```shell
+   gh issue create \
+     --title 'Checkout integrity and failure handling' \
+     --body-file '../fixtures/issues/ISSUE-006-checkout-integrity-and-failure-handling.md'
    ```
 
    Create the security and demo users issue.
@@ -128,7 +144,7 @@ Start by bootstrapping the project and creating the repository, issues, and star
    ```shell
    gh issue create \
      --title 'Security and demo users' \
-     --body-file '../fixtures/issues/ISSUE-005-security-and-demo-users.md'
+     --body-file '../fixtures/issues/ISSUE-007-security-and-demo-users.md'
    ```
 
    Create the logistics order dashboard issue.
@@ -136,7 +152,7 @@ Start by bootstrapping the project and creating the repository, issues, and star
    ```shell
    gh issue create \
      --title 'Logistics order dashboard' \
-     --body-file '../fixtures/issues/ISSUE-006-logistics-order-dashboard.md'
+     --body-file '../fixtures/issues/ISSUE-008-logistics-order-dashboard.md'
    ```
 
    Create the inventory catalog management issue.
@@ -144,7 +160,7 @@ Start by bootstrapping the project and creating the repository, issues, and star
    ```shell
    gh issue create \
      --title 'Inventory catalog management' \
-     --body-file '../fixtures/issues/ISSUE-007-inventory-catalog-management.md'
+     --body-file '../fixtures/issues/ISSUE-009-inventory-catalog-management.md'
    ```
 
    Create the validation and error handling issue.
@@ -152,7 +168,7 @@ Start by bootstrapping the project and creating the repository, issues, and star
    ```shell
    gh issue create \
      --title 'Validation and error handling' \
-     --body-file '../fixtures/issues/ISSUE-008-validation-and-error-handling.md'
+     --body-file '../fixtures/issues/ISSUE-010-validation-and-error-handling.md'
    ```
 
    Create the documentation and workshop backlog issue.
@@ -160,7 +176,7 @@ Start by bootstrapping the project and creating the repository, issues, and star
    ```shell
    gh issue create \
      --title 'Documentation and workshop backlog' \
-     --body-file '../fixtures/issues/ISSUE-009-documentation-and-workshop-backlog.md'
+     --body-file '../fixtures/issues/ISSUE-011-documentation-and-workshop-backlog.md'
    ```
 
    Create the UI accessibility and responsive polish issue.
@@ -168,7 +184,7 @@ Start by bootstrapping the project and creating the repository, issues, and star
    ```shell
    gh issue create \
      --title 'UI accessibility and responsive polish' \
-     --body-file '../fixtures/issues/ISSUE-010-ui-accessibility-and-responsive-polish.md'
+     --body-file '../fixtures/issues/ISSUE-012-ui-accessibility-and-responsive-polish.md'
    ```
 
    Create the issue-readiness skill issue.
@@ -176,7 +192,7 @@ Start by bootstrapping the project and creating the repository, issues, and star
    ```shell
    gh issue create \
      --title 'Create review issue-readiness skill' \
-     --body-file '../fixtures/issues/ISSUE-011-create-review-issue-readiness-skill.md'
+     --body-file '../fixtures/issues/ISSUE-013-create-review-issue-readiness-skill.md'
    ```
 
    Create the implementation skills issue.
@@ -184,7 +200,7 @@ Start by bootstrapping the project and creating the repository, issues, and star
    ```shell
    gh issue create \
      --title 'Create issue implementation skills' \
-     --body-file '../fixtures/issues/ISSUE-012-create-implement-issue-skill.md'
+     --body-file '../fixtures/issues/ISSUE-014-create-implement-issue-skill.md'
    ```
 
 3. Address the first three issues
@@ -438,16 +454,17 @@ an implementation agent starts work.
    Build, verify, commit, and push the issue-readiness skill branch.
 
    ```shell
-   git switch --create '011-create-review-issue-readiness-skill'
-   rsync --archive '../fixtures/repository-overlays/011-create-review-issue-readiness-skill/' .
+   set -e
+   git switch --create '013-create-review-issue-readiness-skill'
+   rsync --archive '../fixtures/repository-overlays/013-create-review-issue-readiness-skill/' .
    ./mvnw clean verify
    git add .
    git commit \
      --message 'Add issue-readiness review skill' \
-     --message 'Refs #11.' \
+     --message 'Refs #13.' \
      --message 'Adds a repository-local skill for assessing GitHub issue implementation readiness, including staged clarification and explicit readiness recommendations.' \
      --message 'Includes discoverable skill metadata and documentation for invoking the skill before implementation begins.'
-   git push --set-upstream origin '011-create-review-issue-readiness-skill'
+   git push --set-upstream origin '013-create-review-issue-readiness-skill'
    ```
 
    Open the issue-readiness skill pull request.
@@ -522,7 +539,7 @@ Capture the output that Codex produces outside the repository so that these do n
    mkdir '../codex'
    ```
 
-Use the Codex CLI to invoke `$review-issue-readiness` for issue 4: guest checkout and order confirmation. Resolve any required clarifications before proceeding. The outcome must be an explicit readiness recommendation, not an implicit assumption that the issue is implementable.
+Use the Codex CLI to invoke `$review-issue-readiness` for issue 4: guest pickup checkout and order confirmation. Resolve any required clarifications before proceeding. The outcome must be an explicit readiness recommendation, not an implicit assumption that the issue is implementable.
 
    ```shell
    codex exec \
@@ -539,14 +556,11 @@ Use the Codex CLI to invoke `$review-issue-readiness` for issue 4: guest checkou
 Note that the issue is incomplete and requires some grooming before moving forward as indicated in the response.  
 
 ```markdown
-1. The exact allowed German delivery postal-code list is missing, despite the issue requiring it before implementation.
-2. The issue does not define the required order-code display format beyond its alphabet and entropy constraints.
+1. The issue is blocked because its three checkout access/order-code decisions are explicitly unresolved.
 
-The first concern blocks implementation: the seed migration, delivery validation tests, and end-to-end checkout test all depend on knowing which postal codes are allowed. Choosing a list would be an unapproved product decision.
+The issue says “the groomed fixture resolves them,” but no answers appear in the issue, comments, linked issues, or repository. The implementation cannot safely determine the public order-code contract, whether confirmation URLs are bearer-accessible, or the response for unknown codes.
 
-Which exact German postal codes should be seeded as allowed?
-
-**Blocked**
+Which exact answers should implementation use for those three questions?
 ```
 
 This is just the first iteration. [Issue 4](https://github.com/albertattard/demo-supermarket/issues/4) is not yet ready and requires further grooming. This process can be made interactive and you can answer the model's questions and update the issue in the process.
@@ -576,125 +590,13 @@ Verify that now the issue is properly groomed and we can proceed with the implem
 According to the skill and model, [Issue 4](https://github.com/albertattard/demo-supermarket/issues/4) is now ready to be worked on.   
 
 ```markdown
-The issue is sufficiently detailed and testable to begin implementation.
+1. The issue does not define the expected `GET /cart/{cartToken}/checkout` response for an active but empty cart, despite explicitly requiring empty-cart checkout failures to return `422`.
+2. The issue requires a checkout entry point but does not state whether or where the cart UI must link to it.
+3. No implementation owner, linked dependency, label, or milestone is recorded.
 
-Evidence reviewed:
+The first concern affects routing, controller behavior, and testability: the scope says the checkout form is for “active, non-empty carts,” while the acceptance criteria require an empty cart submission to render the checkout page with `422`. Those requirements leave the initial empty-cart GET undefined.
 
-- Issue #4 defines the checkout flow, persistence model, validation rules, transaction/concurrency behavior, security model, error handling, and explicit out-of-scope items.
-- Acceptance criteria cover pickup, delivery, postal-code validation, fees, snapshots, rollback, uniqueness collisions, repeated/concurrent submissions, and existing cart behavior.
-- The repository already has persisted carts, Flyway migrations, server-rendered Spring MVC views, H2 tests, and cart concurrency tests—appropriate foundations for this work.
-
-Minor implementation assumptions are low-risk:
-
-- New order and checkout classes follow the existing package and server-rendered MVC conventions.
-- The test-only failure seam may use a test-injected callback/configuration mechanism, provided it is impossible or disabled in normal application operation.
-- No maximum field lengths are required unless imposed by existing project conventions or database schema design.
-
-Recommendation: **Ready to implement**
+Should an empty-cart `GET` render the checkout form with `422`, return the existing customer-facing `404`, or use another response?
 ```
-
-## Introduce the implementation skills
-
-Build and merge repository-local skills that implement a ready GitHub issue or orchestrate meaningful, isolated implementation candidates. The skills must distinguish issue facts from repository evidence, keep implementation within the issue's scope, add or update tests, run relevant verification, and report assumptions and remaining risks.
-
-   Build, verify, commit, and push the implementation skills branch.
-
-   ```shell
-   git switch --create '012-create-implementation-skills'
-   rsync --archive '../fixtures/repository-overlays/012-create-implement-issue-skill/' .
-   ./mvnw clean verify
-   git add .
-   git commit \
-     --message 'Add issue implementation skills' \
-     --message 'Refs #12.' \
-     --message 'Adds repository-local skills for focused issue implementation and orchestrating isolated implementation candidates with relevant tests, verification, and explicit reporting of assumptions and risks.' \
-     --message 'Includes discoverable skill metadata and documentation for invoking both workflows after issue readiness review.'
-   git push --set-upstream origin '012-create-implementation-skills'
-   ```
-
-   Open the implementation skills pull request.
-
-   ```shell
-   gh pr create \
-     --title 'Add issue implementation skills' \
-     --body-file '../fixtures/pr/PR-012-create-implement-issue-skill.md' \
-     > '../fixtures/pr/PR-012-create-implement-issue-skill.out'
-   ```
-
-   Wait for implementation skills checks, then merge the pull request.
-
-   ```shell
-   pr_url="$(cat '../fixtures/pr/PR-012-create-implement-issue-skill.out')"
-   pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-   while true; do
-     if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
-       printf '%s\n' "${checks_output}"
-       break
-     fi
-
-     case "${checks_output}" in
-       *"no checks reported"*|*"no required checks reported"*)
-         echo "Waiting for checks to be reported for pull request #${pr_number}."
-         sleep 5
-         ;;
-       *)
-         printf '%s\n' "${checks_output}" >&2
-         echo "Required checks failed for pull request #${pr_number}." >&2
-         exit 1
-         ;;
-     esac
-   done
-
-   while true; do
-     merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-     case "${merge_state}" in
-       CLEAN|HAS_HOOKS|UNSTABLE)
-         break
-         ;;
-       BLOCKED)
-         echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-         sleep 10
-         ;;
-       BEHIND)
-         echo "Updating pull request #${pr_number} branch before merging."
-         gh pr update-branch "${pr_number}"
-         sleep 10
-         ;;
-       DIRTY|DRAFT)
-         echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-         exit 1
-         ;;
-       *)
-         echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-         sleep 10
-         ;;
-     esac
-   done
-
-   gh pr merge "${pr_number}" --merge --delete-branch
-   ```
-
-Create two isolated worktrees from the same main-branch commit. The primary worktree holds the simplest design consistent with repository conventions; the alternative worktree holds a genuinely different viable design, or remains unchanged when no useful alternative exists.
-
-   ```shell
-   base_commit="$(git rev-parse HEAD)"
-
-   for candidate in primary alternative; do
-     branch="issue-4-${candidate}"
-     worktree="../demo-supermarket-issue-4-${candidate}"
-
-     if git show-ref --verify --quiet "refs/heads/${branch}" || [ -e "${worktree}" ]; then
-       echo "Candidate branch or worktree already exists: ${branch} / ${worktree}" >&2
-       exit 1
-     fi
-   done
-
-   git worktree add -b 'issue-4-primary'     '../demo-supermarket-issue-4-primary'     "${base_commit}"
-   git worktree add -b 'issue-4-alternative' '../demo-supermarket-issue-4-alternative' "${base_commit}"
-   ```
-
-   Use the orchestrator to coordinate the primary and alternative implementations in their prepared worktrees.
 
 > Breakpoint reached: Stop here
