@@ -527,7 +527,7 @@ entries:
 
   - type: Markdown
     contents: |
-      Build and merge repository-local skills that implement a ready GitHub issue or orchestrate meaningful, isolated implementation candidates. The skills must distinguish issue facts from repository evidence, keep implementation within the issue's scope, add or update tests, run relevant verification, and report assumptions and remaining risks.
+      Build and merge repository-local skills that implement a ready GitHub issue, orchestrate meaningful isolated implementation candidates, and independently review each candidate. The skills must distinguish issue facts from repository evidence, keep implementation within the issue's scope, add or update tests, run relevant verification, and report assumptions and remaining risks.
 
   - type: Markdown
     contents: Create the implementation skills issue.
@@ -553,8 +553,8 @@ entries:
       git commit \
         --message 'Add issue implementation skills' \
         --message 'Refs #15.' \
-        --message 'Adds repository-local skills for focused issue implementation and orchestrating isolated implementation candidates with relevant tests, verification, and explicit reporting of assumptions and risks.' \
-        --message 'Includes discoverable skill metadata and documentation for invoking both workflows after issue readiness review.'
+        --message 'Adds repository-local skills for focused issue implementation, orchestration of isolated candidates, and independent candidate review with relevant tests, verification, and explicit reporting of assumptions and risks.' \
+        --message 'Includes discoverable skill metadata and documentation for invoking all workflows after issue readiness review.'
       git push --set-upstream origin '015-create-implementation-skills'
     indent: 3
 
@@ -639,6 +639,10 @@ entries:
 
   - type: Markdown
     contents: |
-      Introduce an independent review skill that examines every candidate in its isolated worktree. It must compare the implementations against issue 4's acceptance criteria, automated-test coverage, maintainability, and regressions, then recommend exactly one candidate for merge.
+      Use the independent review skill once for each candidate whose orchestration evidence audit is complete. Supply the candidate worktree, the shared base commit, the issue, canonical evidence matrix, explicit exclusions, and the reserved verification commands. The reviewer must inspect the candidate's actual diff and return `ACCEPT`, `CHANGES_REQUESTED`, or `BLOCKED`; it does not select a winner.
 
-      TODO: Add the review skill, review commands, selected-candidate merge, and cleanup of unselected worktrees and branches.
+      ```text
+      Use $review-implementation to review issue 4 in /private/tmp/demo-supermarket/repository-worktree-issue-4-primary against the supplied base commit and evidence matrix.
+      ```
+
+      If the verdict is `CHANGES_REQUESTED`, pass the complete finding set to that candidate's original writer for one repair cycle, then re-run the same independent review. The final selection, merging, and cleanup remain separate work.

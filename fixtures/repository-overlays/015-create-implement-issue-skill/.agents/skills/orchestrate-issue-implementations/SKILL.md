@@ -24,6 +24,12 @@ description: Coordinate a primary and an alternative implementation of a ready G
 5. If either worktree is missing or mismatched, stop and report the exact problem. Do not create, remove, switch, reset, merge, or repair worktrees or branches.
 6. Before changing files, run `./mvnw clean verify` in each assigned worktree. Record any pre-existing failures as baseline failures and do not mask them with unrelated changes.
 
+## Reserve shared verification resources
+
+1. Before assigning writers, inspect the relevant build, test, and runtime configuration for fixed shared resources: ports, databases, filesystem paths, Docker resources, and external services.
+2. Record the owner and isolation strategy for every shared resource. If the resource cannot be isolated safely, reserve a serialized verification window before implementation begins. Do not change application configuration merely to accommodate parallel orchestration.
+3. Give writers any resource reservation and the command sequence they must follow. A candidate must not run a reserved command outside its assigned window.
+
 For any required verification that fails only because the current sandbox lacks necessary access, request one scoped approval to rerun the exact command with the necessary access when the session supports approvals. Do not request broader access, a broader sandbox mode, or unrelated filesystem or network access. If approval is unavailable or declined, record the failure as an environmental blocker and continue only where that blocker does not invalidate the result.
 
 ## Coordinate implementation
@@ -41,9 +47,11 @@ For any required verification that fails only because the current sandbox lacks 
 ## Verify and hand off
 
 1. Require each changed worktree to add or update tests, run `./mvnw clean verify` after implementation, inspect its final diff, and provide the completed shared matrix. Do not accept a passing build or an intermediate-response test as evidence that a user journey is complete.
-2. Commission an independent, read-only review for every candidate whose evidence audit marks every in-scope matrix row `PASS`; this is an audit candidate, not yet a candidate eligible for selection. Give the reviewer the issue, final diff, canonical matrix, completed matrix, and explicit exclusions. Require a verdict for every matrix ID.
-3. Audit the reviewer’s findings against the issue and explicit exclusions. Send material in-scope findings through the bounded repair process in Coordinate implementation; reject findings that concern explicit exclusions or invent requirements absent from issue scope. Do not reinterpret valid findings as follow-ups to make a candidate selectable.
-4. A candidate is eligible for selection only when its evidence audit and final independent review have no unresolved material findings. If neither candidate is eligible, report that outcome and the specific blockers; do not select the least-bad implementation.
-5. Leave eligible changed worktrees ready to commit after the final verification.
-6. Collect a concise final handoff from each candidate: implementation summary, tests and outcomes, completed requirements-to-evidence matrix with final verdicts, explicit exclusions, assumptions, risks, unresolved blockers, and whether it produced a commit.
-7. Do not merge, delete, or clean up branches or worktrees. Hand eligible candidates to the selection workflow.
+2. Commission an independent, read-only `$review-implementation` review for every candidate whose evidence audit marks every in-scope matrix row `PASS`; this is an audit candidate, not yet a candidate eligible for selection. Give the reviewer only its assigned worktree, exact common base commit, issue, canonical matrix, explicit exclusions, and relevant verification commands. Do not give it the writer's self-assessment, completed matrix, another candidate's implementation, or another reviewer's findings.
+3. Require a complete review report with exactly one terminal verdict: `ACCEPT`, `CHANGES_REQUESTED`, or `BLOCKED`. Reviewers inspect the actual diff and test code, not an implementation summary. A reviewer does not select a winner.
+4. Audit reviewer findings against the issue and explicit exclusions. Reject only findings that concern an explicit exclusion or invent a requirement absent from the issue. Do not reinterpret a valid finding as follow-up work to make a candidate selectable.
+5. For `CHANGES_REQUESTED`, send the original writer one consolidated repair task containing the complete valid finding set. The writer maps every finding to code or test changes and verification in its response. Allow one review-driven repair cycle only, then send the updated candidate to the same independent reviewer for re-review. If material findings remain, mark the candidate ineligible; do not start another review-driven repair cycle.
+6. Mark a candidate eligible for selection only when its evidence audit and final independent review have no unresolved material findings. If neither candidate is eligible, report that outcome and the specific blockers; do not select the least-bad implementation.
+7. Emit a compact evidence index for each candidate mapping every matrix ID to its exact test method(s), relevant file(s), and final verdict. A passing build or a claimed matrix row is not an evidence index.
+8. Leave eligible changed worktrees ready to commit after final verification. Collect a concise handoff from each candidate: implementation summary, tests and outcomes, evidence index, explicit exclusions, assumptions, risks, unresolved blockers, and whether it produced a commit.
+9. Do not merge, delete, or clean up branches or worktrees. Hand eligible candidates to the selection workflow.
