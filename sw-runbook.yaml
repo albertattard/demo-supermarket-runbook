@@ -309,56 +309,7 @@ entries:
 
   - type: Command
     commands: |
-      pr_url="$(cat '../fixtures/pr/PR-001-project-foundation.out')"
-      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-      while true; do
-        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
-          printf '%s\n' "${checks_output}"
-          break
-        fi
-
-        case "${checks_output}" in
-          *"no checks reported"*|*"no required checks reported"*)
-            echo "Waiting for checks to be reported for pull request #${pr_number}."
-            sleep 5
-            ;;
-          *)
-            printf '%s\n' "${checks_output}" >&2
-            echo "Required checks failed for pull request #${pr_number}." >&2
-            exit 1
-            ;;
-        esac
-      done
-
-      while true; do
-        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-        case "${merge_state}" in
-          CLEAN|HAS_HOOKS|UNSTABLE)
-            break
-            ;;
-          BLOCKED)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-          BEHIND)
-            echo "Updating pull request #${pr_number} branch before merging."
-            gh pr update-branch "${pr_number}"
-            sleep 10
-            ;;
-          DIRTY|DRAFT)
-            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-            exit 1
-            ;;
-          *)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-        esac
-      done
-
-      gh pr merge "${pr_number}" --merge --delete-branch
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-001-project-foundation.out'
     timeout: 10 minutes
     indent: 3
 
@@ -401,56 +352,7 @@ entries:
 
   - type: Command
     commands: |
-      pr_url="$(cat '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out')"
-      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-      while true; do
-        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
-          printf '%s\n' "${checks_output}"
-          break
-        fi
-
-        case "${checks_output}" in
-          *"no checks reported"*|*"no required checks reported"*)
-            echo "Waiting for checks to be reported for pull request #${pr_number}."
-            sleep 5
-            ;;
-          *)
-            printf '%s\n' "${checks_output}" >&2
-            echo "Required checks failed for pull request #${pr_number}." >&2
-            exit 1
-            ;;
-        esac
-      done
-
-      while true; do
-        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-        case "${merge_state}" in
-          CLEAN|HAS_HOOKS|UNSTABLE)
-            break
-            ;;
-          BLOCKED)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-          BEHIND)
-            echo "Updating pull request #${pr_number} branch before merging."
-            gh pr update-branch "${pr_number}"
-            sleep 10
-            ;;
-          DIRTY|DRAFT)
-            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-            exit 1
-            ;;
-          *)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-        esac
-      done
-
-      gh pr merge "${pr_number}" --merge --delete-branch
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
     timeout: 10 minutes
     indent: 3
 
@@ -490,56 +392,7 @@ entries:
 
   - type: Command
     commands: |
-      pr_url="$(cat '../fixtures/pr/PR-003-persisted-guest-cart.out')"
-      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-      while true; do
-        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
-          printf '%s\n' "${checks_output}"
-          break
-        fi
-
-        case "${checks_output}" in
-          *"no checks reported"*|*"no required checks reported"*)
-            echo "Waiting for checks to be reported for pull request #${pr_number}."
-            sleep 5
-            ;;
-          *)
-            printf '%s\n' "${checks_output}" >&2
-            echo "Required checks failed for pull request #${pr_number}." >&2
-            exit 1
-            ;;
-        esac
-      done
-
-      while true; do
-        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-        case "${merge_state}" in
-          CLEAN|HAS_HOOKS|UNSTABLE)
-            break
-            ;;
-          BLOCKED)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-          BEHIND)
-            echo "Updating pull request #${pr_number} branch before merging."
-            gh pr update-branch "${pr_number}"
-            sleep 10
-            ;;
-          DIRTY|DRAFT)
-            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-            exit 1
-            ;;
-          *)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-        esac
-      done
-
-      gh pr merge "${pr_number}" --merge --delete-branch
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-003-persisted-guest-cart.out'
     timeout: 10 minutes
     indent: 3
 
@@ -591,56 +444,7 @@ entries:
 
   - type: Command
     commands: |
-      pr_url="$(cat '../fixtures/pr/PR-013-create-review-issue-readiness-skill.out')"
-      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-      while true; do
-        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
-          printf '%s\n' "${checks_output}"
-          break
-        fi
-
-        case "${checks_output}" in
-          *"no checks reported"*|*"no required checks reported"*)
-            echo "Waiting for checks to be reported for pull request #${pr_number}."
-            sleep 5
-            ;;
-          *)
-            printf '%s\n' "${checks_output}" >&2
-            echo "Required checks failed for pull request #${pr_number}." >&2
-            exit 1
-            ;;
-        esac
-      done
-
-      while true; do
-        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-        case "${merge_state}" in
-          CLEAN|HAS_HOOKS|UNSTABLE)
-            break
-            ;;
-          BLOCKED)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-          BEHIND)
-            echo "Updating pull request #${pr_number} branch before merging."
-            gh pr update-branch "${pr_number}"
-            sleep 10
-            ;;
-          DIRTY|DRAFT)
-            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-            exit 1
-            ;;
-          *)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-        esac
-      done
-
-      gh pr merge "${pr_number}" --merge --delete-branch
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-013-create-review-issue-readiness-skill.out'
     timeout: 10 minutes
     indent: 3
 
@@ -764,56 +568,7 @@ entries:
 
   - type: Command
     commands: |
-      pr_url="$(cat '../fixtures/pr/PR-014-create-implement-issue-skill.out')"
-      pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
-
-      while true; do
-        if checks_output="$(gh pr checks "${pr_number}" --watch --required --fail-fast 2>&1)"; then
-          printf '%s\n' "${checks_output}"
-          break
-        fi
-
-        case "${checks_output}" in
-          *"no checks reported"*|*"no required checks reported"*)
-            echo "Waiting for checks to be reported for pull request #${pr_number}."
-            sleep 5
-            ;;
-          *)
-            printf '%s\n' "${checks_output}" >&2
-            echo "Required checks failed for pull request #${pr_number}." >&2
-            exit 1
-            ;;
-        esac
-      done
-
-      while true; do
-        merge_state="$(gh pr view "${pr_number}" --json mergeStateStatus --jq '.mergeStateStatus')"
-
-        case "${merge_state}" in
-          CLEAN|HAS_HOOKS|UNSTABLE)
-            break
-            ;;
-          BLOCKED)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-          BEHIND)
-            echo "Updating pull request #${pr_number} branch before merging."
-            gh pr update-branch "${pr_number}"
-            sleep 10
-            ;;
-          DIRTY|DRAFT)
-            echo "Pull request #${pr_number} is not ready to merge: ${merge_state}" >&2
-            exit 1
-            ;;
-          *)
-            echo "Waiting for pull request #${pr_number} to become mergeable: ${merge_state}"
-            sleep 10
-            ;;
-        esac
-      done
-
-      gh pr merge "${pr_number}" --merge --delete-branch
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-014-create-implement-issue-skill.out'
     timeout: 10 minutes
     indent: 3
 
