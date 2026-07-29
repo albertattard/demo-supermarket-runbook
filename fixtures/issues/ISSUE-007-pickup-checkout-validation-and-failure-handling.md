@@ -9,8 +9,6 @@ Make the pickup checkout introduced in story 4 handle invalid customer input and
 ## Scope
 
 - Keep pickup checkout as a normal full-document form submission, not an HTMX interaction.
-- For an active but empty cart, `GET /cart/{cartToken}/checkout` renders the existing empty-cart page with `200 OK` and the message `Your cart is empty. Add items before checking out.`; it does not return `404`.
-- An active, empty cart has no checkout entry point on its cart page.
 - Validate the customer values after applying the trimming defined by story 4. Empty-after-trimming values are invalid, and validation errors redisplay the trimmed submitted values.
 - Require each customer field to be non-blank after trimming. Validate email with Jakarta Bean Validation's `@Email`; `albert@example.com` is valid and `albert.example.com` is invalid.
 - Validation failures render the checkout page directly with `422 Unprocessable Content`, do not redirect, preserve trimmed submitted values, and show programmatically associated inline errors.
@@ -27,6 +25,5 @@ Make the pickup checkout introduced in story 4 handle invalid customer input and
 ## Acceptance Criteria
 
 - `./mvnw test` and `./mvnw verify` succeed.
-- An active, empty cart has no checkout entry point, and a direct `GET` to its checkout URL returns `200 OK` with the existing empty-cart state and `Your cart is empty. Add items before checking out.` rather than `404`.
 - Missing contact fields and an invalid email return `422 Unprocessable Content` without redirecting, preserve the trimmed submitted values, and show associated inline errors.
 - An empty-cart submission and an archived-product submission return `422 Unprocessable Content` without redirecting, preserve the trimmed submitted values, and show a clear form-level error. The archived-product test archives a cart product after the cart is populated and proves that no order is created.

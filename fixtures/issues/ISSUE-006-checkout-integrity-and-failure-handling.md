@@ -1,9 +1,15 @@
 ## Goal
 
-Make guest checkout robust under collisions, failures, concurrent submissions, and corrupted cart-to-order data.
+Make pickup and delivery guest checkout robust under collisions, failures, concurrent submissions, and corrupted cart-to-order data.
+
+## Depends On
+
+- Story 4: guest pickup checkout and order confirmation.
+- Story 5: delivery checkout.
 
 ## Scope
 
+- Apply the following integrity and failure-handling guarantees to both pickup and delivery checkout.
 - Prove order-code collision retry at the database uniqueness boundary, not merely through a preflight lookup.
 - Add a test-only failure-injection seam that throws after the order and items are persisted and the cart is marked `CHECKED_OUT`, but before commit. It must be disabled outside tests.
 - Preserve the one-transaction invariant: failure leaves no order or order items and leaves the cart `ACTIVE`.

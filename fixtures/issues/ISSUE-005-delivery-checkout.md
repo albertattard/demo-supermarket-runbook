@@ -2,6 +2,10 @@
 
 Extend guest checkout so customers can choose delivery, provide a valid delivery address, and receive the correct delivery price and confirmation details.
 
+## Depends On
+
+- Story 4: guest pickup checkout and order confirmation.
+
 ## Scope
 
 - Add the `DELIVERY` fulfillment type to the existing checkout and order model.
