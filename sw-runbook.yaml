@@ -685,7 +685,7 @@ entries:
   - type: Markdown
     contents: |
       This is just the first iteration. [Issue 4](https://github.com/albertattard/demo-supermarket/issues/4) is not yet ready and requires further grooming. This process can be made interactive and you can answer the model's questions and update the issue in the process.
-      
+
       The fixtures contain a groom issue which will address all issues which you can use. Update the issue.
 
   - type: Command
@@ -829,7 +829,7 @@ entries:
 
       for candidate in primary alternative; do
         branch="issue-4-${candidate}"
-        worktree="../demo-supermarket-issue-4-${candidate}"
+        worktree="../repository-worktree-issue-4-${candidate}"
 
         if git show-ref --verify --quiet "refs/heads/${branch}" || [ -e "${worktree}" ]; then
           echo "Candidate branch or worktree already exists: ${branch} / ${worktree}" >&2
@@ -837,35 +837,18 @@ entries:
         fi
       done
 
-      git worktree add -b 'issue-4-primary'     '../demo-supermarket-issue-4-primary'     "${base_commit}"
-      git worktree add -b 'issue-4-alternative' '../demo-supermarket-issue-4-alternative' "${base_commit}"
+      git worktree add -b 'issue-4-primary'     '../repository-worktree-issue-4-primary'     "${base_commit}"
+      git worktree add -b 'issue-4-alternative' '../repository-worktree-issue-4-alternative' "${base_commit}"
     indent: 3
 
   - type: Markdown
-    contents: Use the orchestrator to coordinate the primary and alternative implementations in their prepared worktrees.
-    indent: 3
+    contents: |
+      Use the orchestrator to coordinate the primary and alternative implementations in their prepared worktrees.
 
-  - type: Breakpoint
-
-  - type: Command
-    commands: |
-      codex exec \
-        --ephemeral \
-        --sandbox workspace-write \
-        --add-dir '../demo-supermarket-issue-4-primary' \
-        --add-dir '../demo-supermarket-issue-4-alternative' \
-        --add-dir '../.playwright-browsers' \
-        --model gpt-5.6-terra \
-        --config 'model_reasoning_effort="medium"' \
-        --output-last-message '../codex/codex-orchestrate-issue-implementations-004.md' \
-        - <<'EOF' > '../codex/codex-orchestrate-issue-implementations-004.log' 2>&1
+      ```text
       Use $orchestrate-issue-implementations for https://github.com/albertattard/demo-supermarket/issues/4.
-      EOF
-    timeout: 30 minutes
+      ```
     indent: 3
-
-  - type: DisplayFile
-    path: ../codex/codex-orchestrate-issue-implementations-004.md
 
   - type: Markdown
     contents: Commit each candidate that changed. The alternative worktree may remain unchanged when no useful alternative exists.
@@ -874,7 +857,7 @@ entries:
   - type: Command
     commands: |
       for candidate in primary alternative; do
-        worktree="../demo-supermarket-issue-4-${candidate}"
+        worktree="../repository-worktree-issue-4-${candidate}"
 
         if [ -n "$(git -C "${worktree}" status --short)" ]; then
           git -C "${worktree}" add .
