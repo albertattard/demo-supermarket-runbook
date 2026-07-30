@@ -609,6 +609,12 @@ entries:
       ```text
       Use $orchestrate-issue-implementations for https://github.com/albertattard/demo-supermarket/issues/4.
       ```
+
+      It’s a strong orchestration run: clear acceptance matrix, genuinely distinct persistence approaches, repaired weak evidence instead of waving it through, independent review, and reproducible green builds.
+
+      It loses points because it was more elaborate than this issue needed, the alternatives differed only in one architectural seam, and the work stopped before the important final step—selecting, committing, and integrating the chosen candidate. The “exhaustive” language also overclaims what tests can establish.
+
+      Choose primary, commit it, and move on.
     indent: 3
 
   - type: Breakpoint
