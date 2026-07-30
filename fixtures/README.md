@@ -3,6 +3,12 @@
 Demo Supermarket is a sample online grocery store used for workshop and
 demonstration scenarios.
 
+## Workshop
+
+Workshop attendees should start with [RUNBOOK.md](RUNBOOK.md). It uses the
+canonical GitHub backlog as read-only context and keeps all workshop changes
+local to the clone.
+
 The application models a small supermarket that lets customers browse a product
 catalog, build a shopping bag, and place guest orders for pickup or delivery.
 It also includes simple internal workflows for the teams that keep the store

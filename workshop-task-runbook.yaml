@@ -1,0 +1,126 @@
+entries:
+  - type: Heading
+    level: H1
+    title: Demo Supermarket workshop
+
+  - type: Markdown
+    contents: |
+      Work in your clone of `demo-supermarket-starter`. The canonical GitHub issues
+      are the workshop briefs: read them, but do not create, edit, or close issues,
+      open pull requests, push branches, or merge pull requests. All workshop output
+      stays in your local clone.
+
+      This guide is published to the canonical starter repository by the facilitator
+      after baseline provisioning. It is generated Markdown, not a Sociable Weaver
+      source file in your clone.
+
+      Clone the canonical starter repository link provided by the facilitator, then
+      open this file from that clone. Do not fork the repository.
+
+      Before starting, confirm that you are on a clean `main` branch and that the
+      application verifies:
+
+      ```shell
+      git switch main
+      git status --short
+      ./mvnw clean verify
+      ```
+
+  - type: Heading
+    level: H2
+    title: Read issue 4 and assess readiness
+
+  - type: Markdown
+    contents: |
+      Open the canonical brief from your clone. This is read-only GitHub access and
+      avoids assuming a particular GitHub owner or repository URL.
+
+      ```shell
+      gh issue view 4 --web
+      gh issue view 4 --json url,title,body
+      ```
+
+      Read the canonical brief for the readiness skill with `gh issue view 14 --web`,
+      then create a local `review-issue-readiness` skill on a branch such as
+      `workshop/issue-readiness`. It should distinguish issue facts from repository
+      evidence, name missing acceptance criteria and test expectations, and finish
+      with `READY`, `READY_WITH_ASSUMPTIONS`, or `BLOCKED`. Commit the skill locally.
+
+      Use that skill to review issue 4. Save its report outside the repository (for
+      example, in a temporary directory) so it does not pollute the implementation
+      diff. Treat the first review as blocked: issue 4 deliberately leaves important
+      public order-confirmation decisions unresolved.
+
+  - type: Heading
+    level: H2
+    title: Instructor-led grooming pause
+
+  - type: Markdown
+    contents: |
+      Stop here. The instructor now updates issue 4 in the canonical starter
+      repository during the live grooming discussion. Attendees do not edit the
+      issue and do not substitute a local fixture for it.
+
+      After the instructor confirms the update, refresh the issue and repeat the
+      readiness assessment:
+
+      ```shell
+      gh issue view 4 --web
+      gh issue view 4 --json url,title,body
+      ```
+
+      Record the explicit readiness decision, assumptions, and remaining risks in
+      the saved review report.
+
+  - type: Heading
+    level: H2
+    title: Prepare local implementation candidates
+
+  - type: Markdown
+    contents: |
+      Read the canonical brief for these skills with `gh issue view 15 --web`, then
+      create local skills for focused issue implementation, candidate orchestration,
+      and independent implementation review. Each must keep work within the groomed
+      issue scope, preserve issue facts separately from repository evidence, require
+      relevant tests, and report assumptions and risks. Commit these skills locally
+      on a branch such as `workshop/implementation-skills`.
+
+      Create two local worktrees from the same `main` commit. The primary candidate
+      uses the simplest design consistent with the application; the alternative must
+      be genuinely different or remain unchanged when no useful alternative exists.
+
+      ```shell
+      base_commit="$(git rev-parse main)"
+      git worktree add -b issue-4-primary ../demo-supermarket-starter-issue-4-primary "${base_commit}"
+      git worktree add -b issue-4-alternative ../demo-supermarket-starter-issue-4-alternative "${base_commit}"
+      ```
+
+      Implement and verify each candidate locally. Commit only candidates that
+      changed. Do not push them or create pull requests.
+
+  - type: Heading
+    level: H2
+    title: Review and select locally
+
+  - type: Markdown
+    contents: |
+      Independently review each changed candidate against the refreshed canonical
+      issue, the shared base commit, its diff, and verification evidence. The review
+      verdict must be `ACCEPT`, `CHANGES_REQUESTED`, or `BLOCKED`; it does not choose
+      the winner. Give a candidate with requested changes one repair cycle and repeat
+      the review.
+
+      Select the accepted candidate with the clearest evidence and merge it locally
+      into your local `main` branch. Re-run the full verification, then retain the
+      commit hash and evidence for the workshop discussion. This merge is deliberately
+      local: there is no shared attendee branch, pull request, or upstream change.
+
+      ```shell
+      git switch main
+      git merge --no-ff issue-4-primary
+      ./mvnw clean verify
+      git log -1 --oneline
+      ```
+
+      If the alternative is selected, replace `issue-4-primary` with its branch name.
+      Remove the temporary worktrees only after the discussion has finished.

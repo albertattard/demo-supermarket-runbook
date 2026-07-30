@@ -83,7 +83,8 @@ local-only implementation workflow.
 3. Generate `RUNBOOK.md` from the workshop task runbook and arrange for it to
    be included in the provisioned starter repository, with a link from its
    application `README.md`.
-4. Update `run.sh`, source fixtures, links, repository names, and validation
-   commands to use explicit runbook input files.
+4. Replace `run.sh` with `starter-project-runbook.sh` and
+   `workshop-task-runbook.sh`, update source fixtures, links, repository names,
+   and validation commands to use explicit runbook input files.
 5. Validate both runbooks. Do not run the full provisioning workflow against
    GitHub unless recreating the disposable starter repository is intended.

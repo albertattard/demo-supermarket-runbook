@@ -1,0 +1,144 @@
+entries:
+  - type: Heading
+    level: H1
+    title: Demo Supermarket starter provisioning
+
+  - type: Markdown
+    contents: |
+      Facilitator-only workflow for recreating the disposable `demo-supermarket-starter`
+      repository. It prepares the baseline application and canonical issue backlog
+      before the workshop.
+
+  - type: Heading
+    level: H2
+    title: Create the starter repository
+
+  - type: Markdown
+    contents: |
+      The generated repository receives application files and normal project documentation only; runbook sources remain outside it.
+
+  - type: Command
+    commands: |
+      cp '../fixtures/README.md' .
+      cp '../fixtures/LICENSE' .
+      cp '../fixtures/.editorconfig' .
+      cp '../fixtures/.gitattributes' .
+      cp '../fixtures/.gitignore' .
+      git init
+      git add .
+      git commit -m 'Initial commit'
+
+  - type: Command
+    commands: |
+      if gh repo view 'demo-supermarket-starter' >/dev/null 2>&1; then
+        gh repo delete 'demo-supermarket-starter' --yes
+      fi
+      gh repo create 'demo-supermarket-starter' --public --source=. --remote=origin --push
+
+  - type: Markdown
+    contents: |
+      Require passing verification and pull requests on `main`.
+
+  - type: Command
+    commands: |
+      owner="$(gh repo view 'demo-supermarket-starter' --json owner --jq '.owner.login')"
+      gh api --method PUT "repos/${owner}/demo-supermarket-starter/branches/main/protection" --input - <<'JSON'
+      {
+        "required_status_checks": {
+          "strict": true,
+          "contexts": [
+            "verify"
+          ]
+        },
+        "enforce_admins": true,
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews": true,
+          "require_code_owner_reviews": false
+        },
+        "restrictions": null,
+        "required_linear_history": false,
+        "allow_force_pushes": false,
+        "allow_deletions": false,
+        "block_creations": false,
+        "required_conversation_resolution": true,
+        "lock_branch": false,
+        "allow_fork_syncing": false
+      }
+      JSON
+
+  - type: Heading
+    level: H2
+    title: Create the canonical backlog
+
+  - type: Markdown
+    contents: |
+      Create the initial read-only issue briefs in this order. Issue 4 deliberately uses the under-specified version; the facilitator grooms it live during the workshop.
+
+  - type: Command
+    commands: |
+      gh issue create --title 'Create Spring Boot project foundation'           --body-file '../fixtures/issues/ISSUE-001-project-foundation.md'
+      gh issue create --title 'Seed catalog and product listing'                --body-file '../fixtures/issues/ISSUE-002-seed-catalog-and-product-listing.md'
+      gh issue create --title 'Persisted guest cart'                            --body-file '../fixtures/issues/ISSUE-003-persisted-guest-cart.md'
+      gh issue create --title 'Guest pickup checkout and order confirmation'    --body-file '../fixtures/issues/ISSUE-004-guest-checkout-and-order-confirmation.md'
+      gh issue create --title 'Delivery checkout'                               --body-file '../fixtures/issues/ISSUE-005-delivery-checkout.md'
+      gh issue create --title 'Checkout integrity and failure handling'         --body-file '../fixtures/issues/ISSUE-006-checkout-integrity-and-failure-handling.md'
+      gh issue create --title 'Pickup checkout validation and failure handling' --body-file '../fixtures/issues/ISSUE-007-pickup-checkout-validation-and-failure-handling.md'
+      gh issue create --title 'Security and demo users'                         --body-file '../fixtures/issues/ISSUE-008-security-and-demo-users.md'
+      gh issue create --title 'Logistics order dashboard'                       --body-file '../fixtures/issues/ISSUE-009-logistics-order-dashboard.md'
+      gh issue create --title 'Inventory catalog management'                    --body-file '../fixtures/issues/ISSUE-010-inventory-catalog-management.md'
+      gh issue create --title 'Validation and error handling'                   --body-file '../fixtures/issues/ISSUE-011-validation-and-error-handling.md'
+      gh issue create --title 'Documentation and workshop backlog'              --body-file '../fixtures/issues/ISSUE-012-documentation-and-workshop-backlog.md'
+      gh issue create --title 'UI accessibility and responsive polish'          --body-file '../fixtures/issues/ISSUE-013-ui-accessibility-and-responsive-polish.md'
+      gh issue create --title 'Create review issue-readiness skill'             --body-file '../fixtures/issues/ISSUE-014-create-review-issue-readiness-skill.md'
+      gh issue create --title 'Create issue implementation skills'              --body-file '../fixtures/issues/ISSUE-015-create-implement-issue-skill.md'
+
+  - type: Heading
+    level: H2
+    title: Build the three-story baseline
+
+  - type: Markdown
+    contents: |
+      Apply each approved overlay, verify it, and merge it through the protected canonical repository. These are facilitator provisioning actions, not attendee instructions.
+
+  - type: Command
+    commands: |
+      git switch --create '001-project-foundation'
+      rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
+      chmod +x mvnw
+      ./mvnw clean verify
+      git add .
+      git commit --message 'Create Spring Boot project foundation' --message 'Refs #1.'
+      git push --set-upstream origin '001-project-foundation'
+      gh pr create --title 'Create Spring Boot project foundation' --body-file '../fixtures/pr/PR-001-project-foundation.md' > '../fixtures/pr/PR-001-project-foundation.out'
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-001-project-foundation.out'
+    timeout: 15 minutes
+
+  - type: Command
+    commands: |
+      git switch main
+      git pull --ff-only
+      git switch --create '002-seed-catalog-and-product-listing'
+      rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
+      rm -f src/main/java/demo/supermarket/home/HomeController.java src/main/resources/templates/home.html
+      ./mvnw clean verify
+      git add .
+      git commit --message 'Seed catalog categories and products' --message 'Refs #2.'
+      git push --set-upstream origin '002-seed-catalog-and-product-listing'
+      gh pr create --title 'Seed catalog categories and products' --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
+    timeout: 15 minutes
+
+  - type: Command
+    commands: |
+      git switch main
+      git pull --ff-only
+      git switch --create '003-persisted-guest-cart'
+      rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
+      ./mvnw clean verify
+      git add .
+      git commit --message 'Implement persisted guest carts' --message 'Refs #3.'
+      git push --set-upstream origin '003-persisted-guest-cart'
+      gh pr create --title 'Implement persisted guest carts' --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' > '../fixtures/pr/PR-003-persisted-guest-cart.out'
+      ../tools/merge-pull-request.sh '../fixtures/pr/PR-003-persisted-guest-cart.out'
+    timeout: 15 minutes
