@@ -65,7 +65,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - Add GitHub Actions workflow running `./mvnw verify`.
 - Use `oracle-actions/setup-java` to install Oracle Java 25 in GitHub Actions.
 - Add initial `README.md` with setup, run, and test instructions.
-- Add `docs/README.md` with the architectural decisions made in this issue.
+- Add `docs/adrs/README.md` with the architectural decisions made in this issue.
 
 ## Out of Scope
 
@@ -120,5 +120,5 @@ Engineers working on later issues should be able to clone the repository, run th
 - `.gitignore` excludes build outputs, IDE metadata, and local runtime files that should not be committed.
 - `.editorconfig` defines consistent formatting basics for the repository.
 - README explains the project purpose, stack, how to run/test it, and that the first `./mvnw verify` run may download the Playwright Chromium browser binary.
-- `docs/README.md` records the key architectural decisions made so far.
+- `docs/adrs/README.md` records the key architectural decisions made so far.
 - The application does not require Node, npm, Docker, or an external database to run locally.

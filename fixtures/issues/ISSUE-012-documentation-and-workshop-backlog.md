@@ -18,7 +18,7 @@ The documentation should make the repository usable as a baseline for AI-assiste
   - GitHub Actions summary
   - workshop automation flow
   - intentionally missing features
-- Add or update `docs/README.md` with key architectural decisions:
+- Add or update `docs/adrs/README.md` with key architectural decisions:
   - Java 25
   - Spring Boot + Thymeleaf + HTMX
   - no React or other JS framework
@@ -51,7 +51,7 @@ The documentation should make the repository usable as a baseline for AI-assiste
 - `./mvnw test` succeeds.
 - `./mvnw verify` succeeds.
 - README accurately reflects implemented behavior.
-- `docs/README.md` records the important decisions and rationale.
+- `docs/adrs/README.md` records the important decisions and rationale.
 - Documentation clearly states that H2 data resets on restart.
 - Documentation clearly states that payment and production deployment are out of scope.
 - Documentation includes sample backlog items with acceptance criteria.

@@ -14,9 +14,9 @@ routes are redirected to the standard form-login page.
 
 ## Decisions
 
-1. [Spring Boot and Maven](adr/ADR-001-spring-boot-and-maven.md)
-2. [Java 25](adr/ADR-002-java-25.md)
-3. [Server-Rendered Web Baseline](adr/ADR-003-server-rendered-web-baseline.md)
-4. [Persistence Baseline](adr/ADR-004-persistence-baseline.md)
-5. [Security Baseline](adr/ADR-005-security-baseline.md)
-6. [Operational Baseline](adr/ADR-006-operational-baseline.md)
+1. [Spring Boot and Maven](ADR-001-spring-boot-and-maven.md)
+2. [Java 25](ADR-002-java-25.md)
+3. [Server-Rendered Web Baseline](ADR-003-server-rendered-web-baseline.md)
+4. [Persistence Baseline](ADR-004-persistence-baseline.md)
+5. [Security Baseline](ADR-005-security-baseline.md)
+6. [Operational Baseline](ADR-006-operational-baseline.md)
