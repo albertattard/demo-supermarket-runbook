@@ -5,7 +5,7 @@ entries:
 
   - type: Markdown
     contents: |
-      Work in your clone of `demo-supermarket-starter`. The canonical task files in
+      Work in your fork of `demo-supermarket-starter`. The canonical task files in
       `docs/tasks/` are the workshop briefs. Read them, but do not edit them, open
       pull requests, push branches, or merge pull requests. All workshop output stays
       in your local clone.
@@ -14,17 +14,106 @@ entries:
       after baseline provisioning. It is generated Markdown, not a Sociable Weaver
       source file in your clone.
 
-      Clone the canonical starter repository link provided by the facilitator, then
-      open this file from that clone. Do not fork the repository.
+  - type: Heading
+    level: H2
+    title: Prerequisites
 
-      Before starting, confirm that you are on a clean `main` branch and that the
-      application verifies:
+  - type: Markdown
+    contents: |
+      You need Java 25 or newer, Git, and an authenticated GitHub CLI session. Your
+      GitHub account must be able to create a fork of the canonical starter repository.
+      These checks run when the facilitator publishes this guide; use them as the
+      required local setup for the workshop.
+
+  - type: Prerequisite
+    checks:
+      - kind: java
+        name: Java 25+
+        version: 25+
+        contents: |
+          Java 25 or newer is required to run the application's Maven verification.
+        help: Install Java 25 or newer and make sure `java` is available on the PATH.
+      - kind: command
+        name: Git
+        contents: |
+          Git manages the local branches, worktrees, and commits created during the workshop.
+        commands: |
+          git --version
+        assert:
+          exit_code: 0
+        help: Install Git and make sure `git` is available on the PATH.
+      - kind: command
+        name: Authenticated GitHub CLI
+        contents: |
+          The GitHub CLI creates the attendee fork and clone.
+        commands: |
+          gh auth status --active
+        assert:
+          exit_code: 0
+        help: Authenticate the GitHub CLI with an account that can fork the canonical starter repository.
+
+  - type: Heading
+    level: H2
+    title: Fork and clone the starter repository
+
+  - type: Markdown
+    contents: |
+      Start by forking the starter project from
+      [albertattard/demo-supermarket-starter](https://github.com/albertattard/demo-supermarket-starter).
+      This gives you an independent copy for the workshop.
+
+      If you are repeating the workshop, delete the previous fork and its local clone
+      first. Replace `YOUR-GITHUB-LOGIN` with your GitHub account name. The local
+      deletion is destructive: run it only from the directory that contains the clone,
+      never from inside it.
+
+  - type: Markdown
+    contents: |
+      Login to GH if you have not already done so and follow the provided instructions
 
       ```shell
-      git switch main
-      git status --short
-      ./mvnw clean verify
+      gh auth login \
+        --hostname github.com \
+        --web \
+        --git-protocol ssh \
+        --skip-ssh-key
       ```
+
+      If already logged in, make sure you are using the right account
+
+  - type: Command
+    commands: |
+      gh auth switch \
+        --hostname github.com \
+        --user albertattard-gh-test
+      gh auth status
+    output:
+      caption: |
+        TODO: Update the caption
+    cleanup: |
+      gh auth switch --hostname github.com --user albertattard
+
+  - type: Command
+    commands: |
+      gh repo delete 'albertattard-gh-test/demo-supermarket' --yes 2>/dev/null || true
+      rm -rf './demo-supermarket'
+
+  - type: Markdown
+    contents: |
+      Fork the canonical starter [repository link](https://github.com/albertattard/demo-supermarket-starter), then clone your fork.
+
+  - type: Command
+    commands: |
+      gh repo fork albertattard/demo-supermarket-starter \
+        --fork-name demo-supermarket \
+        --clone
+
+  - type: ChangeDirectory
+    path: demo-supermarket
+    contents: |
+      Work in the cloned fork for the remaining application steps.
+
+  - type: Breakpoint
 
   - type: Heading
     level: H2
