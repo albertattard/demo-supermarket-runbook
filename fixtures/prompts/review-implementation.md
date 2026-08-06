@@ -1,4 +1,4 @@
-Review the current implementation of canonical GitHub issue 4 from this cloned
+Review the current implementation of canonical task 4 from this cloned
 starter repository as a Staff Software Engineer.
 
 The application uses Java 25, Spring Boot 4, and Playwright for end-to-end testing.

@@ -2,7 +2,7 @@
 
 Adds the issue 14 `review-issue-readiness` skill for Demo Supermarket.
 
-Closes #14.
+Implements [TASK-014](docs/tasks/TASK-014-create-review-issue-readiness-skill.md).
 
 - Adds a repository-local skill for assessing whether GitHub issues are ready to implement.
 - Defines an evidence-based review workflow that identifies ambiguity, dependencies, scope gaps, and relevant operational risks.

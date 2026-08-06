@@ -1,8 +1,8 @@
 ## Summary
 
-Establishes the issue 1 project foundation for Demo Supermarket.
+Establishes the task 1 project foundation for Demo Supermarket.
 
-Closes #1.
+Implements [TASK-001](docs/tasks/TASK-001-project-foundation.md).
 
 ## Verification
 

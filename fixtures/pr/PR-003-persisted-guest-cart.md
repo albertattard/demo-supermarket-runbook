@@ -1,8 +1,8 @@
 ## Summary
 
-Adds the issue 3 persisted guest cart for Demo Supermarket.
+Adds the task 3 persisted guest cart for Demo Supermarket.
 
-Closes #3.
+Implements [TASK-003](docs/tasks/TASK-003-persisted-guest-cart.md).
 
 - Creates Flyway-managed cart and cart item tables with opaque public cart tokens.
 - Adds server-side cart persistence for active guest carts, line items, and reserved cart states.

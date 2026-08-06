@@ -6,8 +6,8 @@ entries:
   - type: Markdown
     contents: |
       Facilitator-only workflow for recreating the disposable `demo-supermarket-starter`
-      repository. It prepares the baseline application and canonical issue backlog
-      before the workshop.
+      repository. It prepares the baseline application and the canonical task
+      backlog before the workshop.
 
   - type: Heading
     level: H2
@@ -69,32 +69,6 @@ entries:
 
   - type: Heading
     level: H2
-    title: Create the canonical backlog
-
-  - type: Markdown
-    contents: |
-      Create the initial read-only issue briefs in this order. Issue 4 deliberately uses the under-specified version; the facilitator grooms it live during the workshop.
-
-  - type: Command
-    commands: |
-      gh issue create --title 'Create Spring Boot project foundation'           --body-file '../fixtures/issues/ISSUE-001-project-foundation.md'
-      gh issue create --title 'Seed catalog and product listing'                --body-file '../fixtures/issues/ISSUE-002-seed-catalog-and-product-listing.md'
-      gh issue create --title 'Persisted guest cart'                            --body-file '../fixtures/issues/ISSUE-003-persisted-guest-cart.md'
-      gh issue create --title 'Guest pickup checkout and order confirmation'    --body-file '../fixtures/issues/ISSUE-004-guest-checkout-and-order-confirmation.md'
-      gh issue create --title 'Delivery checkout'                               --body-file '../fixtures/issues/ISSUE-005-delivery-checkout.md'
-      gh issue create --title 'Checkout integrity and failure handling'         --body-file '../fixtures/issues/ISSUE-006-checkout-integrity-and-failure-handling.md'
-      gh issue create --title 'Pickup checkout validation and failure handling' --body-file '../fixtures/issues/ISSUE-007-pickup-checkout-validation-and-failure-handling.md'
-      gh issue create --title 'Security and demo users'                         --body-file '../fixtures/issues/ISSUE-008-security-and-demo-users.md'
-      gh issue create --title 'Logistics order dashboard'                       --body-file '../fixtures/issues/ISSUE-009-logistics-order-dashboard.md'
-      gh issue create --title 'Inventory catalog management'                    --body-file '../fixtures/issues/ISSUE-010-inventory-catalog-management.md'
-      gh issue create --title 'Validation and error handling'                   --body-file '../fixtures/issues/ISSUE-011-validation-and-error-handling.md'
-      gh issue create --title 'Documentation and workshop backlog'              --body-file '../fixtures/issues/ISSUE-012-documentation-and-workshop-backlog.md'
-      gh issue create --title 'UI accessibility and responsive polish'          --body-file '../fixtures/issues/ISSUE-013-ui-accessibility-and-responsive-polish.md'
-      gh issue create --title 'Create review issue-readiness skill'             --body-file '../fixtures/issues/ISSUE-014-create-review-issue-readiness-skill.md'
-      gh issue create --title 'Create issue implementation skills'              --body-file '../fixtures/issues/ISSUE-015-create-implement-issue-skill.md'
-
-  - type: Heading
-    level: H2
     title: Build the three-story baseline
 
   - type: Markdown
@@ -108,7 +82,7 @@ entries:
       chmod +x mvnw
       ./mvnw clean verify
       git add .
-      git commit --message 'Create Spring Boot project foundation' --message 'Refs #1.'
+      git commit --message 'Create Spring Boot project foundation'
       git push --set-upstream origin '001-project-foundation'
       gh pr create --title 'Create Spring Boot project foundation' --body-file '../fixtures/pr/PR-001-project-foundation.md' > '../fixtures/pr/PR-001-project-foundation.out'
       ../tools/merge-pull-request.sh '../fixtures/pr/PR-001-project-foundation.out'
@@ -123,7 +97,7 @@ entries:
       rm -f src/main/java/demo/supermarket/home/HomeController.java src/main/resources/templates/home.html
       ./mvnw clean verify
       git add .
-      git commit --message 'Seed catalog categories and products' --message 'Refs #2.'
+      git commit --message 'Seed catalog categories and products'
       git push --set-upstream origin '002-seed-catalog-and-product-listing'
       gh pr create --title 'Seed catalog categories and products' --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
       ../tools/merge-pull-request.sh '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
@@ -137,7 +111,7 @@ entries:
       rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
       ./mvnw clean verify
       git add .
-      git commit --message 'Implement persisted guest carts' --message 'Refs #3.'
+      git commit --message 'Implement persisted guest carts'
       git push --set-upstream origin '003-persisted-guest-cart'
       gh pr create --title 'Implement persisted guest carts' --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' > '../fixtures/pr/PR-003-persisted-guest-cart.out'
       ../tools/merge-pull-request.sh '../fixtures/pr/PR-003-persisted-guest-cart.out'

@@ -2,7 +2,7 @@
 
 Adds the issue 15 implementation skills for Demo Supermarket.
 
-Closes #15.
+Implements [TASK-015](docs/tasks/TASK-015-create-implement-issue-skill.md).
 
 - Adds `$implement-issue` for focused implementation of a ready GitHub issue.
 - Adds `$orchestrate-issue-implementations` for coordinating a primary and an alternative implementation in prepared worktrees.

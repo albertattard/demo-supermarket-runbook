@@ -10,14 +10,14 @@ security, inventory management, and further quality improvements.
 
 ## What participants practise
 
-Participants use the canonical issue backlog as product context, assess whether
-an issue is ready to implement, clarify ambiguity through live grooming, and
+Participants use the canonical task backlog as product context, assess whether
+a task is ready to implement, clarify ambiguity through live grooming, and
 develop evidence-backed implementation candidates. The exercise emphasises
 small, reviewable changes, tests, verification, and explicit assumptions rather
 than treating generated code as automatically trustworthy.
 
 Work is intentionally local to each participant's clone. The shared starter
-repository provides common context and issue briefs; it is not a destination for
+repository provides common context and task briefs; it is not a destination for
 attendee pull requests or merged workshop changes.
 
 ## The application scenario

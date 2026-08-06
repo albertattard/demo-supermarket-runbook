@@ -15,11 +15,11 @@ application repository itself.
   then creates and merges the facilitator publication PR.
 - `fixtures/README.md` becomes the generated target repository README.
 - `fixtures/LICENSE` becomes the generated target repository licence.
-- `fixtures/issues/` contains GitHub issue bodies used during provisioning.
 - `fixtures/pr/` contains facilitator pull-request bodies and generated URL
   outputs.
 - `fixtures/repository-overlays/` contains staged application overlays used only
-  during facilitator provisioning.
+  during facilitator provisioning. The initial overlay's `docs/tasks/` directory
+  contains the attendee-facing task briefs.
 - `/tmp/demo-supermarket-starter`, when present, is generated output and
   should not be treated as source.
 
@@ -34,8 +34,9 @@ the runbook or fixtures and regenerate.
 When changing generated application content, place the intended final files in
 the appropriate `fixtures/repository-overlays/<step>/` directory.
 
-When changing issue or pull request text, edit the matching Markdown file under
-`fixtures/issues/` or `fixtures/pr/`.
+When changing task or pull request text, edit the matching Markdown file under
+`fixtures/repository-overlays/001-project-foundation/docs/tasks/` or
+`fixtures/pr/`.
 
 ## Validation
 

@@ -21,12 +21,11 @@ application tooling.
 
 The facilitator provisions the canonical `demo-supermarket-starter` repository
 before the workshop. It contains the application after the first three project
-stories and its prepared GitHub issue backlog. Attendees receive the repository
+stories and its prepared task backlog in `docs/tasks/`. Attendees receive the repository
 link and clone it as part of the workshop.
 
-This is intentionally not a fork-based workflow. Forks do not copy GitHub
-issues or most repository settings, and attendees do not need to merge changes
-back into a shared upstream repository.
+This is intentionally not a fork-based workflow. Attendees do not need to merge
+changes back into a shared upstream repository.
 
 ## Attendee entry point
 
@@ -38,23 +37,23 @@ installation.
 The generated task guide may rely only on:
 
 - the attendee's cloned starter repository;
-- its canonical GitHub repository and public GitHub data; and
+- its canonical task files in `docs/tasks/`; and
 - explicitly linked, stable public web resources when needed.
 
 It must not use relative paths into this repository such as `../fixtures` or
 `../tools`, nor hard-code the former `albertattard/demo-supermarket` repository
 name.
 
-## GitHub realism and permissions
+## Task briefs and permissions
 
-GitHub issues remain the canonical source of truth for the workshop briefs.
+The task files remain the canonical source of truth for the workshop briefs.
 They are read-only context for attendees.
 
-Issue 4 begins intentionally under-specified. During the workshop, the
-facilitator updates issue 4 in the canonical starter repository as a live
-grooming step. Attendees then refresh it and repeat the readiness assessment.
+Task 4 begins intentionally under-specified. During the workshop, the
+facilitator resolves its open questions as a live grooming step. Attendees
+record those decisions in their readiness assessment before repeating it.
 
-Attendees must not be instructed to create or edit GitHub issues, open pull
+Attendees must not be instructed to edit the canonical task files, open pull
 requests, or merge pull requests. Later workshop work is local: branches,
 commits, skills, candidate implementations, review evidence, and selection.
 
@@ -64,17 +63,17 @@ commits, skills, candidate implementations, review evidence, and selection.
 
 Facilitator-only provisioning documentation with light explanations of the
 major steps. It creates and prepares `demo-supermarket-starter`, including the
-baseline application, initial issues, and required repository configuration.
+baseline application, task briefs, and required repository configuration.
 
 ### `workshop-task-runbook.yaml`
 
 Authoring source for the generated attendee `RUNBOOK.md`. It describes the
-actual workshop task, including the instructor-led update to issue 4 and the
+actual workshop task, including the instructor-led grooming of task 4 and the
 local-only implementation workflow.
 
 ## Implementation follow-up
 
-1. Extract the existing bootstrap, issue creation, and first-three-story steps
+1. Extract the existing bootstrap and first-three-story steps
    into `starter-project-runbook.yaml` and rename the generated target to
    `demo-supermarket-starter`.
 2. Create `workshop-task-runbook.yaml` from the remaining workshop material.

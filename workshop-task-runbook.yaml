@@ -5,10 +5,10 @@ entries:
 
   - type: Markdown
     contents: |
-      Work in your clone of `demo-supermarket-starter`. The canonical GitHub issues
-      are the workshop briefs: read them, but do not create, edit, or close issues,
-      open pull requests, push branches, or merge pull requests. All workshop output
-      stays in your local clone.
+      Work in your clone of `demo-supermarket-starter`. The canonical task files in
+      `docs/tasks/` are the workshop briefs. Read them, but do not edit them, open
+      pull requests, push branches, or merge pull requests. All workshop output stays
+      in your local clone.
 
       This guide is published to the canonical starter repository by the facilitator
       after baseline provisioning. It is generated Markdown, not a Sociable Weaver
@@ -28,27 +28,25 @@ entries:
 
   - type: Heading
     level: H2
-    title: Read issue 4 and assess readiness
+    title: Read task 4 and assess readiness
 
   - type: Markdown
     contents: |
-      Open the canonical brief from your clone. This is read-only GitHub access and
-      avoids assuming a particular GitHub owner or repository URL.
+      Open the canonical task brief from your clone:
 
       ```shell
-      gh issue view 4 --web
-      gh issue view 4 --json url,title,body
+      sed -n '1,240p' docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md
       ```
 
-      Read the canonical brief for the readiness skill with `gh issue view 14 --web`,
+      Read `docs/tasks/TASK-014-create-review-issue-readiness-skill.md`,
       then create a local `review-issue-readiness` skill on a branch such as
-      `workshop/issue-readiness`. It should distinguish issue facts from repository
+      `workshop/task-readiness`. It should distinguish task facts from repository
       evidence, name missing acceptance criteria and test expectations, and finish
       with `READY`, `READY_WITH_ASSUMPTIONS`, or `BLOCKED`. Commit the skill locally.
 
-      Use that skill to review issue 4. Save its report outside the repository (for
+      Use that skill to review task 4. Save its report outside the repository (for
       example, in a temporary directory) so it does not pollute the implementation
-      diff. Treat the first review as blocked: issue 4 deliberately leaves important
+      diff. Treat the first review as blocked: task 4 deliberately leaves important
       public order-confirmation decisions unresolved.
 
   - type: Heading
@@ -57,17 +55,12 @@ entries:
 
   - type: Markdown
     contents: |
-      Stop here. The instructor now updates issue 4 in the canonical starter
-      repository during the live grooming discussion. Attendees do not edit the
-      issue and do not substitute a local fixture for it.
+      Stop here. The instructor now resolves task 4's open questions during the live
+      grooming discussion. Attendees do not edit the canonical task file.
 
-      After the instructor confirms the update, refresh the issue and repeat the
-      readiness assessment:
-
-      ```shell
-      gh issue view 4 --web
-      gh issue view 4 --json url,title,body
-      ```
+      Record the resolved decisions alongside the task facts in your saved review
+      report, then repeat the readiness assessment. Do not treat a decision as
+      resolved unless the instructor has confirmed it.
 
       Record the explicit readiness decision, assumptions, and remaining risks in
       the saved review report.
@@ -78,10 +71,10 @@ entries:
 
   - type: Markdown
     contents: |
-      Read the canonical brief for these skills with `gh issue view 15 --web`, then
+      Read `docs/tasks/TASK-015-create-implement-issue-skill.md`, then
       create local skills for focused issue implementation, candidate orchestration,
       and independent implementation review. Each must keep work within the groomed
-      issue scope, preserve issue facts separately from repository evidence, require
+      task scope, preserve task facts separately from repository evidence, require
       relevant tests, and report assumptions and risks. Commit these skills locally
       on a branch such as `workshop/implementation-skills`.
 
@@ -91,8 +84,8 @@ entries:
 
       ```shell
       base_commit="$(git rev-parse main)"
-      git worktree add -b issue-4-primary ../demo-supermarket-starter-issue-4-primary "${base_commit}"
-      git worktree add -b issue-4-alternative ../demo-supermarket-starter-issue-4-alternative "${base_commit}"
+      git worktree add -b task-4-primary ../demo-supermarket-starter-task-4-primary "${base_commit}"
+      git worktree add -b task-4-alternative ../demo-supermarket-starter-task-4-alternative "${base_commit}"
       ```
 
       Implement and verify each candidate locally. Commit only candidates that
@@ -105,7 +98,7 @@ entries:
   - type: Markdown
     contents: |
       Independently review each changed candidate against the refreshed canonical
-      issue, the shared base commit, its diff, and verification evidence. The review
+      task, the shared base commit, its diff, and verification evidence. The review
       verdict must be `ACCEPT`, `CHANGES_REQUESTED`, or `BLOCKED`; it does not choose
       the winner. Give a candidate with requested changes one repair cycle and repeat
       the review.
@@ -117,10 +110,10 @@ entries:
 
       ```shell
       git switch main
-      git merge --no-ff issue-4-primary
+      git merge --no-ff task-4-primary
       ./mvnw clean verify
       git log -1 --oneline
       ```
 
-      If the alternative is selected, replace `issue-4-primary` with its branch name.
+      If the alternative is selected, replace `task-4-primary` with its branch name.
       Remove the temporary worktrees only after the discussion has finished.

@@ -1,8 +1,8 @@
 ## Summary
 
-Adds the issue 2 customer-facing product catalog for Demo Supermarket.
+Adds the task 2 customer-facing product catalog for Demo Supermarket.
 
-Closes #2.
+Implements [TASK-002](docs/tasks/TASK-002-seed-catalog-and-product-listing.md).
 
 - Creates Flyway-managed category and product tables with seeded demo data.
 - Adds schema constraints for core catalog invariants.
