@@ -67,9 +67,7 @@ entries:
 
   - type: Command
     commands: |
-      if gh repo view 'demo-supermarket-starter' >/dev/null 2>&1; then
-        gh repo delete 'demo-supermarket-starter' --yes
-      fi
+      gh repo delete 'demo-supermarket-starter' --yes 2>/dev/null || true
       gh repo create 'demo-supermarket-starter' --public --source=. --remote=origin --push
 
   - type: Markdown

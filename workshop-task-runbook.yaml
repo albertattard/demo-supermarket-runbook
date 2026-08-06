@@ -86,16 +86,20 @@ entries:
       gh auth switch \
         --hostname github.com \
         --user albertattard-gh-test
-      gh auth status
-    output:
-      caption: |
-        TODO: Update the caption
     cleanup: |
       gh auth switch --hostname github.com --user albertattard
 
   - type: Command
     commands: |
-      gh repo delete 'albertattard-gh-test/demo-supermarket' --yes 2>/dev/null || true
+      gh auth status
+    output:
+      caption: |
+        TODO: Update the caption
+
+  - type: Command
+    commands: |
+      owner="$(gh api user --jq '.login')"
+      gh repo delete "${owner}/demo-supermarket" --yes 2>/dev/null || true
       rm -rf './demo-supermarket'
 
   - type: Markdown
@@ -108,10 +112,50 @@ entries:
         --fork-name demo-supermarket \
         --clone
 
+  - type: Markdown
+    contents: |
+      Require passing verification and pull requests on `main`.
+
+  - type: Command
+    commands: |
+      owner="$(gh repo view 'demo-supermarket' --json owner --jq '.owner.login')"
+      gh api --method PUT "repos/${owner}/demo-supermarket/branches/main/protection" --input - <<'JSON'
+      {
+        "required_status_checks": {
+          "strict": true,
+          "contexts": [
+            "verify"
+          ]
+        },
+        "enforce_admins": true,
+        "required_pull_request_reviews": {
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews": true,
+          "require_code_owner_reviews": false
+        },
+        "restrictions": null,
+        "required_linear_history": false,
+        "allow_force_pushes": false,
+        "allow_deletions": false,
+        "block_creations": false,
+        "required_conversation_resolution": true,
+        "lock_branch": false,
+        "allow_fork_syncing": false
+      }
+      JSON
+
   - type: ChangeDirectory
     path: demo-supermarket
     contents: |
       Work in the cloned fork for the remaining application steps.
+
+  - type: Heading
+    level: H2
+    title: Build the application
+
+  - type: Command
+    commands: |
+      ./mvnw clean verify
 
   - type: Breakpoint
 
