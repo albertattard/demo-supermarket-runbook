@@ -6,6 +6,12 @@ overlay.
 The ADRs follow Michael Nygard's lightweight format: title, status, context,
 decision, and consequences.
 
+## Foundation Defaults
+
+For local monitoring, the application exposes both `/actuator/health` and
+`/actuator/info` without authentication. Unauthenticated requests to application
+routes are redirected to the standard form-login page.
+
 ## Decisions
 
 1. [Spring Boot and Maven](adr/ADR-001-spring-boot-and-maven.md)
