@@ -11,6 +11,43 @@ entries:
 
   - type: Heading
     level: H2
+    title: Prerequisites
+
+  - type: Markdown
+    contents: |
+      Run this only from a clean, disposable working directory. It deletes and recreates the `demo-supermarket-starter` GitHub repository. You need Java 25 or newer, Git, and an authenticated GitHub CLI session with permission to create and delete repositories, configure branch protection, and create and merge pull requests.
+
+  - type: Prerequisite
+    checks:
+      - kind: java
+        name: Java 25+
+        version: '25+'
+        contents: |
+          Java 25 or newer is required by the generated Spring Boot project.
+        help: Install Java 25 or newer and make sure `java` is available on the PATH.
+
+      - kind: command
+        name: Git
+        contents: |
+          Git creates the local history and pushes each baseline story.
+        commands: |
+          git --version
+        assert:
+          exit_code: 0
+        help: Install Git and make sure `git` is available on the PATH.
+
+      - kind: command
+        name: Authenticated GitHub CLI
+        contents: |
+          The GitHub CLI creates, protects, and administers the disposable repository.
+        commands: |
+          gh auth status --active
+        assert:
+          exit_code: 0
+        help: Authenticate the GitHub CLI with an account that has the required repository administration permissions.
+
+  - type: Heading
+    level: H2
     title: Create the starter repository
 
   - type: Markdown
