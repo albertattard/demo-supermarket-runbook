@@ -1,16 +1,12 @@
 # Architecture Decision Records
 
-This directory contains architecture decision records for the project foundation
-overlay.
+This directory contains architecture decision records for the project foundation overlay.
 
-The ADRs follow Michael Nygard's lightweight format: title, status, context,
-decision, and consequences.
+The ADRs follow [Michael Nygard's lightweight format](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions.html): title, status, context, decision, and consequences.
 
 ## Foundation Defaults
 
-For local monitoring, the application exposes both `/actuator/health` and
-`/actuator/info` without authentication. Unauthenticated requests to application
-routes are redirected to the standard form-login page.
+For local monitoring, the application exposes both `/actuator/health` and `/actuator/info` without authentication. Unauthenticated requests to application  routes are redirected to the standard form-login page.
 
 ## Decisions
 
