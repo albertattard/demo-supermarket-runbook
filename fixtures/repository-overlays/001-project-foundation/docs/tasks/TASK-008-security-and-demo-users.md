@@ -1,3 +1,9 @@
+---
+id: TASK-008
+title: Security and demo users
+status: ready
+depends_on: []
+---
 ## Goal
 
 Add simple username/password security for logistics and inventory users.

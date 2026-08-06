@@ -1,3 +1,9 @@
+---
+id: TASK-012
+title: Documentation and workshop backlog
+status: ready
+depends_on: []
+---
 ## Goal
 
 Document the project decisions, local workflow, CI behaviour, and future workshop backlog.

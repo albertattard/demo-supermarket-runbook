@@ -1,3 +1,10 @@
+---
+id: TASK-003
+title: Persisted guest cart
+status: done
+depends_on:
+  - TASK-002
+---
 ## Goal
 
 Implement persisted guest carts using opaque URL tokens.

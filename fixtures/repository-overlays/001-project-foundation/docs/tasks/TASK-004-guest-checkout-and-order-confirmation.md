@@ -1,3 +1,10 @@
+---
+id: TASK-004
+title: Guest pickup checkout and order confirmation
+status: needs-grooming
+depends_on:
+  - TASK-003
+---
 ## Goal
 
 Implement the first usable guest checkout: customers with an active cart can place a **pickup** order and view its confirmation.

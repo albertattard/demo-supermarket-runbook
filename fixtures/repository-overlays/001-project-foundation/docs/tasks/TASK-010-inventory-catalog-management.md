@@ -1,3 +1,9 @@
+---
+id: TASK-010
+title: Inventory catalogue management
+status: ready
+depends_on: []
+---
 ## Goal
 
 Implement inventory user screens for managing products and categories.

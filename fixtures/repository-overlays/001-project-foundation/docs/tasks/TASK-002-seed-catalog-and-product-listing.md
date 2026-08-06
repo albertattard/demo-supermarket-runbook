@@ -1,3 +1,10 @@
+---
+id: TASK-002
+title: Seed catalogue and product listing
+status: done
+depends_on:
+  - TASK-001
+---
 ## Goal
 
 Create the initial customer-facing product catalogue backed by Flyway-seeded demo data.

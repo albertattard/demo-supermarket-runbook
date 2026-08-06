@@ -1,3 +1,9 @@
+---
+id: TASK-009
+title: Logistics order dashboard
+status: ready
+depends_on: []
+---
 ## Goal
 
 Implement the logistics order dashboard and fulfilment-specific status transitions.

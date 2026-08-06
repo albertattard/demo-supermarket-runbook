@@ -1,3 +1,9 @@
+---
+id: TASK-013
+title: UI accessibility and responsive polish
+status: ready
+depends_on: []
+---
 ## Goal
 
 Apply basic UI, accessibility, and responsive polish across the server-rendered pages.

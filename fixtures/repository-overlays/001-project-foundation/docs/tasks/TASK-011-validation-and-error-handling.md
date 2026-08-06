@@ -1,3 +1,9 @@
+---
+id: TASK-011
+title: Validation and error handling
+status: ready
+depends_on: []
+---
 ## Goal
 
 Improve validation and user-facing error handling across catalogue, cart, logistics, and inventory workflows.

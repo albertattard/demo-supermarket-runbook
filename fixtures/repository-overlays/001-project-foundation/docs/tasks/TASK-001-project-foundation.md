@@ -1,3 +1,9 @@
+---
+id: TASK-001
+title: Create Spring Boot project foundation
+status: done
+depends_on: []
+---
 ## Goal
 
 Create the baseline Spring Boot project for the Demo Supermarket application so future feature work can be built, tested, and reviewed consistently.

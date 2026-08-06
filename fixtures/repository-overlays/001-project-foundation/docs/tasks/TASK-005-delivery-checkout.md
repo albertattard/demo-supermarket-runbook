@@ -1,3 +1,10 @@
+---
+id: TASK-005
+title: Delivery checkout
+status: ready
+depends_on:
+  - TASK-004
+---
 ## Goal
 
 Extend guest checkout so customers can choose delivery, provide a valid delivery address, and receive the correct delivery price and confirmation details.
