@@ -10,7 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 class SecurityConfiguration {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(final HttpSecurity http) {
         return http
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(

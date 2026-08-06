@@ -10,7 +10,7 @@ canonical GitHub backlog as read-only context and keeps all workshop changes
 local to the clone.
 
 The application models a small supermarket that lets customers browse a product
-catalog, build a shopping bag, and place guest orders for pickup or delivery.
+catalogue, build a shopping bag, and place guest orders for pickup or delivery.
 It also includes simple internal workflows for the teams that keep the store
 running.
 
@@ -19,7 +19,7 @@ running.
 Customers can:
 
 - browse available grocery products
-- search and filter the catalog
+- search and filter the catalogue
 - add products to a shopping bag
 - place a guest order
 - choose pickup or delivery
@@ -35,8 +35,8 @@ Logistics staff can:
 Inventory staff can:
 
 - maintain product and category information
-- archive items that should no longer appear in the customer catalog
-- keep historical orders unchanged when catalog details change later
+- archive items that should no longer appear in the customer catalogue
+- keep historical orders unchanged when catalogue details change later
 
 ## Fulfillment Model
 
