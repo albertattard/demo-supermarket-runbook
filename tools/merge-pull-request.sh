@@ -68,3 +68,4 @@ while true; do
 done
 
 gh pr merge "${pr_url}" --merge --delete-branch
+git fetch --prune origin

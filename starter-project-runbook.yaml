@@ -21,11 +21,10 @@ entries:
     checks:
       - kind: java
         name: Java 25+
-        version: '25+'
+        version: 25+
         contents: |
           Java 25 or newer is required by the generated Spring Boot project.
         help: Install Java 25 or newer and make sure `java` is available on the PATH.
-
       - kind: command
         name: Git
         contents: |
@@ -35,7 +34,6 @@ entries:
         assert:
           exit_code: 0
         help: Install Git and make sure `git` is available on the PATH.
-
       - kind: command
         name: Authenticated GitHub CLI
         contents: |
@@ -67,7 +65,13 @@ entries:
 
   - type: Command
     commands: |
-      gh repo delete 'demo-supermarket-starter' --yes 2>/dev/null || true
+      repository='demo-supermarket-starter'
+      if gh repo view "${repository}" --json nameWithOwner >/dev/null 2>&1; then
+        gh repo delete "${repository}" --yes
+      fi
+
+  - type: Command
+    commands: |
       gh repo create 'demo-supermarket-starter' --public --source=. --remote=origin --push
 
   - type: Markdown
@@ -128,8 +132,6 @@ entries:
 
   - type: Command
     commands: |
-      git switch main
-      git pull --ff-only
       git switch --create '002-seed-catalog-and-product-listing'
       rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
       rm -f src/main/java/demo/supermarket/home/HomeController.java src/main/resources/templates/home.html
@@ -146,8 +148,6 @@ entries:
 
   - type: Command
     commands: |
-      git switch main
-      git pull --ff-only
       git switch --create '003-persisted-guest-cart'
       rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
       ./mvnw clean verify
