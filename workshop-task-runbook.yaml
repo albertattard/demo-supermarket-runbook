@@ -51,6 +51,13 @@ entries:
         assert:
           exit_code: 0
         help: Authenticate the GitHub CLI with an account that can fork the canonical starter repository.
+      - kind: command
+        name: Codex CLI
+        contents: |
+          - [Codex CLI](https://developers.openai.com/codex/cli) or equivalent agentic
+            tool
+        commands: codex --version
+        help: Install Codex CLI and make sure `codex` is available on your PATH.
 
   - type: Heading
     level: H2
@@ -85,16 +92,31 @@ entries:
     commands: |
       gh auth switch \
         --hostname github.com \
-        --user albertattard-gh-test
+        --user change-this-to-your-gh-username
     cleanup: |
       gh auth switch --hostname github.com --user albertattard
 
   - type: Command
     commands: |
-      gh auth status
+      echo "$(gh api user --jq '.login')"
     output:
       caption: |
-        TODO: Update the caption
+        The logged in user
+
+  - type: Markdown
+    contents: |
+      Change `git@github.runbook` to the host name you have configured in your `~/.ssh/config`.
+
+  - type: Command
+    commands: |
+      ssh -T git@github.runbook
+    output:
+      caption: |
+        The logged in user
+    assert:
+      exit_code: 1
+
+  - type: Breakpoint
 
   - type: Command
     commands: |
@@ -156,6 +178,130 @@ entries:
   - type: Command
     commands: |
       ./mvnw clean verify
+
+  - type: Heading
+    level: H2
+    title: Understand the project
+
+  - type: Markdown
+    contents: |
+      One especially useful prompt is to make Codex act as an **interactive guide**:
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox read-only \
+        --output-last-message '/tmp/codex-onboarding-guide.md' \
+        - <<'EOF' > '/tmp/codex-onboarding-guide.log' 2>&1
+      Act as my technical onboarding guide for this repository. Don’t overwhelm me with a complete codebase explanation. First establish the high-level mental model, then take me through one important subsystem at a time. At each stage, point me to specific files to inspect and give me 2–3 questions I should be able to answer from them. When useful, trace actual code paths rather than relying on README documentation.
+      EOF
+    cleanup: |
+      rm -f '/tmp/codex-onboarding-guide.md'
+      rm -f '/tmp/codex-onboarding-guide.log'
+    timeout: 5 minutes
+
+  - type: Markdown
+    contents: |
+      The model's response
+
+  - type: DisplayFile
+    path: /tmp/codex-onboarding-guide.md
+
+  - type: Markdown
+    contents: |
+      A good way to use Codex for onboarding is to move from **map → architecture → execution → deep dive → contribution**. These prompts are designed so Codex can inspect the repository rather than just explain concepts generically.
+
+      1. **Get the 10-minute overview**
+
+         > Give me a practical onboarding overview of this repository. Explain what the project does, who/what consumes it, the major components, the main technologies/frameworks, and how the pieces fit together. Point me to the 5–10 files or directories I should understand first, and explain why each matters.
+
+      2. **Build a mental model of the architecture**
+
+         > Analyze this codebase and explain its architecture to a new engineer. Identify the major modules/services/layers, their responsibilities, dependencies between them, important interfaces, and where state/data is stored. Trace one representative request or workflow end-to-end through the system.
+
+      3. **Explain the repository structure**
+
+         > Walk me through the repository structure. For each important top-level directory, explain its purpose, what kinds of code live there, and whether I need to understand it immediately or can ignore it initially. Highlight generated code, third-party code, configuration, tests, build tooling, and deployment infrastructure.
+
+      4. **Figure out how to run it**
+
+         > Determine how I can build and run this project locally from a clean checkout. Inspect the repository rather than guessing. Give me the commands in order, explain prerequisites and environment variables, and point to the files where you found this information. Also explain how to run the tests and common developer workflows.
+
+      5. **Find the important entry points**
+
+         > Identify the main entry points into this application. Show me where execution starts and trace what happens during startup. Then identify the main runtime paths an engineer working on this project is likely to encounter.
+
+      6. **Teach me the domain**
+
+         > Teach me the domain model behind this project using the code as evidence. What are the most important concepts, entities, abstractions, and terminology? For each concept, point me to representative classes/files/functions. Explain relationships between them in plain English.
+
+      7. **Understand the data flow**
+
+         > Pick one important user action/API operation/workflow and trace it end-to-end through the codebase. Start at the external entry point and follow it through validation, business logic, persistence/external calls, and the response. Include file names and key functions/classes at each step.
+
+      8. **Understand the tests**
+
+         > Explain the testing strategy of this repository. Identify the test frameworks, unit/integration/end-to-end tests, fixtures and mocks, and how tests are organized. Show me 3 representative tests that would teach me the most about how this system is intended to behave.
+
+      9. **Find the risky/complex parts**
+
+         > Analyze the repository and identify the 5 areas that are hardest or riskiest for a new engineer to modify. For each, explain why it is complex, what assumptions or invariants I should understand, what tests protect it, and what mistakes a newcomer could easily make.
+
+      10. **Give me an onboarding curriculum**
+
+         > Create a 2-hour onboarding plan for this repository. Assume I’m a new engineer who needs to become productive quickly. Give me an ordered sequence of files, concepts, and code paths to study. For each step, tell me what question I should be able to answer before moving on. Avoid making me read the entire repository.
+
+  - type: Heading
+    level: H2
+    title: Create the `AGENTS.md` file
+
+  - type: Markdown
+    contents: |
+      Create the `AGENTS.md` file
+
+      You can use the following TUI slash command when working with the OpenAI Codex desktop application
+
+      > /init
+
+      The TUI slash command does not work from the command line. Therefore, you need to be a bit more prescriptive.
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox workspace-write \
+        --output-last-message '/tmp/codex-create-agents_md-file.md' \
+        - <<'EOF' > '/tmp/codex-create-agents_md-file.log' 2>&1
+      Create a concise `AGENTS.md` in the repository root with durable guidance for future agents. Keep it specific to this Java/Maven/Spring Boot application. Do not change any other files. Do not only describe the file: create it. Finally, verify that `AGENTS.md` exists.
+      EOF
+    cleanup: |
+      rm -f '/tmp/codex-create-agents_md-file.md'
+      rm -f '/tmp/codex-create-agents_md-file.log'
+    timeout: 5 minutes
+
+  - type: Markdown
+    contents: |
+      The newly created `AGENTS.md` file
+
+  - type: DisplayFile
+    path: demo-supermarket/AGENTS.md
+
+  - type: Markdown
+    contents: |
+      Commit the changes once ready
+
+  - type: Command
+    commands: |
+      git switch --create '004-create-agents_md-file'
+      git add .
+      git commit --message 'Create AGENTS.md file' \
+                 --message 'Add repository guidance for coding agents'
+      git push --set-upstream origin '004-create-agents_md-file'
+      gh pr create \
+        --title 'Create AGENTS.md file' \
+        --body 'Add repository guidance for coding agents'
+    timeout: 1 minutes
 
   - type: Breakpoint
 

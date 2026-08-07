@@ -63,7 +63,7 @@ entries:
       cp '../fixtures/.gitignore' .
       git init
       git add .
-      git commit -m 'Initial commit'
+      git commit --message 'Initial commit'
 
   - type: Command
     commands: |
@@ -119,7 +119,10 @@ entries:
       git add .
       git commit --message 'Create Spring Boot project foundation'
       git push --set-upstream origin '001-project-foundation'
-      gh pr create --title 'Create Spring Boot project foundation' --body-file '../fixtures/pr/PR-001-project-foundation.md' > '../fixtures/pr/PR-001-project-foundation.out'
+      gh pr create \
+        --title 'Create Spring Boot project foundation' \
+        --body-file '../fixtures/pr/PR-001-project-foundation.md' \
+        > '../fixtures/pr/PR-001-project-foundation.out'
       ../tools/merge-pull-request.sh '../fixtures/pr/PR-001-project-foundation.out'
     timeout: 15 minutes
 
@@ -134,7 +137,10 @@ entries:
       git add .
       git commit --message 'Seed catalog categories and products'
       git push --set-upstream origin '002-seed-catalog-and-product-listing'
-      gh pr create --title 'Seed catalog categories and products' --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
+      gh pr create \
+        --title 'Seed catalog categories and products' \
+        --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' \
+        > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
       ../tools/merge-pull-request.sh '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
     timeout: 15 minutes
 
@@ -148,6 +154,9 @@ entries:
       git add .
       git commit --message 'Implement persisted guest carts'
       git push --set-upstream origin '003-persisted-guest-cart'
-      gh pr create --title 'Implement persisted guest carts' --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' > '../fixtures/pr/PR-003-persisted-guest-cart.out'
+      gh pr create \
+        --title 'Implement persisted guest carts' \
+        --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' \
+        > '../fixtures/pr/PR-003-persisted-guest-cart.out'
       ../tools/merge-pull-request.sh '../fixtures/pr/PR-003-persisted-guest-cart.out'
     timeout: 15 minutes

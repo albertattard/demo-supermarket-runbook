@@ -9,5 +9,5 @@ sw format --input-file workshop-task-runbook.yaml
 sw run \
   --input-file workshop-task-runbook.yaml \
   --working-directory "${PARENT}" \
-  --output-file "${REPOSITORY}/RUNBOOK.md" \
+  --output-file "runbooks/README.md" \
   --verbose
