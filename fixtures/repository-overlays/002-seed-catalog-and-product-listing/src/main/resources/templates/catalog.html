@@ -14,23 +14,23 @@
         <p class="eyebrow">Fresh demo data</p>
         <h1>Demo Supermarket</h1>
       </div>
-      <p class="catalog-summary" th:text="${catalog.products().size()} + ' products available'">0 products available</p>
+      <p class="catalog-summary" th:text="${catalog.products.size()} + ' products available'">0 products available</p>
     </header>
 
     <form class="catalog-filters" action="/products" method="get">
       <label class="filter-field" for="q">
         <span>Search</span>
-        <input id="q" name="q" type="search" placeholder="Search products" th:value="${catalog.search()}">
+        <input id="q" name="q" type="search" placeholder="Search products" th:value="${catalog.search}">
       </label>
 
       <label class="filter-field" for="category">
         <span>Category</span>
         <select id="category" name="category">
           <option value="">All categories</option>
-          <option th:each="category : ${catalog.categories()}"
+          <option th:each="category : ${catalog.categories}"
                   th:value="${category.id()}"
                   th:text="${category.name()}"
-                  th:selected="${category.id().equals(catalog.selectedCategoryId())}">
+                  th:selected="${category.id().equals(catalog.selectedCategoryId)}">
             Bakery
           </option>
         </select>
@@ -45,7 +45,7 @@
     </section>
 
     <section class="product-grid" aria-label="Products" th:if="${catalog.hasProducts()}">
-      <article class="product-card" th:each="product : ${catalog.products()}">
+      <article class="product-card" th:each="product : ${catalog.products}">
         <img class="product-image"
              th:src="${product.displayImagePath()}"
              th:alt="${product.name()}">

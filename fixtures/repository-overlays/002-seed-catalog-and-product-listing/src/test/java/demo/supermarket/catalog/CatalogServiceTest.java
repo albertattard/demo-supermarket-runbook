@@ -16,32 +16,32 @@ class CatalogServiceTest {
     void treatsPercentageAsLiteralSearchText() {
         final CatalogView catalog = catalogService.findCatalog(null, "%");
 
-        assertThat(catalog.search()).isEqualTo("%");
-        assertThat(catalog.products()).isEmpty();
+        assertThat(catalog.getSearch()).isEqualTo("%");
+        assertThat(catalog.getProducts()).isEmpty();
     }
 
     @Test
     void treatsUnderscoreAsLiteralSearchText() {
         final CatalogView catalog = catalogService.findCatalog(null, "_");
 
-        assertThat(catalog.search()).isEqualTo("_");
-        assertThat(catalog.products()).isEmpty();
+        assertThat(catalog.getSearch()).isEqualTo("_");
+        assertThat(catalog.getProducts()).isEmpty();
     }
 
     @Test
     void treatsBackslashAsLiteralSearchText() {
         final CatalogView catalog = catalogService.findCatalog(null, "\\");
 
-        assertThat(catalog.search()).isEqualTo("\\");
-        assertThat(catalog.products()).isEmpty();
+        assertThat(catalog.getSearch()).isEqualTo("\\");
+        assertThat(catalog.getProducts()).isEmpty();
     }
 
     @Test
     void searchesByNameOrDescriptionCaseInsensitivelyAfterTrimming() {
         final CatalogView catalog = catalogService.findCatalog(null, "  TOMATOES  ");
 
-        assertThat(catalog.search()).isEqualTo("TOMATOES");
-        assertThat(catalog.products())
+        assertThat(catalog.getSearch()).isEqualTo("TOMATOES");
+        assertThat(catalog.getProducts())
             .extracting(CatalogProduct::name)
             .containsExactly("Cherry tomatoes", "Chopped tomatoes");
     }
@@ -50,7 +50,7 @@ class CatalogServiceTest {
     void combinesCategoryAndSearchFilters() {
         final CatalogView catalog = catalogService.findCatalog(6L, "tomatoes");
 
-        assertThat(catalog.products())
+        assertThat(catalog.getProducts())
             .extracting(CatalogProduct::name)
             .containsExactly("Chopped tomatoes");
     }

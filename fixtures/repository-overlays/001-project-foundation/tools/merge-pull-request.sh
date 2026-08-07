@@ -68,4 +68,33 @@ while true; do
 done
 
 gh pr merge "${pr_url}" --merge --delete-branch
-git fetch --prune origin
+
+merge_deadline=$((SECONDS + 600))
+while (( SECONDS < merge_deadline )); do
+  state="$(gh pr view "${pr_url}" --json state --jq '.state')"
+
+  case "${state}" in
+    MERGED)
+      echo "Pull request #${pr_number} merged."
+      git fetch --prune origin
+      git switch main
+      git pull --ff-only origin main
+      exit 0
+      ;;
+    OPEN)
+      echo "Waiting for pull request #${pr_number} to merge."
+      sleep 10
+      ;;
+    CLOSED)
+      echo "Pull request #${pr_number} closed without merging." >&2
+      exit 1
+      ;;
+    *)
+      echo "Unexpected state for pull request #${pr_number}: ${state}" >&2
+      exit 1
+      ;;
+  esac
+done
+
+echo "Timed out waiting for pull request #${pr_number} to merge." >&2
+exit 1
