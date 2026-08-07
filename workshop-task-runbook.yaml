@@ -375,6 +375,14 @@ entries:
       rm -f "${pr_url_file}"
     timeout: 15 minutes
 
+  - type: Heading
+    level: H2
+    title: Using Agents
+
+  - type: Markdown
+    contents: |
+      TODO: Update description!
+
   - type: Command
     commands: |
       codex exec \
@@ -407,8 +415,7 @@ entries:
            - why the change improves maintainability;
            - the test commands run and their results.
       
-      Do not run `git push` or `gh pr create`. Stop after the local commit and
-      writing the pull-request description.
+      Do not run `git push` or `gh pr create`. Stop after the local commit and writing the pull-request description.
       EOF
       
       branch="$(git branch --show-current)"     
@@ -437,3 +444,11 @@ entries:
         --title "$title" \
         --body-file 'target/codex-modernisation-pr.md'
     timeout: 15 minutes
+
+  - type: Markdown
+    contents: |
+      Review the PR
+
+      ![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
+
+      This can be easily captured in a script and executed on a scheduler.
