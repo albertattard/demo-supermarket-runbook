@@ -234,73 +234,82 @@ EOF
 
 The model's response
 
-```markdown
-## Stage 1 — High-level mental model
+~~~markdown
+This is a small, server-rendered Spring Boot supermarket—not a REST API plus SPA.
 
-This is a small server-rendered modular monolith:
+The high-level mental model is:
 
-- Spring MVC controllers handle HTTP requests.
-- Feature services contain business/application logic.
-- Spring Data JPA repositories persist to an in-memory H2 database.
-- Flyway owns the schema; Hibernate only validates it.
-- Thymeleaf renders HTML, while HTMX replaces selected fragments.
-- Most customer routes are public. Guest carts are identified by an opaque token embedded in the URL—not by login or browser session.
-
-The two current feature areas are `catalog` and `cart`. Their boundaries are useful but porous: each controller calls services from both packages. Don’t mistake the package layout for strict domain isolation.
-
-Start with these files:
-
-- [pom.xml](/private/tmp/demo-supermarket/pom.xml) — Java 25, Spring Boot, JPA, Thymeleaf, HTMX, and test stack.
-- [application.yml](/private/tmp/demo-supermarket/src/main/resources/application.yml) — ephemeral H2 database and Flyway/Hibernate responsibilities.
-- [CatalogController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogController.java:21) — the two catalog modes: anonymous and cart-scoped.
-- [SecurityConfiguration.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/security/SecurityConfiguration.java:13) — public surface area.
-
-You should be able to answer:
-
-1. What state disappears when the application restarts, and why?
-2. What changes in the model and URL when browsing with an existing cart?
-3. Does knowing a cart URL effectively grant access to that cart?
-
-## Stage 2 — Guest cart subsystem
-
-This is the best first subsystem because it crosses every layer and exposes the application’s main design choices.
-
-### Trace: first “Add to cart”
-
-1. The catalog form posts a product slug to `/cart/start` in [catalog.html](/private/tmp/demo-supermarket/src/main/resources/templates/catalog.html:88).
-2. [CartController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartController.java:23) calls `CartService.startCart(...)`.
-3. [CartService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartService.java:44) validates the product, creates a cart with a generated token, then adds the initial product.
-4. Token creation is flushed immediately and retried on uniqueness collisions at [CartService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartService.java:53).
-5. The controller returns HTTP `303` to `/cart/{token}/products`, preserving the cart identity in the URL.
-6. [CatalogController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogController.java:29) then loads both catalog and cart state for the resulting page.
-
-A subtle point: creating the cart and adding its initial item happen in separate transactions. That makes collision retry clean, but a failure during the second transaction can leave an empty cart behind.
-
-### Trace: subsequent quantity change
-
-1. HTMX posts to `/cart/{token}/items` from [catalog.html](/private/tmp/demo-supermarket/src/main/resources/templates/catalog.html:131).
-2. The controller delegates at [CartController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartController.java:43).
-3. The service obtains a pessimistic write lock through [CartRepository.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartRepository.java:16), preventing concurrent increments from overwriting each other.
-4. The `Cart` aggregate changes its child collection in [Cart.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/Cart.java:66).
-5. `CartService` calculates line totals and subtotal into an immutable view at [CartService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartService.java:151).
-6. HTMX receives only the affected product control plus an out-of-band cart-link update. Without HTMX, the same mutation uses a normal `303` redirect.
-
-The database independently enforces the important invariants—unique token, one line per cart/product, and quantity `1–99`—in [V3__guest_carts.sql](/private/tmp/demo-supermarket/src/main/resources/db/migration/V3__guest_carts.sql:1).
-
-Inspect these tests after the production path:
-
-- [CartControllerTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/cart/CartControllerTest.java) — HTTP, validation, redirects, fragments, and not-found behavior.
-- [CartServiceConcurrencyTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/cart/CartServiceConcurrencyTest.java) — why pessimistic locking exists.
-- [CartServiceTokenRetryTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/cart/CartServiceTokenRetryTest.java) — token collision behavior.
-
-You should now be able to answer:
-
-1. Why does an HTMX request receive HTML rather than JSON, and what happens without the `HX-Request` header?
-2. Which invariants exist in both Java and SQL, and why is that duplication intentional?
-3. Why does `updateQuantity` silently do nothing for a valid product absent from the cart, while an unknown product returns `404`?
-
-The natural next subsystem is the catalog query path: filtering, SQL wildcard escaping, entity-to-view mapping, and avoiding lazy-loading problems.
+```text
+Browser
+  → Spring MVC controller
+  → application service / transaction boundary
+  → Spring Data JPA repository
+  → in-memory H2 database
+  → view model
+  → Thymeleaf HTML response
 ```
+
+A few important constraints:
+
+- `catalog` is read-heavy: filtering, searching, sorting, and presenting products.
+- `cart` owns guest-cart creation and mutations. A cart is identified by a token embedded in the URL, not by a login, session, or cookie.
+- Thymeleaf renders full pages; HTMX selectively replaces fragments during cart mutations.
+- Flyway owns the schema and seed data. Hibernate only validates it.
+- The database is in-memory, so application restarts discard carts.
+- The package boundary is pragmatic rather than strict: catalog depends on cart state, and cart sometimes asks catalog for presentation data.
+
+The likely onboarding sequence is catalog → cart domain and persistence → HTMX response handling → error/security boundaries → test strategy.
+
+## Stage 1: Trace catalog browsing
+
+Start with this actual request:
+
+```text
+GET /products?category=6&q=tomatoes
+```
+
+Inspect these files in order:
+
+1. [CatalogController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogController.java:21)  
+   Finds the HTTP entry points and places one `CatalogView` in the model.
+
+2. [CatalogService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogService.java:19)  
+   Normalizes input, escapes SQL wildcard characters, queries categories/products, and converts entities into presentation objects.
+
+3. [ProductRepository.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/ProductRepository.java:12)  
+   Contains the real filtering and ordering rules. Notice the `join fetch`: that matters because open-in-view is disabled.
+
+4. [CatalogProduct.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogProduct.java:5) and [CatalogView.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogView.java:5)  
+   These are deliberately separate from JPA entities. Formatting and fallback-image behavior live here.
+
+5. [catalog.html](/private/tmp/demo-supermarket/src/main/resources/templates/catalog.html:39)  
+   Follow how `catalog.search`, `catalog.categories`, and `catalog.products` become HTML. Stop around line 80 for now; the later cart controls belong to the next subsystem.
+
+6. [CatalogControllerTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/catalog/CatalogControllerTest.java:37)  
+   This is a concise executable specification of visibility, filtering, ordering, and empty-state behavior.
+
+The code path is:
+
+```text
+CatalogController.catalog()
+  → CatalogService.findCatalog()
+    → CategoryRepository.findByActiveTrueOrderByNameAsc()
+    → ProductRepository.findActiveCatalogProducts(6, "%tomatoes%")
+    → CatalogView
+  → catalog.html
+  → HTTP 200 HTML
+```
+
+Questions you should be able to answer:
+
+1. Why does `q=%` search for a literal percent sign instead of matching every product?
+2. Which layer guarantees that inactive products and products in inactive categories remain hidden?
+3. Why would removing `join fetch product.category` be risky when `spring.jpa.open-in-view` is `false`?
+
+One candid architectural observation: `CatalogService.findActiveProduct()` throws a bare `NoSuchElementException`, while cart lookup uses domain-specific exceptions. That inconsistency is worth remembering; it may become an error-handling defect as the application grows.
+
+Once you’ve traced this path, send me your answers—or simply say “next”—and we’ll move to guest-cart creation and persistence.
+~~~
 
 A good way to use Codex for onboarding is to move from **map → architecture → execution → deep dive → contribution**. These prompts are designed so Codex can inspect the repository rather than just explain concepts generically.
 
@@ -367,36 +376,30 @@ EOF
 The newly created `AGENTS.md` file
 
 ```markdown
-# Agent Guide
+# Repository Guide
 
 ## Project shape
 
-- This is a Java 25, Maven Wrapper, Spring Boot 4.1 application. Use `./mvnw`, not a system Maven installation.
-- Production code lives under `src/main/java/demo/supermarket`, organized by feature (`catalog`, `cart`, `security`). Keep new code in the owning feature rather than creating generic layers.
+- This is a Java 25, Maven Wrapper, Spring Boot 4.1 application. Use `./mvnw`, not a globally installed Maven.
+- Production code lives under `src/main/java/demo/supermarket`, grouped by feature (`catalog`, `cart`, `security`). Keep new code in the owning feature package.
 - The UI is server-rendered with Spring MVC, Thymeleaf, and HTMX. Templates are in `src/main/resources/templates`; static assets are in `src/main/resources/static`.
-- Persistence uses Spring Data JPA, an in-memory H2 database in PostgreSQL mode, and Flyway migrations in `src/main/resources/db/migration`.
+- Persistence uses Spring Data JPA and Flyway against H2 in PostgreSQL compatibility mode. Schema migrations live in `src/main/resources/db/migration`.
 
-## Change conventions
+## Change guidelines
 
-- Follow the existing constructor-injection, package-private collaborator, immutable view/record, and `final`-where-practical style.
-- Keep controllers focused on HTTP concerns and business rules in services/domain objects. Use repositories only for persistence access.
-- Treat existing Flyway migrations as immutable. Add a correctly sequenced `V<N>__description.sql` migration for schema or seed-data changes, and keep JPA mappings compatible with `ddl-auto: validate`.
-- Preserve Spring Security and CSRF behavior. State-changing MVC/HTMX requests must remain protected, and tests should submit CSRF tokens.
-- Preserve opaque cart tokens and server-owned pricing, totals, quantities, and product state; never trust client-supplied identifiers or calculated values without validation.
-- Add or update focused tests with behavior changes. Prefer MockMvc/service tests for backend behavior and extend the page-object-based E2E suite only for important browser journeys.
+- Preserve the existing controller -> service -> repository separation. Keep business rules in services rather than controllers or templates.
+- Prefer focused changes that follow the surrounding Java style; do not introduce frameworks, abstractions, or dependencies without a concrete need.
+- Treat committed Flyway migrations as immutable. Add the next versioned migration for schema or seed-data changes, and keep JPA mappings consistent with it.
+- Keep public routes and access rules aligned with `SecurityConfiguration`; add security coverage when exposing a new endpoint.
+- Do not edit generated content under `target/` or checked-in product images unless the task explicitly requires it.
 
 ## Verification
 
-- Run fast tests with `./mvnw test`.
-- Run the full build, including tagged Playwright E2E tests, with `./mvnw verify`. This may install Chromium and system dependencies during `pre-integration-test`.
-- For narrow iteration, use `./mvnw test -Dtest=ClassName` before the full relevant suite.
-- Do not commit generated `target/` output or Playwright browser binaries.
-
-## Working discipline
-
-- Read the nearby production code, tests, templates, and latest migration before editing; follow established naming and response patterns.
-- Keep changes scoped to the request. Do not silently rewrite unrelated code or overwrite existing user changes.
-- Challenge requirements that conflict with domain invariants, security, migrations, or verified behavior; state the conflict and propose a concrete alternative.
+- Put tests under the matching package in `src/test/java`; use focused MVC/service tests for behavior close to the change.
+- Run a focused test while iterating: `./mvnw test -Dtest=ClassName`.
+- Run the unit/integration suite before handoff: `./mvnw test`.
+- Run `./mvnw verify` when changing browser-visible flows or the end-to-end harness. This runs Playwright-tagged tests and may install Chromium.
+- If verification cannot run, report the exact command and blocker; do not claim success from compilation alone.
 ```
 
 Commit the changes once ready
@@ -428,3 +431,74 @@ cat "${pr_url_file}"
 ./tools/merge-pull-request.sh "${pr_url_file}"
 rm -f "${pr_url_file}"
 ```
+
+## Using Agents
+
+TODO: Update description!
+
+```shell
+codex exec \
+  --ephemeral \
+  --sandbox workspace-write \
+  --output-last-message '/tmp/codex-modernisation-task.md' \
+  - <<'EOF' > '/tmp/codex-modernisation-task.log' 2>&1
+Find exactly one worthwhile Java modernisation opportunity in this codebase and implement it in a focused commit.
+
+Constraints:
+  - Keep the project on Java 25. Do not lower the Java version or alter the runtime/toolchain baseline.
+  - Look for code that is unnecessarily Java-8-style or older in expression: for example mutable JavaBean-style value objects, boilerplate equals/hashCode/toString, manual collection processing, nullable control flow, or verbose conditional logic.
+  - Choose one cohesive opportunity only. Do not perform a broad refactor or mix unrelated cleanup into the change.
+  - Preserve observable behaviour, public routes, persistence behaviour, and existing test intent.
+  - Prefer a clear Java 25-era idiom when it materially improves the code. Do not modernise merely for novelty.
+  - Add or adjust tests where needed to prove the behaviour remains correct.
+  - Do not overwrite, revert, stage, or commit unrelated existing changes.
+
+Process:
+  1. Inspect the codebase and identify the best single candidate.
+  2. Briefly explain the candidate and the intended modernisation before editing.
+  3. Create a branch named `codex/modernise-<short-description>`.
+  4. Implement the focused change and commit it with a clear message.
+  5. Run `./mvnw test` and `./mvnw verify`; fix any failures caused by your change.
+  6. Review the final diff for scope and correctness.
+  7. Write the proposed pull-request description to
+     `target/codex-modernisation-pr.md`. It must state:
+     - the legacy-style code found;
+     - the Java 25 idiom adopted;
+     - why the change improves maintainability;
+     - the test commands run and their results.
+
+Do not run `git push` or `gh pr create`. Stop after the local commit and writing the pull-request description.
+EOF
+
+branch="$(git branch --show-current)"
+case "$branch" in
+  codex/modernise-*) ;;
+  *)
+    echo "Expected a codex/modernise-* branch, but found: $branch" >&2
+    exit 1
+    ;;
+esac
+
+if [ ! -s 'target/codex-modernisation-pr.md' ]; then
+  echo 'The agent did not create a pull-request description.' >&2
+  exit 1
+fi
+
+git push --set-upstream origin "$branch"
+
+repository="$(git remote get-url origin | sed -E 's#^.*[:/]([^/]+/[^/]+)\.git$#\1#')"
+title="$(git log -1 --format=%s)"
+
+gh pr create \
+  --repo "$repository" \
+  --base main \
+  --head "$branch" \
+  --title "$title" \
+  --body-file 'target/codex-modernisation-pr.md'
+```
+
+Review the PR
+
+![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
+
+This can be easily captured in a script and executed on a scheduler.
