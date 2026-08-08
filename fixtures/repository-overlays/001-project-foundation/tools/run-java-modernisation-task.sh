@@ -2,12 +2,33 @@
 
 set -euo pipefail
 
+# Check if a modernisation PR already exists and exit if so. We don't want to
+# create too many PRs when no-one is looking into them.
+repository="$(git remote get-url origin | sed -E 's#^.*[:/]([^/]+/[^/]+)\.git$#\1#')"
+existing_prs="$(gh pr list \
+  --repo "$repository" \
+  --state open \
+  --json url,headRefName \
+  --jq '.[] | select(.headRefName | startswith("codex/modernise-")) | .url')"
+
+if [[ -n "$existing_prs" ]]; then
+  echo "An open modernisation PR already exists:"
+  echo "$existing_prs"
+  exit 0
+fi
+
+
+outcome_file='target/codex-modernisation-outcome'
+pr_body_file='target/codex-modernisation-pr.md'
+no_improvement_report_file='target/codex-modernisation-no-improvement.md'
+rm -f "${outcome_file}" "${pr_body_file}" "${no_improvement_report_file}"
+
 codex exec \
   --ephemeral \
   --sandbox workspace-write \
   --output-last-message '/tmp/codex-modernisation-task.md' \
   - <<'EOF' > '/tmp/codex-modernisation-task.log' 2>&1
-Find exactly one worthwhile Java modernisation opportunity in this codebase and implement it in a focused commit.
+Look for one worthwhile Java modernisation opportunity in this codebase and, only if one exists, implement it in a focused commit.
 
 Constraints:
   - Keep the project on Java 25. Do not lower the Java version or alter the runtime/toolchain baseline.
@@ -20,20 +41,34 @@ Constraints:
 
 Process:
   1. Inspect the codebase and identify the best single candidate.
-  2. Briefly explain the candidate and the intended modernisation before editing.
-  3. Create a branch named `codex/modernise-<short-description>`.
-  4. Implement the focused change and commit it with a clear message.
-  5. Run `./mvnw test` and `./mvnw verify`; fix any failures caused by your change.
-  6. Review the final diff for scope and correctness.
-  7. Write the proposed pull-request description to
-     `target/codex-modernisation-pr.md`. It must state:
+  2. If no candidate materially improves the code, do not create or switch branches, modify source files, commit, push, or create a pull request. Write a concise explanation of the assessment to `target/codex-modernisation-no-improvement.md`, write exactly `no-improvement` to `target/codex-modernisation-outcome`, and stop successfully.
+  3. Otherwise, briefly explain the candidate and the intended modernisation before editing.
+  4. Create a branch named `codex/modernise-<short-description>`.
+  5. Implement the focused change and commit it with a clear message.
+  6. Run `./mvnw test` and `./mvnw verify`; fix any failures caused by your change.
+  7. Review the final diff for scope and correctness.
+  8. Write the proposed pull-request description to `target/codex-modernisation-pr.md`. It must state:
      - the legacy-style code found;
      - the Java 25 idiom adopted;
      - why the change improves maintainability;
      - the test commands run and their results.
+     Then write exactly `modernised` to `target/codex-modernisation-outcome`.
 
 Do not run `git push` or `gh pr create`. Stop after the local commit and writing the pull-request description.
 EOF
+
+outcome="$(tr -d '\r\n' < "$outcome_file" 2>/dev/null || true)"
+case "$outcome" in
+  no-improvement)
+    echo 'No worthwhile Java modernisation opportunity was found; no pull request was created.'
+    exit 0
+    ;;
+  modernised) ;;
+  *)
+    echo "Expected $outcome_file to contain 'modernised' or 'no-improvement', but found: ${outcome:-<missing>}" >&2
+    exit 1
+    ;;
+esac
 
 branch="$(git branch --show-current)"
 case "$branch" in
@@ -44,7 +79,7 @@ case "$branch" in
     ;;
 esac
 
-if [ ! -s 'target/codex-modernisation-pr.md' ]; then
+if [ ! -s "$pr_body_file" ]; then
   echo 'The agent did not create a pull-request description.' >&2
   exit 1
 fi
@@ -59,4 +94,4 @@ gh pr create \
   --base main \
   --head "$branch" \
   --title "$title" \
-  --body-file 'target/codex-modernisation-pr.md'
+  --body-file "$pr_body_file"
