@@ -154,6 +154,7 @@ entries:
       gh repo fork albertattard/demo-supermarket-starter \
         --fork-name demo-supermarket \
         --clone
+    timeout: 5 minutes
 
   - type: ChangeDirectory
     path: demo-supermarket
@@ -247,6 +248,8 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox read-only \
+        --model 'gpt-5.6-luna' \
+        --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-onboarding-guide.md' \
         - <<'EOF' > '/tmp/codex-onboarding-guide.log' 2>&1
       Act as my technical onboarding guide for this repository. Don’t overwhelm me with a complete codebase explanation. First establish the high-level mental model, then take me through one important subsystem at a time. At each stage, point me to specific files to inspect and give me 2–3 questions I should be able to answer from them. When useful, trace actual code paths rather than relying on README documentation.
@@ -326,6 +329,8 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox workspace-write \
+        --model 'gpt-5.6-terra' \
+        --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-create-agents_md-file.md' \
         - <<'EOF' > '/tmp/codex-create-agents_md-file.log' 2>&1
       Create a concise `AGENTS.md` in the repository root with durable guidance for future agents. Keep it specific to this Java/Maven/Spring Boot application. Do not change any other files. Do not only describe the file: create it. Finally, verify that `AGENTS.md` exists.
@@ -377,7 +382,7 @@ entries:
 
   - type: Heading
     level: H2
-    title: Using Agents
+    title: A Simple Agentic Workflow
 
   - type: Markdown
     contents: |
@@ -394,3 +399,89 @@ entries:
       ![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
 
       This can be easily captured in a script and executed on a scheduler.
+
+  - type: Heading
+    level: H2
+    title: Skills
+
+  - type: Markdown
+    contents: |
+      TODO: Update description!
+
+  - type: Command
+    commands: |
+      tree --dirsfirst --sort=name '.agents/skills'
+    output:
+      caption: |
+        The repository level skills
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      TODO: Update description!
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox read-only \
+        --model 'gpt-5.6-luna' \
+        --config 'model_reasoning_effort="low"' \
+        --output-last-message '/tmp/codex-next-task.md' \
+        - <<'EOF' > '/tmp/codex-next-task.log' 2>&1
+      Which issue should we work on next?
+      EOF
+    cleanup: |
+      rm -f '/tmp/codex-next-task.md'
+      rm -f '/tmp/codex-next-task.log'
+    timeout: 5 minutes
+
+  - type: Markdown
+    contents: |
+      TODO: Update description!
+
+  - type: DisplayFile
+    path: /tmp/codex-next-task.md
+
+  - type: Markdown
+    contents: |
+      TODO: Update description!
+      > Use $review-task-readiness on @docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md and update it to record my answers.
+
+      This is a rehearsed example and all open questions are answered in advanced to enable unattended runs.
+
+  - type: Command
+    commands: |
+      # Download the answers
+      answers="$(
+        curl \
+          --location \
+          --silent \
+          --fail \
+          'https://github.com/albertattard/demo-supermarket-runbook/raw/refs/heads/main/fixtures/prompts/TASK-004-readiness-decisions.md'
+      )"
+
+      # Construct the prompt
+      codex_prompt="$(cat <<EOF
+      Use \$review-task-readiness on docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md and update it to record my answers.
+
+      Read the readiness decisions below before reviewing TASK-004. Treat every listed answer as settled; do not re-ask those questions.
+
+      <readiness-decisions>
+      ${answers}
+      </readiness-decisions>
+      EOF
+      )"
+
+      # Call the model
+      codex exec \
+        --ephemeral \
+        --sandbox workspace-write \
+        --model 'gpt-5.6-terra' \
+        --config 'model_reasoning_effort="medium"' \
+        --output-last-message '/tmp/codex-review-next-task-readiness.md' \
+        "${codex_prompt}" > '/tmp/codex-review-next-task-readiness.log' 2>&1
+    cleanup: |
+      rm -f '/tmp/codex-review-next-task-readiness.md'
+      rm -f '/tmp/codex-review-next-task-readiness.log'
+    timeout: 5 minutes
