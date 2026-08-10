@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Task Readiness"
+  short_description: "Assess whether a task is ready for implementation"
+  default_prompt: "Use $review-task-readiness to assess this task before implementation."
