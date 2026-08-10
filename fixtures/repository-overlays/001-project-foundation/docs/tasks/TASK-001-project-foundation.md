@@ -8,7 +8,7 @@ depends_on: []
 
 Create the baseline Spring Boot project for the Demo Supermarket application so future feature work can be built, tested, and reviewed consistently.
 
-This issue establishes the build, application skeleton, configuration, database migration setup, CI workflow, and basic documentation. It should not implement supermarket business features yet.
+This issue establishes the build, application skeleton, configuration, database migration setup, CI workflow, repository-local Codex skills, and basic documentation. It should not implement supermarket business features yet.
 
 ## Context
 
@@ -68,6 +68,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - Add a minimal Playwright smoke test that opens `/` and verifies the initial home page renders.
 - Add Maven Wrapper pinned to Apache Maven 3.9.16.
 - Add `.gitignore` and `.editorconfig`.
+- Add the repository-local Codex skills under `.agents/skills` so contributors share the same issue-readiness, implementation, orchestration, and implementation-review workflows.
 - Add GitHub Actions workflow running `./mvnw verify`.
 - Use `oracle-actions/setup-java` to install Oracle Java 25 in GitHub Actions.
 - Add initial `README.md` with setup, run, and test instructions.
@@ -125,6 +126,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - Maven Wrapper files are committed, documented, and pinned to Apache Maven 3.9.16.
 - `.gitignore` excludes build outputs, IDE metadata, and local runtime files that should not be committed.
 - `.editorconfig` defines consistent formatting basics for the repository.
+- Repository-local Codex skills are committed under `.agents/skills` for reviewing issue readiness, implementing issues, orchestrating alternative implementations, and reviewing implementations.
 - README explains the project purpose, stack, how to run/test it, and that the first `./mvnw verify` run may download the Playwright Chromium browser binary.
 - `docs/adrs/README.md` records the key architectural decisions made so far.
 - The application does not require Node, npm, Docker, or an external database to run locally.
