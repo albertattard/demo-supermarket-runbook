@@ -54,14 +54,12 @@ entries:
 
   - type: Command
     commands: |
-      cp '../fixtures/README.md' .
-      cp '../fixtures/LICENSE' .
-      cp '../fixtures/.editorconfig' .
-      cp '../fixtures/.gitattributes' .
-      cp '../fixtures/.gitignore' .
+      rsync --archive '../fixtures/repository-overlays/000-starter/' .
       git init
       git add .
-      git commit --message 'Initial commit'
+      git commit \
+        --message 'Initial commit' \
+        --message 'Establish the repository baseline so the workshop starts from a consistent, documented, and licensed project.'
 
   - type: Command
     commands: |
@@ -121,7 +119,9 @@ entries:
       chmod +x mvnw
       ./mvnw clean verify
       git add .
-      git commit --message 'Create Spring Boot project foundation'
+      git commit \
+        --message 'Create Spring Boot project foundation' \
+        --message 'Provide a verified application foundation so attendees can focus on delivering supermarket features rather than project setup.'
       git push --set-upstream origin '001-project-foundation'
       gh pr create \
         --title 'Create Spring Boot project foundation' \
@@ -137,7 +137,9 @@ entries:
       rm -f src/main/java/demo/supermarket/home/HomeController.java src/main/resources/templates/home.html
       ./mvnw clean verify
       git add .
-      git commit --message 'Seed catalog categories and products'
+      git commit \
+        --message 'Seed catalog categories and products' \
+        --message 'Make a realistic product catalog available so shoppers can discover products and the workshop can build on meaningful business data.'
       git push --set-upstream origin '002-seed-catalog-and-product-listing'
       gh pr create \
         --title 'Seed catalog categories and products' \
@@ -152,7 +154,9 @@ entries:
       rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
       ./mvnw clean verify
       git add .
-      git commit --message 'Implement persisted guest carts'
+      git commit \
+        --message 'Implement persisted guest carts' \
+        --message 'Preserve a guest shopper’s selected items across requests so they can continue toward checkout without losing their basket.'
       git push --set-upstream origin '003-persisted-guest-cart'
       gh pr create \
         --title 'Implement persisted guest carts' \

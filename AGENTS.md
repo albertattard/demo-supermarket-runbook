@@ -13,8 +13,8 @@ application repository itself.
   and has GitHub side effects.
 - `workshop-task-runbook.sh` renders `RUNBOOK.md` into that provisioned clone,
   then creates and merges the facilitator publication PR.
-- `fixtures/README.md` becomes the generated target repository README.
-- `fixtures/LICENSE` becomes the generated target repository licence.
+- `fixtures/repository-overlays/000-starter/README.md` becomes the generated target repository README.
+- `fixtures/repository-overlays/000-starter/LICENSE` becomes the generated target repository licence.
 - `fixtures/pr/` contains facilitator pull-request bodies and generated URL
   outputs.
 - `fixtures/repository-overlays/` contains staged application overlays used only
