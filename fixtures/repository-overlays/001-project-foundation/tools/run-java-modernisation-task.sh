@@ -17,10 +17,9 @@ if [[ -n "$existing_prs" ]]; then
   exit 0
 fi
 
-
 outcome_file='target/codex-modernisation-outcome'
-pr_body_file='target/codex-modernisation-pr.md'
 no_improvement_report_file='target/codex-modernisation-no-improvement.md'
+pr_body_file='target/codex-modernisation-pr.md'
 rm -f "${outcome_file}" "${pr_body_file}" "${no_improvement_report_file}"
 
 codex exec \

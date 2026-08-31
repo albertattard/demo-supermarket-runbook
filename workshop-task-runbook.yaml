@@ -234,6 +234,7 @@ entries:
   - type: Command
     commands: |
       ./mvnw clean verify
+    timeout: 10 minutes
 
   - type: Heading
     level: H2
@@ -389,8 +390,10 @@ entries:
       TODO: Update description!
 
   - type: DisplayFile
-    path: demo-supermarket/tools/run-java-modernisation-task.sh
+    path: demo-supermarket/tools/run-java-modernisation-task-v2.sh
     start_line: 5
+
+  - type: Breakpoint
 
   - type: Markdown
     contents: |
@@ -485,3 +488,56 @@ entries:
       rm -f '/tmp/codex-review-next-task-readiness.md'
       rm -f '/tmp/codex-review-next-task-readiness.log'
     timeout: 5 minutes
+
+  - type: Markdown
+    contents: |
+      TODO: Update description!
+
+  - type: DisplayFile
+    path: /tmp/codex-review-next-task-readiness.md
+
+  - type: Heading
+    level: H2
+    title: Agent Orchestration
+
+  - type: Markdown
+    contents: |
+      TODO: Update description!
+
+      ```mermaid
+      flowchart LR
+          I["Ready GitHub issue"]
+          O["Orchestrator<br/>plan designs · shared evidence matrix<br/>validate worktrees · baseline · reserve resources"]
+
+          I --> O
+
+          O --> P["Primary implementor<br/>(worktree: primary)"]
+          O --> A["Alternative implementor<br/>(worktree: alternative)"]
+
+          P --> PA{"Orchestrator evidence audit<br/>every in-scope matrix row PASS?"}
+          A --> AA{"Orchestrator evidence audit<br/>every in-scope matrix row PASS?"}
+
+          PA -- "No: consolidated findings<br/>(max 2 audit repairs)" --> P
+          AA -- "No: consolidated findings<br/>(max 2 audit repairs)" --> A
+
+          PA -- Yes --> PR["Independent reviewer<br/>(read-only)"]
+          AA -- Yes --> AR["Independent reviewer<br/>(read-only)"]
+
+          PR --> PV{"Review verdict"}
+          AR --> AV{"Review verdict"}
+
+          PV -- "CHANGES_REQUESTED<br/>(one repair only)" --> P
+          AV -- "CHANGES_REQUESTED<br/>(one repair only)" --> A
+
+          PV -- ACCEPT --> PE["Eligible primary candidate<br/>evidence index + handoff"]
+          AV -- ACCEPT --> AE["Eligible alternative candidate<br/>evidence index + handoff"]
+
+          PV -- BLOCKED --> PX["Primary ineligible"]
+          AV -- BLOCKED --> AX["Alternative ineligible"]
+
+          PE --> S["Separate selection workflow"]
+          AE --> S
+
+          P -->| "audit repairs exhausted / blocked" | PX
+          A -->| "audit repairs exhausted / blocked" | AX
+      ```

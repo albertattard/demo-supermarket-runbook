@@ -226,6 +226,8 @@ One especially useful prompt is to make Codex act as an **interactive guide**:
 codex exec \
   --ephemeral \
   --sandbox read-only \
+  --model 'gpt-5.6-luna' \
+  --config 'model_reasoning_effort="low"' \
   --output-last-message '/tmp/codex-onboarding-guide.md' \
   - <<'EOF' > '/tmp/codex-onboarding-guide.log' 2>&1
 Act as my technical onboarding guide for this repository. Don’t overwhelm me with a complete codebase explanation. First establish the high-level mental model, then take me through one important subsystem at a time. At each stage, point me to specific files to inspect and give me 2–3 questions I should be able to answer from them. When useful, trace actual code paths rather than relying on README documentation.
@@ -235,81 +237,152 @@ EOF
 The model's response
 
 ~~~markdown
-## High-level mental model
+## Stage 1: The mental model
 
-This is a modular monolith, not a microservice system or SPA:
+This is a small server-rendered Spring Boot application for browsing a supermarket catalog and maintaining anonymous shopping carts.
+
+The central flow is:
 
 ```text
-Browser → Spring MVC controller → service → JPA repository → in-memory H2
-                           ↓
-                    Thymeleaf HTML
-                    + optional HTMX fragments
+HTTP request
+  → Spring MVC controller
+  → application service
+  → JPA repository
+  → H2 database
+
+service result
+  → Thymeleaf HTML template
+  → full-page response or HTMX fragment
 ```
 
-There are currently two meaningful feature slices:
+There are two main subsystems:
 
-- `catalog`: read-only product browsing, searching, and filtering.
-- `cart`: token-addressed guest carts with persistent line items and concurrency controls.
+1. Catalog: active categories and products, with filtering and search.
+2. Cart: guest cart creation, product additions, quantity changes, and removal.
 
-“Persistent” is slightly misleading: carts survive HTTP requests but not application restarts because the database is in-memory H2.
+The database is initialized by Flyway migrations, while Hibernate validates that the Java entity model matches the schema. There is no user-account or login workflow; cart access is based on a randomly generated token in the URL.
 
-### Stage 0: establish the boundaries
+### First files to inspect
 
-Inspect these first:
+Start with:
 
-- [pom.xml](/private/tmp/demo-supermarket/pom.xml) — Java 25, Spring Boot, Thymeleaf, JPA, Flyway, Security, HTMX, and Playwright.
-- [application.yml](/private/tmp/demo-supermarket/src/main/resources/application.yml:1) — database lifecycle and JPA configuration.
-- [SupermarketApplication.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/SupermarketApplication.java:1) — application and component-scan root.
-- [SecurityConfiguration.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/security/SecurityConfiguration.java:1) — current public HTTP boundary.
+- [SupermarketApplication.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/SupermarketApplication.java)
+- [pom.xml](/private/tmp/demo-supermarket/pom.xml)
+- [application.yml](/private/tmp/demo-supermarket/src/main/resources/application.yml)
+- [SecurityConfiguration.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/security/SecurityConfiguration.java)
+- [V1__baseline.sql](/private/tmp/demo-supermarket/src/main/resources/db/migration/V1__baseline.sql)
+- [V2__catalog.sql](/private/tmp/demo-supermarket/src/main/resources/db/migration/V2__catalog.sql)
+- [V3__guest_carts.sql](/private/tmp/demo-supermarket/src/main/resources/db/migration/V3__guest_carts.sql)
+- [V4__product_slugs.sql](/private/tmp/demo-supermarket/src/main/resources/db/migration/V4__product_slugs.sql)
 
-You should be able to answer:
+Questions you should be able to answer:
 
-1. Why does all application data disappear after a restart?
-2. Does Hibernate create the schema, or merely verify it?
-3. Which routes can an unauthenticated browser access?
+1. Which framework dependencies make this a server-rendered application rather than a REST-only service?
+2. Where does the database come from, and what happens to it when the application restarts?
+3. Why can a user access `/cart/**` without authenticating?
+4. Which database constraints enforce valid cart states and quantities?
 
-## Stage 1: catalog browsing
+One detail worth noticing: the application uses Java 25 and Spring Boot 4.1. The `main` method in `SupermarketApplication` is package-private, which is valid for the current Java/Spring setup but is an unusual choice worth remembering.
 
-Start with the simpler read path before touching cart mutation logic.
+## Stage 2: The catalog subsystem
 
-Trace this request:
+The catalog request path is straightforward:
 
 ```text
-GET /products?category=6&q=tomatoes
-  → CatalogController.catalog()
-  → CatalogService.findCatalog()
+GET / or /products
+  → CatalogController.catalog(...)
+  → CatalogService.findCatalog(...)
   → CategoryRepository + ProductRepository
   → CatalogView
-  → catalog.html
-  → rendered HTML response
+  → templates/catalog.html
 ```
 
-Read these in order:
+Inspect these files:
 
-1. [CatalogController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogController.java:21)  
-   See how query parameters enter the application and how the Thymeleaf view is selected.
+- [CatalogController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogController.java)
+- [CatalogService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogService.java)
+- [ProductRepository.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/ProductRepository.java)
+- [CategoryRepository.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CategoryRepository.java)
+- [CatalogView.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogView.java)
+- [catalog.html](/private/tmp/demo-supermarket/src/main/resources/templates/catalog.html)
+- [CatalogServiceTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/catalog/CatalogServiceTest.java)
 
-2. [CatalogService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogService.java:19)  
-   Follow search normalization, wildcard escaping, repository calls, and entity-to-view mapping.
+Trace this concrete request:
 
-3. [ProductRepository.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/ProductRepository.java:12)  
-   This query contains the actual visibility, filtering, and ordering rules.
+```text
+GET /products?category=3&q=spinach
+```
 
-4. [catalog.html](/private/tmp/demo-supermarket/src/main/resources/templates/catalog.html:39)
-   First inspect the filters and product loop. Stop around line 80; the remainder crosses into cart behavior.
+The controller passes the two query parameters to the service. The service:
 
-5. [CatalogServiceTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/catalog/CatalogServiceTest.java:15) and [CatalogControllerTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/catalog/CatalogControllerTest.java:24)
-   These expose intended behavior more precisely than the README.
+- trims and normalizes the search text;
+- escapes `%`, `_`, and backslashes so the user cannot accidentally inject SQL `LIKE` wildcards;
+- loads only active categories and products;
+- joins each product’s active category;
+- maps entities into view records rather than exposing entities directly.
 
-Pay particular attention to `open-in-view: false`. The service deliberately converts JPA entities into view objects inside the transaction. The repository also `join fetch`es each product’s category, so rendering does not depend on an open persistence session.
+Questions:
 
-You should now be able to answer:
+1. Why does `ProductRepository.findActiveCatalogProducts` use `join fetch product.category`?
+2. What is the difference between the display search value and `searchPattern`?
+3. Where are inactive products excluded, and is that enforced in one layer or multiple layers?
 
-1. Where is the rule that inactive products—or products in inactive categories—must not appear?
-2. Why are `%`, `_`, and `\` escaped before the repository query?
-3. Why does the repository fetch `product.category` eagerly for this query even though the entity association is lazy?
+A useful architectural signal: the catalog exposes `CatalogProduct` and `CatalogView`, not raw JPA entities. That is deliberate boundary-setting between persistence and the HTML-facing model.
 
-Next, the cart subsystem is the right progression: start-cart request → opaque token creation → locked mutation → HTMX fragment response. It is substantially denser, so don’t begin it until you can answer the three catalog questions.
+## Stage 3: The important subsystem — carts
+
+The cart is the most important subsystem because it combines URL-based identity, persistence, domain mutation, concurrency, validation, and two response modes.
+
+The main mutation path is:
+
+```text
+POST /cart/start
+  → create cart token
+  → optionally add initial product
+  → redirect to /cart/{token}
+
+POST /cart/{token}/items
+  → lock active cart
+  → find active product
+  → add or increment item
+  → render redirect or HTMX fragment
+```
+
+Inspect these files in this order:
+
+- [CartController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartController.java)
+- [CartService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartService.java)
+- [CartRepository.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartRepository.java)
+- [Cart.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/Cart.java)
+- [CartItem.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartItem.java)
+- [cart.html](/private/tmp/demo-supermarket/src/main/resources/templates/cart.html)
+- [CartServiceConcurrencyTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/cart/CartServiceConcurrencyTest.java)
+- [CartControllerTest.java](/private/tmp/demo-supermarket/src/test/java/demo/supermarket/cart/CartControllerTest.java)
+
+The key implementation decisions are in `CartService`:
+
+- `startCart` creates an empty cart, then optionally adds a product.
+- `findActiveCartForMutation` uses a pessimistic write lock.
+- quantities are restricted to 1–99 in application code and database constraints.
+- `toView` calculates line totals and subtotal.
+- cart tokens are generated using `SecureRandom`, URL-safe Base64, and 24 random bytes.
+- token collisions are handled by retrying up to five times after a uniqueness violation.
+
+The controller then decides how to present the result:
+
+- ordinary browser request → redirect or full page;
+- HTMX request → return a Thymeleaf fragment;
+- invalid quantity → HTTP 400 with an inline error model.
+
+Questions:
+
+1. Why does cart creation use a separate transaction template and retry loop?
+2. What race condition is the pessimistic lock in `CartRepository` intended to prevent?
+3. Why does `Cart.java` use `orphanRemoval = true`, and what happens when `removeItem` is called?
+
+A potentially important thing to investigate: `updateQuantity` validates the submitted quantity, but if the product is not already in the cart, it silently does nothing and still returns the cart view. Decide whether that is intentional behavior or a bug by checking the controller tests and the intended UI behavior.
+
+For the next stage, trace one complete “add Hummus” interaction from `catalog.html` through `CartController.addItem`, `CartService.addProduct`, the database mappings, and back to either `cart.html` or `catalog-cart-mutation.html`.
 ~~~
 
 A good way to use Codex for onboarding is to move from **map → architecture → execution → deep dive → contribution**. These prompts are designed so Codex can inspect the repository rather than just explain concepts generically.
@@ -368,6 +441,8 @@ The TUI slash command does not work from the command line. Therefore, you need t
 codex exec \
   --ephemeral \
   --sandbox workspace-write \
+  --model 'gpt-5.6-terra' \
+  --config 'model_reasoning_effort="medium"' \
   --output-last-message '/tmp/codex-create-agents_md-file.md' \
   - <<'EOF' > '/tmp/codex-create-agents_md-file.log' 2>&1
 Create a concise `AGENTS.md` in the repository root with durable guidance for future agents. Keep it specific to this Java/Maven/Spring Boot application. Do not change any other files. Do not only describe the file: create it. Finally, verify that `AGENTS.md` exists.
@@ -377,30 +452,14 @@ EOF
 The newly created `AGENTS.md` file
 
 ```markdown
-# Repository Guidance
+# Demo Supermarket
 
-## Project shape
-
-- This is a Java 25, Maven, Spring Boot 4.1 application under the base package `demo.supermarket`.
-- Keep features grouped by domain (`catalog`, `cart`, and future peer packages), with controllers, services, repositories, entities, and view records close together.
-- The UI is server-rendered with Thymeleaf and HTMX. Preserve accessible HTML and keep HTTP behavior in controllers, business rules in services, and persistence in repositories.
-- The database is in-memory H2 in PostgreSQL compatibility mode. Hibernate uses `ddl-auto: validate`; Flyway owns schema changes.
-
-## Change discipline
-
-- Make focused changes and preserve existing package-private visibility, constructor injection, immutable records, and `final` parameter/local conventions.
-- Do not edit an applied Flyway migration. Add the next numbered migration in `src/main/resources/db/migration` and keep JPA mappings consistent with it.
-- Treat cart tokens as opaque identifiers. Do not expose internal database IDs or weaken the existing public-route security boundaries.
-- Update Thymeleaf templates and MockMvc assertions together when response markup or routes change.
-- Avoid adding dependencies unless the JDK or existing Spring stack cannot reasonably solve the problem.
-
-## Verification
-
-- Run focused tests while iterating: `./mvnw test -Dtest=ClassName`.
-- Run the unit/integration suite before handing off: `./mvnw test`.
-- Run `./mvnw verify` for changes affecting routes, templates, JavaScript/HTMX behavior, security, startup, or the E2E harness. This installs Chromium and runs tests tagged `e2e`, so it is slower and may require system dependencies.
-- Add or update tests for every behavior change. Prefer service tests for business rules, MockMvc tests for HTTP/rendering behavior, and Playwright tests only for browser-level flows.
-- Do not claim verification that was not actually run; report any skipped or failing checks explicitly.
+- This is a Java 25, Maven, Spring Boot 4 application. Use the Maven wrapper: `./mvnw test` for unit and MVC tests, `./mvnw verify` for the full build including Playwright end-to-end tests, and `./mvnw spring-boot:run` to run locally.
+- Application code is under `src/main/java/demo/supermarket`, organised by feature (`cart`, `catalog`, `security`). Keep controllers thin; put business rules in services and persistence access in repositories.
+- The UI is server-rendered Thymeleaf with htmx. Keep templates in `src/main/resources/templates` and static assets in `src/main/resources/static`; preserve endpoint/template fragment contracts when changing interactions.
+- Data uses H2 in PostgreSQL compatibility mode with Flyway and JPA validation. Add schema changes as a new, ordered migration in `src/main/resources/db/migration`; never edit an applied migration.
+- Add or update focused tests in `src/test/java`. Normal tests run under Surefire; browser tests are tagged `e2e` and run through Failsafe during `verify`.
+- Security configuration deliberately controls public routes. Update `SecurityConfiguration` and its route tests together when adding or changing HTTP endpoints.
 ```
 
 Commit the changes once ready
@@ -453,50 +512,251 @@ if [[ -n "$existing_prs" ]]; then
   exit 0
 fi
 
+assessment_outcome_file='target/codex-modernisation-v2-assessment-outcome'
+proposal_file='target/codex-modernisation-v2-proposal.md'
+no_improvement_report_file='target/codex-modernisation-v2-no-improvement.md'
+outcome_file='target/codex-modernisation-v2-outcome'
+pr_body_file='target/codex-modernisation-v2-pr.md'
 
-outcome_file='target/codex-modernisation-outcome'
-pr_body_file='target/codex-modernisation-pr.md'
-no_improvement_report_file='target/codex-modernisation-no-improvement.md'
-rm -f "${outcome_file}" "${pr_body_file}" "${no_improvement_report_file}"
+rm -f "$assessment_outcome_file" "$proposal_file" "$no_improvement_report_file" \
+  "$outcome_file" "$pr_body_file"
 
+# Agent 1 is deliberately limited to assessment. Its only hand-off is one of
+# the outcome files below; it must not alter the repository or Git state.
+codex exec \
+  --ephemeral \
+  --sandbox read-only \
+  --output-last-message '/tmp/codex-modernisation-v2-assessment.md' \
+  - <<'EOF' > '/tmp/codex-modernisation-v2-assessment.log' 2>&1
+You are the assessment agent in a two-agent Java-modernisation workflow.
+
+Your role ends at a written recommendation. Do not edit, create, delete, stage, commit, or revert repository files, except for the explicit hand-off files under `target/` described below. Do not create or switch branches, push, or create a pull request. Do not run commands that change Git state.
+
+Inspect this Java 25 codebase and identify at most one worthwhile, focused modernisation opportunity.
+
+Assess candidates such as:
+
+- unnecessarily Java-8-era or older expression of otherwise straightforward logic;
+- mutable JavaBean-style value objects that could be better expressed with modern Java constructs;
+- boilerplate `equals`, `hashCode`, or `toString`;
+- manual collection transformation/filtering/aggregation that can be expressed more clearly with current Java APIs;
+- avoidable nullable control flow;
+- verbose conditional or type-dispatch logic that a modern Java construct can simplify;
+- other clearly obsolete patterns where a Java 25 idiom improves clarity, safety, or maintainability.
+
+Do not recommend a change merely because it is newer. Prefer an idiom that makes the code materially clearer, less error-prone, or easier to maintain. Avoid stylistic churn, speculative redesign, performance-motivated changes without evidence, and refactors whose primary benefit is novelty.
+
+For each plausible candidate, consider:
+
+1. Is the existing code meaningfully harder to understand, maintain, or modify than a Java 25 equivalent?
+2. Is the modernisation local and cohesive enough to review safely?
+3. Can observable behaviour remain unchanged?
+4. Could the change affect public APIs, serialization, persistence, reflection, framework integration, null semantics, equality semantics, ordering, concurrency, or tests?
+5. Is there a credible regression risk that outweighs the maintenance benefit?
+
+Select the single strongest candidate only. Do not propose broad refactoring, cleanup, dependency upgrades, redesign, or multiple unrelated changes.
+
+Preserve observable behaviour, public routes/APIs, persistence behaviour, serialization contracts, and test intent. Treat framework conventions and reflection-based behaviour as compatibility constraints unless the repository provides clear evidence that they are unaffected.
+
+Use repository evidence, not assumptions. Inspect relevant source, tests, configuration, and usages needed to establish the candidate and its risks. Do not invent missing context.
+
+If no candidate materially improves the code, write a concise explanation to:
+
+`target/codex-modernisation-v2-no-improvement.md`
+
+Then write exactly:
+
+`no-improvement`
+
+to:
+
+`target/codex-modernisation-v2-assessment-outcome`
+
+and stop successfully.
+
+Otherwise, write the implementation hand-off to:
+
+`target/codex-modernisation-v2-proposal.md`
+
+The hand-off must contain:
+
+- **Candidate**: the selected files and relevant types, methods, or code regions.
+- **Current pattern**: the specific legacy-style code and why it is unnecessarily verbose, mutable, fragile, or dated.
+- **Modernisation**: the specific Java 25 language or standard-library idiom to adopt and why it is a better fit.
+- **Evidence and rationale**: the concrete repository evidence showing this is a worthwhile change rather than stylistic novelty.
+- **Bounded change plan**: exactly what should change and what should remain untouched.
+- **Behaviour and compatibility risks**: including API, equality/hash semantics, null handling, ordering, serialization/persistence, reflection/framework integration, and test implications where relevant; explain why the remaining risks are acceptable.
+- **Validation**: tests to add or adjust, existing tests to run, and the commands to run them.
+- **Suggested Git metadata**: a concise branch suffix and commit subject.
+- **Confidence**: high, medium, or low, with a brief justification.
+
+The proposal must be implementable by a second agent without needing to rediscover the assessment.
+
+After successfully writing the proposal, write exactly:
+
+`approved`
+
+to:
+
+`target/codex-modernisation-v2-assessment-outcome`
+
+and stop successfully.
+
+Do not modify any source, test, configuration, build, or Git files.
+EOF
+
+assessment_outcome="$(tr -d '\r\n' < "$assessment_outcome_file" 2>/dev/null || true)"
+case "$assessment_outcome" in
+  no-improvement)
+    if [ ! -s "$no_improvement_report_file" ]; then
+      echo 'The assessment agent reported no improvement without an explanation.' >&2
+      exit 1
+    fi
+    echo 'No worthwhile Java modernisation opportunity was found; no pull request was created.'
+    exit 0
+    ;;
+  approved)
+    if [ ! -s "$proposal_file" ]; then
+      echo 'The assessment agent approved a change without a proposal.' >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "Expected $assessment_outcome_file to contain 'approved' or 'no-improvement', but found: ${assessment_outcome:-<missing>}" >&2
+    exit 1
+    ;;
+esac
+
+# Agent 2 owns all repository mutations. It receives Agent 1's proposal as a
+# recommendation, not an instruction to proceed regardless of current facts.
 codex exec \
   --ephemeral \
   --sandbox workspace-write \
-  --output-last-message '/tmp/codex-modernisation-task.md' \
-  - <<'EOF' > '/tmp/codex-modernisation-task.log' 2>&1
-Look for one worthwhile Java modernisation opportunity in this codebase and, only if one exists, implement it in a focused commit.
+  --output-last-message '/tmp/codex-modernisation-v2-implementation.md' \
+  - <<'EOF' > '/tmp/codex-modernisation-v2-implementation.log' 2>&1
+You are the implementation agent in a two-agent Java-modernisation workflow.
 
-Constraints:
-  - Keep the project on Java 25. Do not lower the Java version or alter the runtime/toolchain baseline.
-  - Look for code that is unnecessarily Java-8-style or older in expression: for example mutable JavaBean-style value objects, boilerplate equals/hashCode/toString, manual collection processing, nullable control flow, or verbose conditional logic.
-  - Choose one cohesive opportunity only. Do not perform a broad refactor or mix unrelated cleanup into the change.
-  - Preserve observable behaviour, public routes, persistence behaviour, and existing test intent.
-  - Prefer a clear Java 25-era idiom when it materially improves the code. Do not modernise merely for novelty.
-  - Add or adjust tests where needed to prove the behaviour remains correct.
-  - Do not overwrite, revert, stage, or commit unrelated existing changes.
+Read `target/codex-modernisation-v2-proposal.md`, which contains the assessment agent's recommendation. You own the implementation decision and all repository mutations. Do not assume the proposal is correct without validating it against the current code.
 
-Process:
-  1. Inspect the codebase and identify the best single candidate.
-  2. If no candidate materially improves the code, do not create or switch branches, modify source files, commit, push, or create a pull request. Write a concise explanation of the assessment to `target/codex-modernisation-no-improvement.md`, write exactly `no-improvement` to `target/codex-modernisation-outcome`, and stop successfully.
-  3. Otherwise, briefly explain the candidate and the intended modernisation before editing.
-  4. Create a branch named `codex/modernise-<short-description>`.
-  5. Implement the focused change and commit it with a clear message.
-  6. Run `./mvnw test` and `./mvnw verify`; fix any failures caused by your change.
-  7. Review the final diff for scope and correctness.
-  8. Write the proposed pull-request description to `target/codex-modernisation-pr.md`. It must state:
-     - the legacy-style code found;
-     - the Java 25 idiom adopted;
-     - why the change improves maintainability;
-     - the test commands run and their results.
-     Then write exactly `modernised` to `target/codex-modernisation-outcome`.
+## Validate the proposal
 
-Do not run `git push` or `gh pr create`. Stop after the local commit and writing the pull-request description.
+Inspect the proposal and the relevant current source, tests, configuration, build files, and usages.
+
+Proceed only if the proposal is still:
+
+- one focused, cohesive Java 25 modernisation;
+- materially beneficial for clarity, maintainability, safety, or reduction of unnecessary boilerplate;
+- narrowly bounded and easy to review;
+- compatible with the repository's architecture and framework conventions;
+- reasonably demonstrable as behaviour-preserving.
+
+Do not implement a proposal merely because a newer Java construct exists. Reject changes whose primary benefit is novelty, stylistic preference, speculative performance improvement, broad cleanup, or redesign.
+
+Pay particular attention to:
+
+- public APIs and routes;
+- persistence and database mappings;
+- serialization and deserialization;
+- reflection and framework conventions;
+- equality, hashing, ordering, and null semantics;
+- concurrency or mutability semantics;
+- generated code and annotation processing;
+- existing test intent.
+
+If the proposal is no longer sound, do not create or switch branches and do not modify source files, tests, configuration, or Git history. Write a concise reason to:
+
+`target/codex-modernisation-v2-no-improvement.md`
+
+Then write exactly:
+
+`no-improvement`
+
+to:
+
+`target/codex-modernisation-v2-outcome`
+
+and stop successfully.
+
+## Implement the modernisation
+
+If the proposal is sound:
+
+1. Create a branch named: `codex/modernise-<short-description>`
+
+2. Implement only the approved cohesive opportunity.
+   - Keep Java 25 as the runtime and toolchain baseline.
+   - Do not lower source, target, compiler, or runtime versions.
+   - Do not introduce unrelated cleanup, formatting churn, dependency upgrades, redesign, or opportunistic refactoring.
+   - Do not expand the change beyond the proposal merely because adjacent improvements are discovered.
+
+3. Add or adjust tests where needed to demonstrate that behaviour and important semantics are preserved.
+
+4. Run the relevant focused tests, then run:
+   `./mvnw test`
+   `./mvnw verify`
+
+5. If failures occur:
+   - Fix failures caused by this implementation when the fix remains within scope.
+   - Do not alter unrelated code simply to make pre-existing failures pass.
+   - Record any pre-existing or environment-related failures accurately in the final hand-off.
+
+6. Review the final diff and Git status before committing.
+   Confirm that:
+   - only files required for this modernisation changed;
+   - the implementation matches the approved proposal;
+   - no unrelated cleanup slipped in;
+   - no source, test, configuration, or build file was changed unnecessarily.
+
+7. Stage only the implementation files belonging to this modernisation.
+
+8. Commit them with a concise, specific commit subject.
+
+9. Verify after the commit that the committed diff contains only the intended modernisation.
+
+Do not commit the assessment proposal, outcome files, or no-improvement file unless the repository workflow explicitly requires it.
+
+## Completion hand-off
+
+Write:
+
+`target/codex-modernisation-v2-pr.md`
+
+It must state:
+
+- the legacy-style code identified;
+- the specific Java 25 idiom adopted;
+- the files and relevant types or methods changed;
+- why the change materially improves maintainability;
+- the scope of the implementation;
+- important compatibility or behavioural considerations;
+- the test and verification commands run;
+- the result of those commands;
+- any pre-existing or environment-related failures;
+- the final commit hash;
+- the final commit subject;
+- the branch name.
+
+Only after the implementation, validation, review, and commit are complete, write exactly:
+
+`modernised`
+
+to:
+
+`target/codex-modernisation-v2-outcome`
+
+and stop successfully.
+
+Do not run `git push` or `gh pr create`; the calling script performs publication after this hand-off is complete.
 EOF
 
 outcome="$(tr -d '\r\n' < "$outcome_file" 2>/dev/null || true)"
 case "$outcome" in
   no-improvement)
-    echo 'No worthwhile Java modernisation opportunity was found; no pull request was created.'
+    if [ ! -s "$no_improvement_report_file" ]; then
+      echo 'The implementation agent reported no improvement without an explanation.' >&2
+      exit 1
+    fi
+    echo 'The proposed modernisation was not implemented; no pull request was created.'
     exit 0
     ;;
   modernised) ;;
@@ -516,7 +776,7 @@ case "$branch" in
 esac
 
 if [ ! -s "$pr_body_file" ]; then
-  echo 'The agent did not create a pull-request description.' >&2
+  echo 'The implementation agent did not create a pull-request description.' >&2
   exit 1
 fi
 
@@ -533,12 +793,4 @@ gh pr create \
   --body-file "$pr_body_file"
 ```
 
-Review the PR
-
-![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
-
-This can be easily captured in a script and executed on a scheduler.
-
-## Skills
-
-TODO: Update description!
+> Breakpoint reached: Stop here

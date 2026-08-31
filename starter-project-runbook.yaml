@@ -127,7 +127,7 @@ entries:
         --title 'Create Spring Boot project foundation' \
         --body-file '../fixtures/pr/PR-001-project-foundation.md' \
         > '../fixtures/pr/PR-001-project-foundation.out'
-      ../tools/merge-pull-request.sh '../fixtures/pr/PR-001-project-foundation.out'
+      ./tools/merge-pull-request.sh '../fixtures/pr/PR-001-project-foundation.out'
     timeout: 15 minutes
 
   - type: Command
@@ -145,7 +145,7 @@ entries:
         --title 'Seed catalog categories and products' \
         --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' \
         > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
-      ../tools/merge-pull-request.sh '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
+      ./tools/merge-pull-request.sh '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
     timeout: 15 minutes
 
   - type: Command
@@ -162,5 +162,5 @@ entries:
         --title 'Implement persisted guest carts' \
         --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' \
         > '../fixtures/pr/PR-003-persisted-guest-cart.out'
-      ../tools/merge-pull-request.sh '../fixtures/pr/PR-003-persisted-guest-cart.out'
+      ./tools/merge-pull-request.sh '../fixtures/pr/PR-003-persisted-guest-cart.out'
     timeout: 15 minutes
