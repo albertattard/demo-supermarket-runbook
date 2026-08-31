@@ -278,6 +278,8 @@ entries:
          application. This is a manual smoke test: confirm that the application loads
          and that its basic navigation works before moving on to agent-assisted work.
 
+         ![Homepage](assets/images/demo-supermarket-homepage.png)
+
   - type: Markdown
     contents: |
       4. Stop the application
