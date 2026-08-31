@@ -433,10 +433,10 @@ entries:
     contents: |
       A coding agent combines a model with a harness: the harness gives the model
       access to the repository and tools, applies safeguards, and supplies relevant
-      context. The model does not automatically know a project’s rules, conventions,
-      or workflows. Without durable project guidance, you may need to repeat coding
-      standards, verification requirements, architectural decisions, and preferred
-      practices in every new session.
+      context. The model does not automatically know how a project is organised or
+      which technologies and workflows matter to a new contributor. Without durable
+      project guidance, it must rediscover that orientation from scattered repository
+      evidence in every new session.
 
       In this workshop, Codex uses an **`AGENTS.md`** file as repository-specific
       guidance. When applicable, Codex makes that guidance available in the agent’s
@@ -465,8 +465,10 @@ entries:
 
       Use it for information that materially changes how an agent should work, is hard
       to infer quickly, or prevents a recurring mistake. In this workshop, the file
-      records the project map, verification command, local-only scope, and rules for
-      handling under-specified tasks.
+      provides a concise project map alongside the verification command, local-only
+      scope, and rules for handling under-specified tasks. The next exercise compares
+      how Codex introduces the framework and technology stack to a new contributor
+      before and after that guidance exists.
 
       Codex’s `/init` command in the interactive desktop or terminal application can
       create a starting draft. Treat that draft as input for review, not as a finished
@@ -488,16 +490,7 @@ entries:
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-agents-before.md' \
         - <<'EOF' > '/tmp/codex-agents-before.log' 2>&1
-      Prepare a test strategy for
-      docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md.
-
-      Do not modify files. Inspect the task, existing code, and tests. Propose:
-      - the end-to-end user journeys that need functional browser coverage;
-      - the rules, validation cases, and input combinations better covered by unit or MVC tests;
-      - likely test files to add or change; and
-      - unresolved testing or product decisions that need a human answer.
-
-      Explain the rationale for the scope of each test and cite repository-relative files as evidence.
+      Describe this project’s framework and technology stack for a new contributor in a paragraph or two.
       EOF
     cleanup: |
       rm -f '/tmp/codex-agents-before.md'
@@ -586,8 +579,9 @@ entries:
 
       ## Working agreements
 
-      - Treat `docs/tasks/` as read-only task context. Current code describes existing
-        behaviour; task files describe requested change.
+      - Treat `docs/tasks/` as read-only task context unless the task owner explicitly
+        asks to record a settled decision. Current code describes existing behaviour;
+        task files describe requested change.
       - A task differing from current code may be intentional. If a task conflicts
         with a relevant ADR or stated constraint, or leaves behaviour ambiguous, cite
         the conflicting files and ask for a decision. Do not silently rewrite task
@@ -620,16 +614,7 @@ entries:
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-agents-after.md' \
         - <<'EOF' > '/tmp/codex-agents-after.log' 2>&1
-      Prepare a test strategy for
-      docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md.
-
-      Do not modify files. Inspect the task, existing code, and tests. Propose:
-      - the end-to-end user journeys that need functional browser coverage;
-      - the rules, validation cases, and input combinations better covered by unit or MVC tests;
-      - likely test files to add or change; and
-      - unresolved testing or product decisions that need a human answer.
-
-      Explain the rationale for the scope of each test and cite repository-relative files as evidence.
+      Describe this project’s framework and technology stack for a new contributor in a paragraph or two.
       EOF
     cleanup: |
       rm -f '/tmp/codex-agents-after.md'
@@ -691,7 +676,7 @@ entries:
 
   - type: Command
     commands: |
-      git add AGENTS.md
+      git add 'AGENTS.md'
       git commit --message 'Add repository guidance for coding agents'
     indent: 3
 
@@ -715,92 +700,189 @@ entries:
 
   - type: Markdown
     contents: |
-      TODO: Update description!
+      `AGENTS.md` provides durable guidance for working in a repository, but it is not
+      a good place for every specialized workflow. As a project grows, putting
+      detailed instructions for testing, debugging, deployments, documentation, or
+      other specific tasks into one file makes the guidance harder to maintain and
+      less relevant to any individual task.
+
+      A skill provides a focused, reusable method for one kind of work. Its `SKILL.md`
+      explains when the skill applies, what information or inputs to use, how to
+      perform the work, and what result to produce. Skills complement `AGENTS.md`: the
+      repository guidance defines the overall rules for working in the project, while
+      skills provide the detailed procedures for specific types of tasks. Together,
+      they give contributors and AI agents consistent, repeatable ways to work without
+      turning `AGENTS.md` into a collection of every possible workflow.
+
+      Skills can be installed at both the **machine level** and the
+      **repository level**, depending on how broadly they should apply. Machine-level
+      skills are available across repositories on a developer’s machine, making them
+      useful for general-purpose workflows that can be reused across many projects.
+      Repository-level skills are stored with the project and are specific to that
+      codebase, making them useful for workflows that depend on the repository’s
+      architecture, tools, or conventions. This separation allows teams to share
+      project-specific skills through the repository while developers can also
+      maintain a broader set of reusable skills for their own development workflows.
+
+      This repository comes with a set of skills that we can use as part of this
+      exercise.
+
+  - type: Markdown
+    contents: |
+      1. Inspect the repository-local skills.
 
   - type: Command
     commands: |
       tree --dirsfirst --sort=name '.agents/skills'
     output:
       caption: |
-        The repository level skills
+        Repository-local skills
     indent: 3
 
   - type: Markdown
     contents: |
-      TODO: Update description!
-
-  - type: Command
-    commands: |
-      codex exec \
-        --ephemeral \
-        --sandbox read-only \
-        --model 'gpt-5.6-luna' \
-        --config 'model_reasoning_effort="low"' \
-        --output-last-message '/tmp/codex-next-task.md' \
-        - <<'EOF' > '/tmp/codex-next-task.log' 2>&1
-      Which issue should we work on next?
-      EOF
-    cleanup: |
-      rm -f '/tmp/codex-next-task.md'
-      rm -f '/tmp/codex-next-task.log'
-    timeout: 5 minutes
-
-  - type: Markdown
-    contents: |
-      TODO: Update description!
+      2. Read the `review-task-readiness` skill. Notice that it gathers evidence,
+         separates product decisions from engineering decisions, and pauses for the
+         task owner when a material question remains.
 
   - type: DisplayFile
-    path: /tmp/codex-next-task.md
+    path: demo-supermarket/.agents/skills/review-task-readiness/SKILL.md
+    indent: 3
 
   - type: Markdown
     contents: |
-      TODO: Update description!
-      > Use $review-task-readiness on @docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md and update it to record my answers.
+      A `SKILL.md` file comprises two parts: YAML front matter and an instruction body.
 
-      This is a rehearsed example and all open questions are answered in advanced to enable unattended runs.
+      The front matter identifies the skill and describes when it should be used. Codex
+      uses this lightweight metadata to discover relevant skills. When a skill is
+      selected—for example, when you invoke `$review-task-readiness`, Codex loads the
+      instruction body and follows its task-specific procedure.
+
+      Keep the front matter concise and specific so the right skill can be discovered.
+      Put the detailed workflow, evidence requirements, constraints, and expected
+      output in the body.
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      3. Try the skill interactively in the Codex desktop application or terminal
+         interface.
+
+         > Use $review-task-readiness on @docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md and update it to record my answers.
+
+         The skill should first identify unresolved questions and wait for your answer.
+         This is the normal workflow: the harness helps reveal decisions, but the task
+         owner makes them.
+
+         Alternatively, run the following non-interactive example. It provides all
+         known answers in the initial prompt and explicitly authorises the corresponding
+         task update.
+
+         This is a workshop simplification, not the normal readiness-review workflow.
+         In practice, the skill discovers questions during its investigation and the
+         task owner answers them as they arise. Here, the decisions are included up
+         front so the exercise can run from start to finish in one command.
+
+         This task updates a shared task brief and must reconcile requirements with
+         related work. We use Terra with medium reasoning to balance careful
+         repository analysis against workshop time and cost.
 
   - type: Command
     commands: |
-      # Download the answers
-      answers="$(
-        curl \
-          --location \
-          --silent \
-          --fail \
-          'https://github.com/albertattard/demo-supermarket-runbook/raw/refs/heads/main/fixtures/prompts/TASK-004-readiness-decisions.md'
-      )"
-
-      # Construct the prompt
-      codex_prompt="$(cat <<EOF
-      Use \$review-task-readiness on docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md and update it to record my answers.
-
-      Read the readiness decisions below before reviewing TASK-004. Treat every listed answer as settled; do not re-ask those questions.
-
-      <readiness-decisions>
-      ${answers}
-      </readiness-decisions>
-      EOF
-      )"
-
-      # Call the model
       codex exec \
         --ephemeral \
         --sandbox workspace-write \
         --model 'gpt-5.6-terra' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-review-next-task-readiness.md' \
-        "${codex_prompt}" > '/tmp/codex-review-next-task-readiness.log' 2>&1
+        - <<'EOF' > '/tmp/codex-review-next-task-readiness.log' 2>&1
+      I am the task owner. Use $review-task-readiness on
+      docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md and update it to
+      record my settled decisions.
+
+      Treat every decision below as settled. Do not re-ask these questions or replace
+      them with implementation assumptions.
+
+      <readiness-decisions>
+      - TASK-007 owns validation failures, empty-cart failures, and archived-product
+        failures. TASK-004 covers the successful pickup-checkout and confirmation path.
+      - Use an eight-character uppercase order reference drawn from
+        `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. It is not an access credential.
+      - The database enforces order-reference uniqueness. A collision uses the existing
+        generic error response; retry behaviour is deferred to TASK-006.
+      - Only the browser session that placed an order may view its confirmation. Durable
+        cross-session confirmation access is deferred to a follow-up task.
+      - An unknown order reference, or a missing required session association, returns
+        `404 Not Found` with a generic `Order not found` page.
+      - Checked-out cart routes retain the established cart-not-found behaviour. The
+        exception is a repeated checkout POST, which redirects to the existing
+        confirmation without creating another order.
+      - The confirmation page displays the immutable order snapshot: order reference,
+        placed time, fulfilment, customer data, purchased lines, and all totals.
+      </readiness-decisions>
+      EOF
     cleanup: |
       rm -f '/tmp/codex-review-next-task-readiness.md'
       rm -f '/tmp/codex-review-next-task-readiness.log'
     timeout: 5 minutes
+    indent: 3
 
   - type: Markdown
     contents: |
-      TODO: Update description!
+      Review Codex’s summary, then inspect the task diff. Confirm that each edit is
+      traceable to a settled decision and that the task no longer contains
+      acceptance criteria owned by TASK-007.
+    indent: 3
 
   - type: DisplayFile
     path: /tmp/codex-review-next-task-readiness.md
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      4. Review the task changes. Verify that they accurately record the settled
+         decisions, keep behaviour owned by TASK-007 out of scope, and do not
+         introduce new requirements or assumptions.
+
+  - type: Command
+    commands: |
+      git diff -- 'docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md'
+    output:
+      caption: |
+        TASK-004 readiness updates
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      5. Commit the reviewed task locally.
+
+         If your Codex environment includes the `$commit-changes` skill, you can use it
+         to inspect the repository state and diff before creating a commit. It may stop
+         when it finds a material concern, such as an incomplete change, unrelated
+         files, or user-facing prose that needs correction.
+
+         These checks complement existing validation and review guardrails; they do not
+         replace them.
+
+         To use the skill:
+
+         > $commit-changes
+
+         Alternatively, create the same commit manually with `git`.
+
+  - type: Command
+    commands: |
+      git add 'docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md'
+      git commit \
+        --message 'Resolve TASK-004 readiness decisions' \
+        --message 'Record the settled checkout decisions and align the task scope and acceptance criteria with TASK-007.'
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      This exercise applies existing skills. Later exercises can add small,
+      project-specific skills when a team has a repeatable workflow that deserves its
+      own method and evidence standard.
 
   - type: Breakpoint
 
