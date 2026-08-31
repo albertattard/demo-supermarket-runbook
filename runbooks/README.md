@@ -59,7 +59,7 @@ By the end of this workshop, you can:
 
 ## Prerequisites and environment
 
-You need Java 25 or newer, Git, and the Codex CLI in a macOS or Linux
+You need Java 25 or newer, Git, `curl`, and the Codex CLI in a macOS or Linux
 environment with a Bash-compatible shell. The starter repository is public and
 this core workshop works entirely in a local clone, so it does not require a
 GitHub account or the GitHub CLI. Internet access is required to clone the
@@ -70,6 +70,8 @@ repository and use Codex.
 
 - Git manages the local branches, worktrees, and commits created during the
   workshop.
+
+`curl` checks that the application has started successfully.
 
 - [Codex CLI](https://developers.openai.com/codex/cli) or equivalent agentic
   tool
@@ -125,11 +127,96 @@ The five most recent commits in the starter repository. Stop and seek help if
 this does not look like the expected Demo Supermarket history.
 
 ```
-5d57436 (HEAD -> main, origin/main, origin/HEAD) Merge pull request #3 from albertattard/003-persisted-guest-cart
-1e03744 Implement persisted guest carts
-d3818bb Merge pull request #2 from albertattard/002-seed-catalog-and-product-listing
-944f3e2 Seed catalog categories and products
-22c11e3 Merge pull request #1 from albertattard/001-project-foundation
+9b4b379 (HEAD -> main, origin/main, origin/HEAD) Merge pull request #3 from albertattard/003-persisted-guest-cart
+d6b5234 Implement persisted guest carts
+53d5435 Merge pull request #2 from albertattard/002-seed-catalog-and-product-listing
+28e06d5 Seed catalog categories and products
+29eb53f Merge pull request #1 from albertattard/001-project-foundation
 ```
+
+## Build the application
+
+Before asking Codex to inspect or change the code, establish that this clone
+builds, tests, and starts successfully on your machine. This baseline separates
+pre-existing environment or application failures from any later agent-assisted
+change. Stop and resolve a failure in this section before continuing.
+
+1. **Build and verify the application.**
+
+   The Maven Wrapper compiles the project and runs its verification suite. The
+   first run may take longer while Maven downloads dependencies.
+
+   ```shell
+   ./mvnw clean verify
+   ```
+
+   **Optional: inspect the build artefacts.** Confirm that the Spring Boot
+   executable JAR was created before starting the application.
+
+   ```shell
+   tree --dirsfirst --sort=name --prune -L 1 'target'
+   ```
+
+   The executable Spring Boot JAR and the original JAR retained before Spring
+   Boot repackages it. The executable JAR includes the application and its
+   runtime dependencies.
+
+   ```
+   target
+   ├── demo-supermarket-1.0.0.jar
+   └── demo-supermarket-1.0.0.jar.original
+
+   1 directory, 2 files
+   ```
+
+2. **Run the application locally.**
+
+   This starts the executable JAR in the background, writes its output to
+   `target/application.log`, and records its process ID for the stop step. If it
+   exits immediately, inspect that log before continuing.
+
+   ```shell
+   java -jar './target/demo-supermarket-1.0.0.jar' > './target/application.log' 2>&1 &
+
+   # Save the PID so later steps can reuse it after this entry finishes.
+   echo "$!" > './target/application.pid'
+   ```
+
+   Wait for the application to start. This checks the home page for up to one
+   minute. If it does not return HTTP 200, inspect the application log and
+   resolve the problem before continuing.
+
+   ```shell
+   for attempt in {1..60}; do
+     status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+       'http://localhost:8080/' 2>/dev/null || true)"
+
+     if [ "${status}" = '200' ]; then
+       exit 0
+     fi
+
+     sleep 1
+   done
+
+   echo 'The application did not respond with HTTP 200 within one minute.' >&2
+   tail -n 100 './target/application.log' || true
+   exit 1
+   ```
+
+3. Access the application
+
+   Open [localhost:8080](http://localhost:8080) in a browser and explore the
+   application. This is a manual smoke test: confirm that the application loads
+   and that its basic navigation works before moving on to agent-assisted work.
+
+4. Stop the application
+
+   Stop the local process when you have finished the smoke test. This removes
+   the PID file.
+
+   ```shell
+   kill "$(cat './target/application.pid')"
+   rm -f './target/application.pid'
+   ```
 
 > Breakpoint reached: Stop here
