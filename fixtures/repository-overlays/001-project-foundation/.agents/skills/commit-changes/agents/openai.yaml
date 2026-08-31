@@ -1,0 +1,7 @@
+interface:
+  display_name: "Commit Changes"
+  short_description: "Review and create Git commits"
+  default_prompt: "Use $commit-changes to review the current changes and prepare the commit."
+
+policy:
+  allow_implicit_invocation: false
