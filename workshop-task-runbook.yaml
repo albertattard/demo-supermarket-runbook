@@ -454,19 +454,14 @@ entries:
       +-------------+        +-----------------+
       ```
 
-      Think of `AGENTS.md` as a concise operational README for coding agents—not a
-      duplicate of the README, task brief, or source code. Its purpose is to reduce
-      repetitive prompting and help Codex work more consistently with the project’s
-      expectations.
+      Think of `AGENTS.md` as a concise operational README for coding agents. It
+      records durable working agreements and a project map, rather than duplicating
+      the README, task brief, or source code. The code and task files remain the
+      source of truth.
 
       `AGENTS.md` is a Codex convention, not a universal standard. Other AI harnesses
       may use a different filename or configuration, or may not load repository
       guidance automatically.
-
-      `AGENTS.md` is repository-owned guidance for coding agents. It records durable
-      working agreements and a concise project map that would otherwise be scattered
-      across prompts, code, and documentation. The code and task files remain the
-      source of truth.
 
       Use it for information that materially changes how an agent should work, is hard
       to infer quickly, or prevents a recurring mistake. In this workshop, the file
@@ -480,8 +475,8 @@ entries:
 
   - type: Markdown
     contents: |
-      1. Compare a planning request before repository guidance exists. Codex can still
-         inspect the code and task brief, but it must infer the team's working
+      1. Compare a test-strategy request before repository guidance exists. Codex can
+         still inspect the code and task brief, but it must infer the team’s working
          agreements from scattered evidence.
 
   - type: Command
@@ -521,12 +516,11 @@ entries:
 
   - type: Markdown
     contents: |
-      For a more detailed analysis look at the logs:
-      `/tmp/codex-agents-before.log`. This will show all interaction between the
-      harness and the model.
+      For a detailed record of this run, inspect `/tmp/codex-agents-before.log`.
+      It contains the captured Codex session output, including its repository
+      investigation.
 
-      Print the number of tokens used to answer this user query without using the
-      `AGENTS.md` file.
+      Extract the tokens used for this request without `AGENTS.md` guidance.
     indent: 3
 
   - type: Command
@@ -545,11 +539,10 @@ entries:
 
   - type: Markdown
     contents: |
-      Numbers are easy to compare, but one cannot simply conclude that one approach
-      is better than the other by just looking at the number of tokens used. The
-      main important thing here is the message prodcued by the model, which cannot
-      be compared using quantitative measures. We are showing the tokens uses as a
-      measure of efficiency.
+      Token counts are a useful efficiency signal, not a quality score. They do not
+      measure whether the strategy is correct, follows the team’s preferences, or
+      identifies important gaps. One run is only an observation; compare the
+      response itself as well as the numbers.
     indent: 3
 
   - type: Markdown
@@ -605,7 +598,7 @@ entries:
 
   - type: Markdown
     contents: |
-      The `AGENTS.md` file should look like the following.
+      Review the `AGENTS.md` file that you created.
     indent: 3
 
   - type: DisplayFile
@@ -646,7 +639,7 @@ entries:
 
   - type: Markdown
     contents: |
-      The user prompt is the same as before.
+      The prompt is unchanged from the first run.
 
       Review the model’s response.
     indent: 3
@@ -657,9 +650,11 @@ entries:
 
   - type: Markdown
     contents: |
-      For a more detailed analysis look at the logs: `/tmp/codex-agents-after.log`. This will show all interaction between the harness and the model.
+      For a detailed record of this run, inspect `/tmp/codex-agents-after.log`. It
+      contains the captured Codex session output, including its repository
+      investigation.
 
-      Contrast the amount of tokens used by the model to answer the same user prompt.
+      Extract the tokens used for the same request with `AGENTS.md` guidance.
     indent: 3
 
   - type: Command
@@ -678,17 +673,17 @@ entries:
 
   - type: Markdown
     contents: |
-      4. Compare the plans. Do not expect identical wording or a completely different
-         conclusion: Codex may discover much of the same information from the
-         repository. Look instead for the second plan to use the agreed verification,
-         preserve the stated boundaries, keep task files read-only, and surface open
-         product decisions instead of inventing them.
+      4. Compare the test strategies. Do not expect identical wording or a completely
+         different conclusion: Codex may discover much of the same information from
+         the repository. Look instead for the second strategy to propose a small set
+         of distinct browser journeys, move combinations and validation cases to
+         lower-scope tests, and identify product decisions that remain open.
 
-         The runs used @{agents_before_tokens} tokens without `AGENTS.md` and
-         @{agents_after_tokens} tokens with it. Treat this as one observation, not a
-         verdict: the file adds context, so one run can use the same number of tokens
-         or more. Its more important benefit is faster, more consistent use of the
-         team’s guidance across future sessions and tasks.
+         The runs used @{agents_before_tokens} tokens without `AGENTS.md` and @{agents_after_tokens} tokens with it.
+         Treat this as one observation, not a verdict: the file adds context, so one
+         run can use the same number of tokens or more. Its more important benefit is
+         faster, more consistent use of the team’s guidance across future sessions and
+         tasks.
 
   - type: Markdown
     contents: |
@@ -698,6 +693,7 @@ entries:
     commands: |
       git add AGENTS.md
       git commit --message 'Add repository guidance for coding agents'
+    indent: 3
 
   - type: Breakpoint
 

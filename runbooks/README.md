@@ -307,46 +307,62 @@ something that supports your next decision.
 2. Review Codex’s response.
 
    ~~~markdown
-   ## What the application does
+   ## Application model
 
-   This is a Spring Boot, server-rendered grocery shop.
+   This is a small server-rendered Spring Boot grocery application. Customers can:
 
-   Verified customer flows:
+   - Browse and search an in-memory H2-backed product catalogue.
+   - Filter by category.
+   - Create an anonymous cart using an opaque URL token.
+   - Add, update, and remove products.
+   - View cart quantities and subtotal.
 
-   - Browse and filter products at `/` or `/products`.
-   - Search with `?q=...` and filter by category with `?category=...`.
-   - Start a guest cart with `POST /cart/start`.
-   - Add, update, and remove cart items under `/cart/{cartToken}`.
-   - View the cart-scoped catalogue at `/cart/{cartToken}/products`.
-   - Use HTMX requests for in-page cart updates.
+   The implemented scope currently ends at catalogue browsing and persisted guest carts. The README describes checkout, logistics, and inventory workflows, but those features are not present in the Java packages or routes inspected.
 
-   The main application entry point is `src/main/java/demo/supermarket/SupermarketApplication.java`.
+   The entry point is `src/main/java/demo/supermarket/SupermarketApplication.java`. The main flow is:
 
-   The README also describes checkout, pickup/delivery, logistics workflows, and inventory workflows. Those capabilities are not represented by corresponding Java packages, routes, or migrations in the repository I inspected, so they appear to be planned or incomplete rather than currently verifiable.
+   1. `CatalogController` handles `/` and `/products`.
+   2. `CatalogService` queries active categories/products and maps entities to view models.
+   3. `CartController` and `CartService` create and mutate guest carts.
+   4. Thymeleaf templates render HTML, with HTMX used for partial cart updates.
+   5. Flyway creates and seeds H2 tables at startup.
+
+   Key routes include:
+
+   - `GET /` and `GET /products`
+   - `POST /cart/start`
+   - `GET /cart/{cartToken}`
+   - `POST /cart/{cartToken}/items`
+   - `POST /cart/{cartToken}/items/{productSlug}`
+   - `POST /cart/{cartToken}/items/{productSlug}/remove`
+   - `GET /cart/{cartToken}/products`
+
+   These routes are defined in:
+
+   - `src/main/java/demo/supermarket/catalog/CatalogController.java`
+   - `src/main/java/demo/supermarket/cart/CartController.java`
 
    ## How to verify locally
 
-   Prerequisites are Java 25 and Maven. The project includes Maven Wrapper scripts.
+   Requirements are Java 25 and Maven, with the project intended to use the Maven wrapper.
 
-   Run unit/integration tests:
+   Run the unit/integration test suite excluding browser tests:
 
-   ```bash
+   ```sh
    ./mvnw test
    ```
 
-   This excludes tests tagged `e2e`, as configured in `pom.xml`.
+   Run the full verification lifecycle, including the Playwright browser setup and E2E tests:
 
-   Run the end-to-end suite:
-
-   ```bash
+   ```sh
    ./mvnw verify
    ```
 
-   The build attempts to install Chromium with Playwright during the pre-integration-test phase. This may require system dependencies and network access.
+   The CI workflow confirms that `./mvnw verify` is the canonical check: `.github/workflows/ci.yml`.
 
-   Run the application:
+   To run the application:
 
-   ```bash
+   ```sh
    ./mvnw spring-boot:run
    ```
 
@@ -354,137 +370,107 @@ something that supports your next decision.
 
    ```text
    http://localhost:8080/
-   http://localhost:8080/products
-   http://localhost:8080/actuator/health
    ```
 
-   I did not execute the build or application because the task was explicitly repository inspection only and the environment is read-only.
+   The application uses an H2 in-memory database configured in `src/main/resources/application.yml`, so data is recreated on each restart. Flyway migrations and seed data are in:
+
+   - `src/main/resources/db/migration/V1__baseline.sql`
+   - `src/main/resources/db/migration/V2__catalog.sql`
+   - `src/main/resources/db/migration/V3__guest_carts.sql`
+   - `src/main/resources/db/migration/V4__product_slugs.sql`
+
+   I did not execute tests or start the application because the request explicitly prohibits modifying files; Maven and Playwright commonly write to build/cache directories.
 
    ## Where things live
 
-   Feature code is split into small domain packages:
+   Feature code is organized by domain rather than by technical layer:
 
-   - Catalogue:
-     - `src/main/java/demo/supermarket/catalog/CatalogController.java`
-     - `src/main/java/demo/supermarket/catalog/CatalogService.java`
-     - `src/main/java/demo/supermarket/catalog/Product.java`
-     - `src/main/java/demo/supermarket/catalog/Category.java`
-     - `src/main/java/demo/supermarket/catalog/ProductRepository.java`
-     - `src/main/java/demo/supermarket/catalog/CategoryRepository.java`
+   - Catalogue: `src/main/java/demo/supermarket/catalog/`
+   - Guest carts: `src/main/java/demo/supermarket/cart/`
+   - Security baseline: `src/main/java/demo/supermarket/security/`
+   - Application startup: `src/main/java/demo/supermarket/SupermarketApplication.java`
 
-   - Guest carts:
-     - `src/main/java/demo/supermarket/cart/CartController.java`
-     - `src/main/java/demo/supermarket/cart/CartService.java`
-     - `src/main/java/demo/supermarket/cart/Cart.java`
-     - `src/main/java/demo/supermarket/cart/CartItem.java`
-     - `src/main/java/demo/supermarket/cart/CartRepository.java`
-     - `src/main/java/demo/supermarket/cart/CartTokenGenerator.java`
+   Configuration:
 
-   - Security:
-     - `src/main/java/demo/supermarket/security/SecurityConfiguration.java`
+   - Spring/H2/Flyway/JPA/Actuator: `src/main/resources/application.yml`
+   - Security rules: `src/main/java/demo/supermarket/security/SecurityConfiguration.java`
+   - Application clock: `src/main/java/demo/supermarket/cart/CartConfiguration.java`
 
-   - Configuration:
-     - `src/main/resources/application.yml`
-     - `src/main/java/demo/supermarket/cart/CartConfiguration.java`
-     - `pom.xml`
+   Presentation:
 
-   - Database schema and seed data:
-     - `src/main/resources/db/migration/V1__baseline.sql`
-     - `src/main/resources/db/migration/V2__catalog.sql`
-     - `src/main/resources/db/migration/V3__guest_carts.sql`
-     - `src/main/resources/db/migration/V4__product_slugs.sql`
+   - Thymeleaf templates: `src/main/resources/templates/`
+   - Product images: `src/main/resources/static/images/products/`
+   - Placeholder image: `src/main/resources/static/images/product-placeholder.svg`
 
-   The application uses an in-memory H2 database configured in `src/main/resources/application.yml`. Flyway applies the migrations at startup, and JPA validates the resulting schema rather than creating it.
+   Tests:
 
-   - Templates:
-     - `src/main/resources/templates/catalog.html`
-     - `src/main/resources/templates/cart.html`
-     - `src/main/resources/templates/catalog-cart-mutation.html`
-     - error templates are also under `src/main/resources/templates/`
-
-   - Static assets:
-     - `src/main/resources/static/css/application.css`
-     - `src/main/resources/static/images/`
-     - product images are stored under `src/main/resources/static/images/products/`
-
-   - Tests:
-     - Catalogue tests: `src/test/java/demo/supermarket/catalog/`
-     - Cart tests: `src/test/java/demo/supermarket/cart/`
-     - Security tests: `src/test/java/demo/supermarket/security/`
-     - Browser tests and harness: `src/test/java/demo/supermarket/e2e/`
-
-   There is no `src/test/resources` directory visible in the repository listing.
+   - Cart controller behavior: `src/test/java/demo/supermarket/cart/CartControllerTest.java`
+   - Cart concurrency: `src/test/java/demo/supermarket/cart/CartServiceConcurrencyTest.java`
+   - Cart token retry behavior: `src/test/java/demo/supermarket/cart/CartServiceTokenRetryTest.java`
+   - Catalogue controller/service: `src/test/java/demo/supermarket/catalog/`
+   - Security routes: `src/test/java/demo/supermarket/security/PublicRoutesTest.java`
+   - Browser journey: `src/test/java/demo/supermarket/e2e/HomePageTest.java`
+   - Playwright test infrastructure: `src/test/java/demo/supermarket/e2e/harness/`
 
    ## Current work visible
 
-   The working tree appears clean. The recent history shows three implemented foundations:
+   The repository history shows completed work through the persisted guest-cart feature:
 
-   - `29eb53f` — project foundation
-   - `28e06d5` — seeded catalogue and product listing
-   - `d6b5234` — persisted guest carts
+   - `TASK-001`: project foundation — done
+   - `TASK-002`: seeded catalogue — done
+   - `TASK-003`: persisted guest cart — done
 
-   The latest commit is merged as:
+   This is visible in `docs/tasks/` and the recent Git history.
 
-   ```text
-   9b4b379 Merge pull request #3 from albertattard/003-persisted-guest-cart
-   ```
+   The next backlog items include:
 
-   The README links to `RUNBOOK.md`, but that file was not present in the repository file listing. That is a concrete documentation inconsistency worth confirming with the team.
+   - `TASK-004`: guest pickup checkout — currently marked `needs-grooming`
+   - `TASK-005`: delivery checkout — ready
+   - `TASK-006`: checkout integrity — ready
+   - `TASK-007`: pickup validation/failure handling — ready
+   - `TASK-008`–`TASK-013`: security, logistics, inventory, validation, documentation, and UI polish — ready
 
-   A safe first contribution to explore would be a narrow catalogue or cart behavior improvement backed by an existing test style—for example, identifying an uncovered search, quantity-boundary, or invalid-token case before changing production code. First trace:
+   The working-tree status could not be conclusively read because Git attempted to create macOS Xcode cache files under `/tmp`, which the environment denied. No diff contents were surfaced, but that is weaker evidence than a successful `git status`; check it locally before making changes.
 
-   `CatalogController` → `CatalogService` → `ProductRepository` → `catalog.html`
-
-   Then compare it with:
-
-   `CartController` → `CartService` → JPA entities/repository → `cart.html`
-
-   Do not start with checkout or fulfillment unless the team confirms those features are actually in scope; they are described in the README but not visible in the current implementation.
+   A safe first contribution to explore is not immediate checkout implementation. `TASK-004` is explicitly marked `needs-grooming`, and the repository currently has no order domain, checkout controller, order migration, or order tests. First contribution should be clarifying and decomposing that task, then adding the smallest pickup-checkout vertical slice with tests.
 
    ## Focused 90-minute onboarding plan
 
-   1. 0–10 minutes: Read `README.md`, `pom.xml`, and `application.yml`. Confirm Java/Maven versions, runtime database, migration behavior, and test commands.
-
-   2. 10–25 minutes: Trace catalogue rendering through `CatalogController.java`, `CatalogService.java`, repository queries, and `catalog.html`.
-
-   3. 25–45 minutes: Trace the guest-cart lifecycle through `CartController.java`, `CartService.java`, `Cart.java`, `CartItem.java`, and `V3__guest_carts.sql`.
-
-   4. 45–60 minutes: Read `CatalogControllerTest.java`, `CatalogServiceTest.java`, and the first half of `CartControllerTest.java`. Note how requests, CSRF, redirects, HTMX fragments, and error statuses are asserted.
-
-   5. 60–72 minutes: Read `CartServiceConcurrencyTest.java` and `CartServiceTokenRetryTest.java`. Pay particular attention to pessimistic locking, transaction boundaries, and token collision handling.
-
-   6. 72–82 minutes: Read `HomePageTest.java` and the E2E harness classes. Map browser actions to HTTP behavior.
-
-   7. 82–90 minutes: Choose one small missing test case, document the expected behavior, and confirm scope with the team before implementing it.
+   - 0–10 minutes: Read `README.md`, `pom.xml`, and `src/main/resources/application.yml`. Confirm Java/Maven versions and runtime assumptions.
+   - 10–25 minutes: Trace catalogue behavior from `CatalogController` through `CatalogService`, repositories, entities, migrations, and `catalog.html`.
+   - 25–45 minutes: Trace the cart lifecycle through `CartController`, `CartService`, `Cart`, `CartItem`, and `cart.html`. Pay particular attention to token generation, locking, quantity limits, and exception handling.
+   - 45–60 minutes: Read `CatalogControllerTest.java`, `CartControllerTest.java`, and `HomePageTest.java`. Map each user journey to its test level.
+   - 60–70 minutes: Read `SecurityConfiguration.java` and `PublicRoutesTest.java`. Confirm which routes are intentionally public.
+   - 70–80 minutes: Read ADRs 001–006, especially the server-rendering, persistence, security, and operational decisions.
+   - 80–90 minutes: Review `TASK-004` in detail, list missing domain concepts and acceptance-criteria ambiguities, and propose a test-first vertical slice.
 
    ## Repository conventions
 
-   Observed conventions include:
+   - Java package structure follows business domains: `cart`, `catalog`, and `security`.
+   - Spring MVC controllers return Thymeleaf template names.
+   - Business logic belongs in services, not controllers.
+   - Persistence is JPA plus Flyway migrations; Hibernate is configured to validate rather than create schema.
+   - Guest customers remain unauthenticated; internal routes are intended to require authentication.
+   - Mutating requests use CSRF protection, and controller tests explicitly provide CSRF tokens.
+   - Cart mutation uses pessimistic locking and quantity bounds of 1–99.
+   - Product URLs use opaque/product slugs rather than database IDs.
+   - Tests use Spring MVC tests for request behavior and Playwright for end-to-end browser journeys.
+   - CI’s authoritative command is `./mvnw verify`.
+   - Architecture decisions are documented in `docs/adrs/`.
 
-   - Java package-by-feature organization: `catalog`, `cart`, and `security`.
-   - Constructor injection.
-   - Package-private controllers and services where external visibility is unnecessary.
-   - Spring MVC controllers returning Thymeleaf view names.
-   - Java records for view models, such as `CatalogView` and `CartView`.
-   - Flyway migrations for schema changes and seed data.
-   - `ddl-auto: validate`; schema ownership belongs to migrations.
-   - UTC timestamps through the `Clock` bean in `CartConfiguration.java`.
-   - Explicit transaction annotations in service methods.
-   - CSRF protection for POST requests; controller tests use Spring Security’s `csrf()` request postprocessor.
-   - Unit/integration tests are the default; E2E tests use the `e2e` JUnit tag and Playwright.
-   - Product URLs use stable slugs rather than database IDs.
-   - HTMX is used for partial cart updates, with fallback redirects for ordinary requests.
+   One documentation issue is directly visible: `README.md` links to `RUNBOOK.md`, but no `RUNBOOK.md` appeared in the repository listing. That link should be verified or corrected before relying on it.
 
-   ## Questions only the team can answer
+   ## Questions for the team
 
-   - Is `RUNBOOK.md` intentionally missing, or should the README link be fixed?
-   - Are checkout, orders, pickup, delivery, logistics, and inventory deliberately future scope, or is code expected on another branch?
-   - What is the intended definition and lifecycle of an “active” cart?
-   - Should inactive products already present in a cart remain visible and purchasable?
-   - Is the in-memory H2 database sufficient for the target deployment, or is persistence expected later?
-   - What is the intended production authentication model? Currently all cart and catalogue routes are public, while other routes require HTTP Basic authentication.
-   - Are browser tests expected to run in every developer environment, CI only, or both?
-   - What is the project’s expected contribution workflow and backlog source, given that the README references a workshop runbook not present here?
+   - Is checkout intentionally the next implementation target, or is the workshop backlog order only illustrative?
+   - What is the intended order data model: customer details, fulfillment state, pricing snapshots, and confirmation-code format?
+   - Should cart prices and product descriptions be snapshotted when checkout occurs?
+   - What does “guest order” mean operationally if there are no customer accounts?
+   - Which pickup locations, delivery areas, fees, and business hours should be used?
+   - Are logistics and inventory workflows expected in this application, or are they deliberately only future documentation?
+   - What authentication mechanism and demo credentials should internal users use?
+   - Is the missing `RUNBOOK.md` an accidental omission or an outdated README link?
+   - Should tests be run with a clean `target/`, and where should Playwright browsers be provisioned in local development?
    ~~~
 
    Verify the response yourself. Open the two files or directories Codex
@@ -539,19 +525,14 @@ should apply across tasks.
 +-------------+        +-----------------+
 ```
 
-Think of `AGENTS.md` as a concise operational README for coding agents—not a
-duplicate of the README, task brief, or source code. Its purpose is to reduce
-repetitive prompting and help Codex work more consistently with the project’s
-expectations.
+Think of `AGENTS.md` as a concise operational README for coding agents. It
+records durable working agreements and a project map, rather than duplicating
+the README, task brief, or source code. The code and task files remain the
+source of truth.
 
 `AGENTS.md` is a Codex convention, not a universal standard. Other AI harnesses
 may use a different filename or configuration, or may not load repository
 guidance automatically.
-
-`AGENTS.md` is repository-owned guidance for coding agents. It records durable
-working agreements and a concise project map that would otherwise be scattered
-across prompts, code, and documentation. The code and task files remain the
-source of truth.
 
 Use it for information that materially changes how an agent should work, is hard
 to infer quickly, or prevents a recurring mistake. In this workshop, the file
@@ -563,8 +544,8 @@ create a starting draft. Treat that draft as input for review, not as a finished
 result. Here, we deliberately create a small hand-groomed file so every line has
 a clear purpose.
 
-1. Compare a planning request before repository guidance exists. Codex can still
-   inspect the code and task brief, but it must infer the team's working
+1. Compare a test-strategy request before repository guidance exists. Codex can
+   still inspect the code and task brief, but it must infer the team’s working
    agreements from scattered evidence.
 
    ```shell
@@ -591,278 +572,202 @@ a clear purpose.
    Review the model’s response
 
    ```markdown
-   The task is testable, but three product decisions remain blocking: order-code semantics, confirmation access control, and unknown-order behaviour.
+   The task is testable as a focused pickup-checkout journey, but it is not implementation-ready until the three order-code/confirmation questions are answered. The strategy should protect the customer journey, persistence invariants, validation behavior, and cart state transitions without pulling in delivery or concurrency hardening.
 
-   ## Functional browser journeys
+   ## Browser/end-to-end coverage
 
-   Add `src/test/java/demo/supermarket/e2e/GuestCheckoutTest.java`, extending the existing Playwright pattern in `HomePageTest.java` and `E2eHarness.java`. Add checkout-specific page objects or methods to `HomePage.java`.
+   Extend the existing page-object flow in:
+
+   - `src/test/java/demo/supermarket/e2e/HomePageTest.java`
+   - `src/test/java/demo/supermarket/e2e/harness/HomePage.java`
+   - `src/test/java/demo/supermarket/e2e/harness/PageHelper.java`
+   - `src/test/java/demo/supermarket/e2e/harness/E2eHarness.java`
+
+   The existing E2E suite already starts from the catalogue, mutates a persisted cart, and follows opaque cart URLs (`HomePageTest.java:42-70`, `HomePage.java:67-175`). Checkout should use the same style.
+
+   Recommended journeys:
 
    1. **Successful pickup checkout**
 
-      - Open the catalog.
-      - Add one or more products, including a quantity greater than one.
-      - Open the cart and choose checkout.
-      - Verify the checkout form contains full name, email, phone, and pickup fulfilment.
-      - Submit valid data.
-      - Verify `303 See Other` navigation to `/orders/{orderCode}/confirmation`.
-      - Verify the confirmation displays:
-        - order code;
-        - `PLACED` order;
-        - submitted customer data;
+      - Open catalogue.
+      - Add at least two products, with one quantity greater than one.
+      - Open the cart and proceed to checkout.
+      - Confirm the checkout form shows the cart lines, subtotal, pickup fulfilment, and zero delivery fee.
+      - Submit valid full name, email, and phone.
+      - Assert the browser lands on `/orders/{orderCode}/confirmation`.
+      - Assert the confirmation shows:
+        - customer snapshot;
         - pickup fulfilment;
-        - product names, unit labels, quantities, unit prices, and line totals;
+        - product names, unit labels, prices, quantities, and line totals;
         - goods subtotal;
         - `0.00` delivery fee;
-        - grand total.
+        - grand total;
+        - `PLACED`-equivalent customer-facing confirmation state.
 
-      This is the primary customer journey required by the task and proves that routing, rendering, persistence, snapshot display, and browser form wiring work together. The existing browser suite already establishes the appropriate style and cart setup flow in `src/test/java/demo/supermarket/e2e/HomePageTest.java`.
+      This is the core journey explicitly required by the task (`TASK-004...md:42-49`). It should verify rendered behavior and route integration, not database internals.
 
-   2. **Repeat checkout submission**
+   2. **Refresh/repeat checkout**
 
-      - Submit a valid checkout.
-      - Re-submit the same checkout URL or form.
-      - Verify the browser resolves to the original confirmation.
-      - Verify the displayed order code and totals are unchanged.
+      - Preserve the original checkout POST or resubmit the same form.
+      - Assert redirect to the same confirmation URL/order code.
+      - Assert the confirmation remains unchanged.
 
-      This belongs in browser coverage because the user-visible behaviour is redirecting to the existing confirmation rather than showing a generic cart error. The underlying “no second order” invariant should additionally be checked through MVC/database tests.
+      The browser test should verify the user-visible idempotent result (`TASK-004...md:24`, `:50`); the “exactly one row” assertion belongs in MVC/database tests.
 
-   3. **Checked-out cart is no longer usable**
-
-      - Complete checkout.
-      - Attempt to open the original cart URL.
-      - Verify the existing cart-not-found page.
-      - Attempt a cart mutation, if practical through the browser or MVC coverage.
-
-      This protects the existing contract from `TASK-003`: non-active carts are unavailable through cart routes. The current implementation and tests establish that contract in `CartService.java`, `CartController.java`, and `CartControllerTest.java`.
-
-   4. **Checkout form validation**
-
-      Browser coverage should include one representative invalid submission, not every input combination:
-
-      - submit blank or whitespace-only customer fields and an invalid email;
-      - verify the page remains on checkout;
-      - verify submitted trimmed values are shown;
-      - verify visible, associated field errors.
-
-      Detailed combinations belong in MVC tests. Browser coverage is only needed to catch broken form names, labels, error association, and template rendering.
-
-   5. **Empty-cart checkout**
+   3. **Empty-cart checkout**
 
       - Start an empty cart.
-      - Open checkout and submit.
-      - Verify a `422` response/page with a clear form-level error and no confirmation.
+      - Open checkout.
+      - Submit it.
+      - Assert `422`, a clear form-level error, and no confirmation.
 
-      This is worth one browser journey because it tests the customer-facing failure page and the checkout entry point. The exact persistence invariant belongs in MVC/database tests.
+      This should be MVC-tested primarily, but a browser journey is useful if checkout is reachable from an empty-cart page. The requirement is explicit (`TASK-004...md:23`, `:48`).
 
-   Archived-product checkout is better kept out of browser coverage because it requires manipulating persistence after the cart is populated and provides little additional browser value.
+   4. **Checked-out cart is no longer usable**
 
-   ## Unit, service, MVC, and persistence coverage
+      - Complete checkout.
+      - Attempt to navigate back to the cart URL.
+      - Assert the existing “Cart not found” page.
+      - Attempt a cart mutation through the old URL and assert the same customer-facing result.
 
-   ### Checkout form validation
+      This protects the existing non-active-cart contract from regression (`TASK-004...md:25`, `:51`; `src/test/java/demo/supermarket/cart/CartControllerTest.java:345-364`).
 
-   Likely files:
+   5. **Unknown confirmation code**
 
-   - `src/test/java/demo/supermarket/order/CheckoutFormTest.java`
-   - `src/test/java/demo/supermarket/order/CheckoutControllerTest.java`
+      - Navigate to an unknown `/orders/{orderCode}/confirmation`.
+      - Assert the agreed customer-facing status/page.
 
-   Cover:
+      This should be added only after the product decision in `TASK-004...md:32` is resolved. Do not encode an arbitrary 404/redirect behavior in the test.
 
-   | Input | Expected result |
-   |---|---|
-   | `null` or missing name | invalid |
-   | `""` name | invalid |
-   | `"   "` name | invalid |
-   | `" Albert Example "` | trimmed and accepted |
-   | equivalent cases for email and phone | same |
-   | `albert@example.com` | accepted |
-   | `albert.example.com` | rejected |
-   | valid name/phone with invalid email | only email error |
-   | all fields invalid | all field errors |
-   | valid values with surrounding whitespace | trimmed values redisplayed and persisted |
+   Browser coverage should not attempt delivery, payment, concurrent submissions, collision injection, rollback injection, or corrupted-data scenarios; those are explicitly deferred (`TASK-004...md:36-40`).
 
-   The task explicitly requires trimmed non-blank values and Jakarta `@Email` validation. MVC tests should prove the HTTP contract:
+   ## Unit and MVC coverage
 
-   - `POST /cart/{token}/checkout`;
-   - `422 Unprocessable Content`;
-   - no redirect;
-   - submitted values preserved after trimming;
-   - field errors associated programmatically with the corresponding inputs.
-
-   Do not test browser-native HTML validation as a substitute; it does not prove server-side validation.
-
-   ### Checkout page and routing
-
-   Likely file:
-
-   - `src/test/java/demo/supermarket/order/CheckoutControllerTest.java`
-
-   Cover:
-
-   - `GET /cart/{token}/checkout` for an active non-empty cart returns `200`;
-   - checkout form contains the cart lines and pickup option;
-   - unknown token returns the established cart-not-found response;
-   - checked-out token returns the same cart-not-found response;
-   - valid POST returns `303`;
-   - redirect location matches the canonical confirmation route;
-   - missing CSRF on POST is rejected consistently with existing cart POST routes.
-
-   The existing MVC convention is visible in `src/test/java/demo/supermarket/cart/CartControllerTest.java`, which uses `MockMvc`, CSRF helpers, redirect assertions, and full-stack Spring context tests.
-
-   ### Order creation and snapshot rules
-
-   Likely files:
+   Likely files to add:
 
    - `src/test/java/demo/supermarket/order/OrderServiceTest.java`
-   - `src/test/java/demo/supermarket/order/OrderRepositoryTest.java`, if repository-specific queries exist
    - `src/test/java/demo/supermarket/order/OrderControllerTest.java`
-   - possibly `src/test/java/demo/supermarket/order/OrderPersistenceTest.java`
-
-   Use a populated cart containing at least two products and different quantities. Assert:
-
-   - exactly one order is created;
-   - status is `PLACED`;
-   - fulfilment is `PICKUP`;
-   - `cart_id` is non-null and unique;
-   - one order item exists per cart line;
-   - product name, unit label, unit price, quantity, and line total are copied;
-   - customer name, email, and phone are copied;
-   - goods subtotal is correct;
-   - delivery fee is exactly `0.00`;
-   - grand total equals subtotal plus delivery fee.
-
-   The order model should be tested as immutable from the application boundary: change the product name or price after checkout, then reload the confirmation/order and verify the original snapshot remains. The same applies to submitted customer data if the design stores a separate customer entity or mutable form object.
-
-   This is more valuable than asserting only rendered HTML. The task’s core risk is persistence correctness, while the browser test should verify that those persisted values are presented.
-
-   ### Empty and archived carts
-
-   Likely file:
-
-   - `src/test/java/demo/supermarket/order/CheckoutControllerTest.java`
-   - possibly `src/test/java/demo/supermarket/order/OrderServiceTest.java`
-
-   Cover:
-
-   - empty active cart POST returns `422`;
-   - response contains a clear form-level error;
-   - submitted customer values are preserved;
-   - no order or order item is created;
-   - cart remains `ACTIVE`.
-
-   For archived products:
-
-   1. create a cart containing an active product;
-   2. set that product’s `active` flag to `false` using `JdbcTemplate` or the product repository;
-   3. submit checkout;
-   4. assert `422`, form-level error, preserved values, and zero orders;
-   5. assert cart remains `ACTIVE`.
-
-   This requirement is specifically distinguished from ordinary catalog visibility: the product may have been added while active and archived later. It therefore requires a persistence-state setup rather than a normal browser journey. The product’s `active` persistence field is defined in `src/main/java/demo/supermarket/catalog/Product.java` and `src/main/resources/db/migration/V2__catalog.sql`.
-
-   ### Repeated submission
-
-   Likely file:
-
-   - `src/test/java/demo/supermarket/order/CheckoutControllerTest.java`
-   - `src/test/java/demo/supermarket/order/OrderServiceTest.java`
-
-   Submit checkout twice with the same cart token and assert:
-
-   - both responses resolve to the same confirmation URL;
-   - order count remains one;
-   - order-item count remains unchanged;
-   - cart state is `CHECKED_OUT`;
-   - the original snapshot is not overwritten by different second-submission customer data.
-
-   That last case is important. “Redirects to its existing order” implies the second submission must not update the original order. The task does not currently state whether changed second-submission values should be ignored, rejected, or silently redirected; this needs a product answer or an explicit test assumption.
-
-   ### Confirmation route
-
-   Likely file:
-
-   - `src/test/java/demo/supermarket/order/OrderControllerTest.java`
-
-   Cover:
-
-   - known order code returns `200`;
-   - confirmation renders persisted snapshots and totals;
-   - pickup confirmation has no delivery address;
-   - unknown order code follows the resolved product decision;
-   - malformed order code follows the same or a distinct policy, once decided;
-   - confirmation is publicly accessible or protected according to the resolved access rule.
-
-   The existing public-route baseline is in `src/test/java/demo/supermarket/security/PublicRoutesTest.java`; it should be extended only after deciding whether possession of an order code is sufficient authorization.
-
-   ### Database migration and constraints
-
-   Likely files:
-
-   - `src/test/java/demo/supermarket/order/OrderSchemaTest.java`, if schema-level tests are used;
-   - or additions to `OrderPersistenceTest.java`.
-
-   Verify the Flyway-created schema enforces:
-
-   - non-null `cart_id`;
-   - unique `cart_id`;
-   - valid enum values for fulfilment and status;
-   - required snapshot columns;
-   - appropriate decimal precision/scale;
-   - foreign-key relationship to carts;
-   - order-item relationship and quantity constraints.
-
-   The existing migration style is in `src/main/resources/db/migration/V3__guest_carts.sql`. Do not add concurrency or forced-collision tests here; those are explicitly assigned to `TASK-006`.
-
-   ## Likely file changes
-
-   Expected additions:
-
-   - `src/main/java/demo/supermarket/order/Order.java`
-   - `src/main/java/demo/supermarket/order/OrderItem.java`
-   - `src/main/java/demo/supermarket/order/OrderRepository.java`
-   - `src/main/java/demo/supermarket/order/OrderService.java`
-   - `src/main/java/demo/supermarket/order/OrderController.java`
-   - checkout form/view records and validation classes;
-   - confirmation and checkout templates;
-   - `src/main/resources/db/migration/V5__orders.sql`;
-   - `src/test/java/demo/supermarket/order/CheckoutFormTest.java`;
-   - `src/test/java/demo/supermarket/order/CheckoutControllerTest.java`;
-   - `src/test/java/demo/supermarket/order/OrderServiceTest.java`;
-   - `src/test/java/demo/supermarket/order/OrderPersistenceTest.java`;
-   - `src/test/java/demo/supermarket/e2e/GuestCheckoutTest.java`;
-   - updates to `src/test/java/demo/supermarket/e2e/harness/HomePage.java` or new `CheckoutPage.java`;
-   - possible additions to `src/test/java/demo/supermarket/security/PublicRoutesTest.java`.
+   - `src/test/java/demo/supermarket/order/OrderRepositoryTest.java` or a focused persistence/integration test
+   - `src/test/java/demo/supermarket/order/OrderSnapshotTest.java`
 
    Likely existing files to change:
 
-   - `src/main/java/demo/supermarket/cart/Cart.java`
-   - `src/main/java/demo/supermarket/cart/CartService.java`
-   - `src/main/java/demo/supermarket/cart/CartController.java`
-   - `src/main/resources/templates/cart.html`
    - `src/test/java/demo/supermarket/cart/CartControllerTest.java`
+   - `src/test/java/demo/supermarket/security/PublicRoutesTest.java`
 
-   The cart changes should be narrowly tested for transition and mutation behaviour; existing cart tests should not be rewritten wholesale. `CartService` currently resolves only `ACTIVE` carts through `findByTokenAndState` and locking mutation queries, which is the relevant seam for checkout transition and post-checkout not-found behaviour.
+   ### Checkout controller MVC tests
 
-   ## Unresolved product/testing decisions
+   Add an `OrderControllerTest` or checkout-focused controller test covering:
 
-   1. What exact public order-code format, alphabet, entropy target, and collision behaviour should this first story guarantee?
-   2. Is an order confirmation public to anyone holding the code, or should this story introduce another access mechanism?
-   3. What customer-facing response should an unknown order code receive?
-   4. On a repeated POST with different customer values, should the original order always win, or should the request be rejected?
-   5. Should direct `GET /cart/{token}/checkout` for an empty cart show the form and fail only on POST, or should GET itself return `422`?
-   6. Should pickup fulfilment be a user-editable field, a fixed hidden value, or a displayed non-editable choice?
-   7. What exact wording qualifies as a “clear form-level error” for empty and archived carts?
-   8. Should order confirmation expose customer phone and email in full, or is masking required?
-   9. What precision and rounding rule should apply to monetary calculations if future prices contain more than two decimal places?
+   - `GET /cart/{token}/checkout` for an active cart returns `200`.
+   - Checkout form contains the expected fields and programmatic associations.
+   - Valid POST returns `303 See Other`.
+   - Redirect location exactly matches the agreed canonical confirmation URL.
+   - Missing or blank full name, email, and phone return `422`.
+   - Whitespace-only values are rejected.
+   - Values with surrounding whitespace are either preserved or normalized according to an explicit product decision; the task currently says “require trimmed” but does not say whether snapshots store trimmed values.
+   - Malformed email values are rejected through Bean Validation.
+   - Valid email boundary examples accepted by Jakarta `@Email`.
+   - Validation errors retain submitted values.
+   - Each error is associated with the corresponding field through `id`/`for`, `aria-describedby`, or the selected form convention.
+   - Empty cart and archived-product cart return `422` with a form-level error.
+   - Unknown cart token follows the existing cart-not-found behavior.
+   - Checked-out cart cannot be submitted as a new checkout.
+   - Confirmation route renders a known order.
+   - Unknown order-code behavior matches the resolved decision.
 
-   The first three are explicitly marked unresolved in the task and materially affect route assertions, security tests, and failure-response expectations. Until they are settled, the strategy can be implemented only with temporary test assumptions.
+   The existing MVC tests use `MockMvc`, CSRF, response status, redirect headers, and HTML assertions (`src/test/java/demo/supermarket/cart/CartControllerTest.java:307-381`). Follow that convention.
+
+   ### Service/domain tests
+
+   `OrderServiceTest` should cover the business rules independently of HTML:
+
+   - Active non-empty cart creates exactly one order.
+   - Order status is `PLACED`.
+   - Fulfilment type is `PICKUP`.
+   - Delivery fee is exactly `BigDecimal("0.00")`.
+   - Grand total equals goods subtotal plus delivery fee.
+   - Multiple lines and quantities calculate line totals correctly.
+   - Product name, unit label, unit price, quantity, and line total are copied into order-item snapshots.
+   - Submitted customer fields are copied into the order snapshot.
+   - The source cart is changed to `CHECKED_OUT` only after successful creation.
+   - Archived products are rejected even if they remain in an existing cart.
+   - Empty carts are rejected.
+   - Repeated checkout resolves to the existing order rather than creating another.
+   - Pickup orders do not contain delivery-only data.
+
+   The current cart implementation calculates totals from live product data (`src/main/java/demo/supermarket/cart/CartService.java:119-151`), while this task specifically requires historical snapshots (`TASK-004...md:20-23`). A persistence-level test should mutate the product after checkout and prove the stored order values do not change. This is more valuable than merely asserting the initial values.
+
+   ### Persistence/schema tests
+
+   Add an integration test against the migrated H2 schema to verify:
+
+   - `orders.cart_id` is non-null and unique.
+   - Order items reference their order.
+   - Required snapshot columns cannot be null.
+   - Enum values persist as `PICKUP` and `PLACED`.
+   - Monetary values retain two-decimal precision.
+   - Cascade/orphan behavior is appropriate for order items.
+   - A cart cannot be linked to two orders.
+
+   The existing migration establishes similar database constraints for carts and cart items (`src/main/resources/db/migration/V3__guest_carts.sql:1-24`), so order constraints should be tested at the database boundary rather than inferred solely from JPA annotations.
+
+   ### Existing cart tests
+
+   Extend `CartControllerTest` with:
+
+   - Checkout success changes the cart’s state.
+   - All cart GET and mutation routes return the existing not-found page after checkout.
+   - Repeated checkout does not create a second order.
+   - Checkout rejects an archived product already present in the cart.
+
+   The current suite already directly inserts a `CHECKED_OUT` cart and verifies non-active routes return 404 (`src/test/java/demo/supermarket/cart/CartControllerTest.java:345-364`). Reusing this fixture style will make the state-transition tests deterministic.
+
+   ### Public-route security test
+
+   Extend `PublicRoutesTest` with the agreed policy for:
+
+   - `GET /cart/{token}/checkout`;
+   - `POST /cart/{token}/checkout`;
+   - `GET /orders/{orderCode}/confirmation`.
+
+   This matters because the task defines guest checkout, and the security baseline says customer catalogue/cart/checkout routes remain unauthenticated (`docs/tasks/TASK-008-security-and-demo-users.md:21-25`). If confirmations are public by order code, test that explicitly; if they require another mechanism, test the denial behavior instead.
+
+   ## Validation matrix
+
+   Use representative equivalence classes rather than exhaustive combinations:
+
+   | Field         | Accept                                                                          | Reject                                                 |
+   | ------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------ |
+   | Full name     | normal name; leading/trailing whitespace if trimming is allowed                 | missing, `""`, whitespace-only                         |
+   | Email         | ordinary valid email; mixed case; surrounding whitespace if trimming is allowed | missing, blank, malformed local/domain, invalid syntax |
+   | Phone         | normal phone string; international-style string if allowed                      | missing, blank                                         |
+   | Cart          | one line; multiple lines; quantity 1 and greater than 1                         | empty; archived product                                |
+   | Request state | active cart                                                                     | checked-out cart; unknown token                        |
+
+   The task specifies blank checking and `@Email`, but it does not specify phone format (`TASK-004...md:20`). Do not invent a phone regex in tests. Test only blank/non-blank until a phone-format rule is agreed.
+
+   ## Decisions requiring a human answer
+
+   These must be resolved before writing stable assertions:
+
+   1. **Order-code contract** — exact format, alphabet, minimum entropy/length, case sensitivity, and collision behavior (`TASK-004...md:30`).
+   2. **Confirmation access** — public to anyone holding the code, or protected by another mechanism (`:31`).
+   3. **Unknown order code** — 404 page, generic error page, redirect, or another response (`:32`).
+   4. **Trimming semantics** — are submitted values trimmed before validation only, or are trimmed values stored in the order snapshot?
+   5. **Phone validation** — blank-only, or a defined format/length rule?
+   6. **Confirmation refresh/replay semantics** — should a browser refresh issue a GET only, and should a repeated POST always redirect to the existing order?
+   7. **Archived-product timing** — should an archive operation invalidate an existing cart immediately, or only cause checkout failure? The task implies the latter but should state it explicitly.
+   8. **Order snapshot visibility** — should the confirmation display every stored snapshot field, including the unit label and exact monetary breakdown?
+
+   The biggest testing risk is treating the task’s phrase “immutability” as a Java-object concern only. The important acceptance behavior is persistence independence: after checkout, later product/catalog changes must not alter the order or confirmation. That requires an integration test backed by the database, not just unit assertions on object construction.
    ```
 
-   For a more detailed analysis look at the logs:
-   `/tmp/codex-agents-before.log`. This will show all interaction between the
-   harness and the model.
+   For a detailed record of this run, inspect `/tmp/codex-agents-before.log`.
+   It contains the captured Codex session output, including its repository
+   investigation.
 
-   Print the number of tokens used to answer this user query without using the
-   `AGENTS.md` file.
+   Extract the tokens used for this request without `AGENTS.md` guidance.
 
    ```shell
    tokens_used="$(awk '/^tokens used$/{getline; print; exit}' '/tmp/codex-agents-before.log')"
@@ -872,14 +777,13 @@ a clear purpose.
    Tokens used without `AGENTS.md`
 
    ```
-   43.109
+   49.298
    ```
 
-   Numbers are easy to compare, but one cannot simply conclude that one approach
-   is better than the other by just looking at the number of tokens used. The
-   main important thing here is the message prodcued by the model, which cannot
-   be compared using quantitative measures. We are showing the tokens uses as a
-   measure of efficiency.
+   Token counts are a useful efficiency signal, not a quality score. They do not
+   measure whether the strategy is correct, follows the team’s preferences, or
+   identifies important gaps. One run is only an observation; compare the
+   response itself as well as the numbers.
 
 2. Add a concise, reviewed `AGENTS.md`. This file is a curated index and set of
    working agreements, not a second README.
@@ -929,7 +833,7 @@ a clear purpose.
    EOF
    ```
 
-   The `AGENTS.md` file should look like the following.
+   Review the `AGENTS.md` file that you created.
 
    ```markdown
    # Demo Supermarket agent guidance
@@ -991,232 +895,285 @@ a clear purpose.
    EOF
    ```
 
-   The user prompt is the same as before.
+   The prompt is unchanged from the first run.
 
    Review the model’s response.
 
    ```markdown
-   ## Test strategy
+   ## Recommended scope
 
-   The task is not fully test-ready: three public-facing decisions are explicitly unresolved, and they affect both assertions and route design. The test plan below treats those as fixtures to be supplied during grooming.
+   Use one functional browser journey for the successful pickup checkout, plus MVC/integration tests for validation, persistence, idempotency, failure states, and route behavior. Do not add browser tests for every validation combination; those would be slow and duplicate server-side behavior.
 
-   ### Functional browser journeys
+   The task is currently `needs-grooming`, and three public-behavior decisions remain unresolved in the task itself: order-code design, confirmation access, and unknown-order handling ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:28-34)). These decisions affect both test assertions and route/security setup.
 
-   Keep browser coverage limited to distinct customer journeys. The existing suite already uses Playwright through `src/test/java/demo/supermarket/e2e/HomePageTest.java` and keeps cart coverage in one journey, so checkout should be added as a separate journey rather than expanding every existing cart test.
+   ## Functional browser coverage
 
-   #### 1. Successful guest pickup checkout
+   ### 1. Complete pickup checkout and confirmation
 
-   Likely location: `src/test/java/demo/supermarket/e2e/HomePageTest.java`, or preferably a new `GuestCheckoutTest.java` with checkout-specific page-object methods.
+   Add a checkout journey to the existing E2E structure, probably in:
+
+   - `src/test/java/demo/supermarket/e2e/CheckoutTest.java`
+   - Extend `src/test/java/demo/supermarket/e2e/harness/HomePage.java`, or add `CheckoutPage.java`
 
    Journey:
 
-   1. Open the catalogue.
-   2. Start a guest cart and add one or more products.
+   1. Open the catalog.
+   2. Add at least two products, with one quantity greater than one.
    3. Open the cart.
    4. Navigate to checkout.
-   5. Submit valid full name, email, and phone values.
-   6. Verify `303 See Other` behavior indirectly through navigation to `/orders/{orderCode}/confirmation`.
-   7. Verify the confirmation displays:
-      - order code;
-      - submitted customer data;
-      - product snapshots and quantities;
-      - goods subtotal;
-      - `0.00` pickup delivery fee;
-      - grand total;
+   5. Submit valid full name, email, and phone.
+   6. Assert `303` behavior indirectly through the final confirmation page and canonical URL.
+   7. Assert the confirmation displays:
+      - customer details;
       - pickup fulfilment;
-      - `PLACED` order state or equivalent customer-facing status.
+      - product names and unit labels;
+      - quantities;
+      - line totals;
+      - goods subtotal;
+      - `0.00` delivery fee;
+      - grand total;
+      - order code.
 
-   Rationale: this is the task’s primary user outcome and the only journey explicitly required to have full-stack or browser coverage. It verifies that catalogue, persisted cart, checkout form, redirect, order creation, and confirmation rendering work together. The existing cart journey establishes the cart setup pattern in `HomePageTest.java`.
+   This is the minimum browser journey explicitly required by the task ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:42-49)). It should use multiple products and a non-unit quantity because a one-line, quantity-one cart would not adequately exercise snapshot and total rendering.
 
-   #### 2. Repeated checkout resolves to the original order
+   ### 2. Repeated checkout resolves to the same order
 
-   This can be part of the successful checkout test if it does not make the scenario unclear; otherwise make it a second browser test.
+   This can be part of the same browser test if the confirmation page or test helper can resubmit the checkout form. Otherwise use a focused MVC test and avoid a second browser journey.
 
-   1. Submit checkout successfully.
-   2. Revisit or resubmit the same checkout URL.
-   3. Verify navigation reaches the original confirmation URL.
-   4. Verify the confirmation still shows the original order code and contents.
+   Browser-level coverage is useful only if the user-visible behavior is important: resubmission must end at the original confirmation rather than displaying an error or creating another order. The database invariant and “no additional order” assertion belong in an MVC/integration test, not in browser-only assertions ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:24, 50)).
 
-   Rationale: this is an observable customer journey and protects the “one order per cart” behavior. The database-level “no additional order” assertion belongs in MVC/service tests, because browser tests should not query persistence directly.
+   ### 3. Checked-out cart is no longer usable
 
-   #### 3. Checked-out cart is no longer usable
+   Prefer MVC coverage for this. A browser test could verify that navigating back to the old cart shows “Cart not found” and that mutation controls cannot be used, but it would add little beyond the route-level tests.
 
-   Likely part of the repeated-submission scenario or a focused MVC test; browser coverage is optional.
+   If retained in the checkout browser journey, assert:
 
-   After successful checkout:
+   - the old cart URL behaves as cart-not-found;
+   - the order confirmation remains accessible;
+   - no cart-edit action succeeds.
 
-   - attempt to open the original cart URL;
-   - verify the existing cart-not-found customer page;
-   - optionally attempt a cart mutation and verify the same outcome.
+   The task explicitly requires both cart-not-found behavior and rejected mutations ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:25, 51)).
 
-   Rationale: this is user-visible and explicitly required, but it does not need a separate expensive browser process if the existing cart-not-found and mutation behavior are covered through MVC tests. It should be included in the browser journey if the checkout page links back to the cart or if this state transition is central to the UI.
+   ### Browser coverage deliberately excluded
 
-   #### Browser cases not worth duplicating
+   Do not create separate browser journeys for:
 
-   Do not create browser tests for every invalid field combination, archived-product setup, exact totals permutation, or order-code collision. Those require controlled state and are better covered through MVC/service tests. The project guidance explicitly recommends few, non-overlapping browser journeys in `AGENTS.md`.
+   - every invalid field;
+   - empty-cart checkout;
+   - archived-product checkout;
+   - unknown order codes;
+   - every whitespace/email variation.
 
-   ### Unit, service, and MVC coverage
+   Those are deterministic server-side branches and are better covered with MockMvc/integration tests. The existing browser suite already keeps journeys broad and few: `HomePageTest` has one catalog/cart journey covering the persisted cart lifecycle ([HomePageTest.java](src/test/java/demo/supermarket/e2e/HomePageTest.java:50-90)).
 
-   No order or checkout implementation currently exists; the current cart boundary is `src/main/java/demo/supermarket/cart/CartService.java` and `CartController.java`. A new capability boundary should likely be introduced under `src/main/java/demo/supermarket/order/` or `checkout/`, consistent with the feature-oriented package rule in `AGENTS.md`.
+   ## Unit and MVC/integration coverage
 
-   #### Checkout form validation
+   ### Checkout form validation
 
-   Likely test file: `src/test/java/demo/supermarket/order/CheckoutControllerTest.java`.
+   Likely test file:
 
-   Cover:
+   - `src/test/java/demo/supermarket/order/OrderControllerTest.java`, or
+   - `src/test/java/demo/supermarket/checkout/CheckoutControllerTest.java`
 
-   - missing full name;
-   - full name containing only whitespace;
-   - leading/trailing whitespace is trimmed before persistence and redisplay;
-   - missing email;
-   - blank email;
-   - malformed email values rejected by `@Email`;
-   - missing phone;
-   - phone containing only whitespace;
-   - all fields valid;
-   - multiple invalid fields in one submission;
-   - submitted values preserved after validation failure;
-   - field errors are programmatically associated with the corresponding inputs;
-   - validation response is `422 Unprocessable Content`;
-   - valid form submission returns `303 See Other`.
+   Cover each field independently and representative combinations:
 
-   Use representative values rather than an exhaustive email-format matrix, because the requirement delegates email validation to Jakarta Bean Validation’s `@Email`. The important combinations are blank/trimmed/malformed/valid and multiple simultaneous errors.
+   | Case                                     | Expected assertions                                                                                 |
+   | ---------------------------------------- | --------------------------------------------------------------------------------------------------- |
+   | Missing full name                        | `422`, submitted values preserved, field error associated with `fullName`                           |
+   | Blank full name                          | Same                                                                                                |
+   | Whitespace-padded full name              | Confirm whether trimming means acceptance after normalization or rejection; see open decision below |
+   | Missing email                            | `422`, field-associated error                                                                       |
+   | Blank email                              | `422`, field-associated error                                                                       |
+   | Malformed email                          | `422`, `@Email` error                                                                               |
+   | Missing phone                            | `422`, field-associated error                                                                       |
+   | Blank phone                              | `422`, field-associated error                                                                       |
+   | All fields invalid                       | `422`, all relevant errors rendered and associated                                                  |
+   | Valid values with surrounding whitespace | Verify the chosen trimming semantics                                                                |
+   | Missing/invalid CSRF on POST             | Preserve the project’s security expectations                                                        |
 
-   Potential unit test: `src/test/java/demo/supermarket/order/CheckoutFormTest.java` if validation or normalization is extracted from MVC binding. Do not duplicate MVC assertions in unit tests.
+   The task explicitly requires trimmed, non-blank values, Jakarta `@Email`, preserved submitted values, programmatic field association, and `422` ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:19-21, 47)). Tests should inspect HTML associations such as `for`/`id` or equivalent Thymeleaf-generated attributes, not merely search for an error string.
 
-   #### Checkout business rules
+   ### Checkout page rendering and method behavior
 
-   Likely test file: `src/test/java/demo/supermarket/order/OrderServiceTest.java`.
+   In the same controller test:
 
-   Cover:
+   - `GET /cart/{token}/checkout` for an active non-empty cart returns `200`;
+   - checkout form contains the expected fields and pickup selection/display;
+   - `GET` for an unknown cart returns existing cart-not-found behavior;
+   - `POST` with valid data returns `303 See Other`;
+   - redirect location matches the resolved canonical confirmation URL;
+   - unsupported methods and missing required parameters behave consistently with the application’s MVC conventions.
 
-   - active cart with one line creates one order;
-   - active cart with multiple lines creates matching order items;
-   - product name, unit label, unit price, quantity, and line total are copied as immutable snapshots;
-   - submitted customer values are copied as snapshots;
-   - fulfilment is `PICKUP`;
-   - goods subtotal equals the sum of snapshot line totals;
-   - delivery fee is exactly `0.00`;
-   - grand total equals subtotal plus delivery fee;
-   - new order status is `PLACED`;
-   - cart becomes `CHECKED_OUT` only after successful order creation;
-   - the order references the source cart;
-   - an empty active cart is rejected with a form-level error;
-   - a cart containing an archived product is rejected with a form-level error;
-   - rejected empty/archived checkout leaves the cart active and creates no order;
-   - product price/name changes after order creation do not alter stored order snapshots;
-   - customer input changes after order creation do not alter stored order snapshots.
+   The existing cart controller uses explicit `RedirectView` responses with `303 See Other` ([CartController.java](src/main/java/demo/supermarket/cart/CartController.java:87-103)), so the new controller test should assert the exact status and `Location` header rather than only following redirects.
 
-   The snapshot tests are more important than merely checking row existence: the task explicitly requires immutable historical values. Persistence assertions should inspect order and order-item repositories or JDBC state, following the existing database-backed style in `src/test/java/demo/supermarket/cart/CartControllerTest.java`.
+   ### Empty and archived carts
 
-   #### Repeated submission and cart state
+   Cover with MVC/integration tests:
 
-   Likely test file: `src/test/java/demo/supermarket/order/OrderServiceTest.java` or `CheckoutControllerTest.java`.
+   - empty active cart submitted to checkout → `422`;
+   - archived-product cart submitted to checkout → `422`;
+   - clear form-level error;
+   - no order created;
+   - cart remains `ACTIVE` after either failure.
 
-   Cover:
+   The archived-product setup may require direct database mutation through `JdbcTemplate`, as the existing cart tests already use database access for state setup/assertion ([CartControllerTest.java](src/test/java/demo/supermarket/cart/CartControllerTest.java:21-30)). Do not test this through the catalog UI: archived products are specifically a checkout integrity rule, not a user journey.
 
-   - checked-out cart with an existing order returns that order;
-   - repeated submission creates no second order;
-   - both submissions resolve to the same confirmation route;
-   - checked-out cart cannot be mutated;
-   - checked-out cart accessed through `GET /cart/{token}` returns the existing cart-not-found behavior;
-   - checked-out cart mutation routes return the same customer-facing not-found behavior.
-
-   The “no additional order” assertion must be a persistence count or unique-cart lookup, not only a redirect assertion.
-
-   #### Confirmation route
-
-   Likely test file: `src/test/java/demo/supermarket/order/OrderControllerTest.java`.
-
-   Cover:
-
-   - known order code returns `200`;
-   - confirmation renders all required snapshots and totals;
-   - unknown order code returns the agreed status and customer-facing response;
-   - confirmation does not expose internal database identifiers;
-   - access behavior matches the resolved public/private decision;
-   - malformed order-code input follows the agreed unknown-code behavior.
-
-   The existing security baseline is protected by default in `docs/adrs/ADR-005-security-baseline.md`, while `src/main/java/demo/supermarket/security/SecurityConfiguration.java` currently explicitly permits `/cart/**` but not `/orders/**`. A test must therefore verify the intended route policy, not assume that confirmations are public.
-
-   #### Order-code generation
-
-   Likely test file: `src/test/java/demo/supermarket/order/OrderCodeGeneratorTest.java` and, after persistence exists, `OrderServiceTest.java`.
-
-   The tests depend on the grooming decision, but should cover:
-
-   - exact alphabet and format;
-   - minimum length/entropy proxy if specified;
-   - generated codes do not expose database IDs or customer data;
-   - uniqueness constraint is present;
-   - collision behavior is either rejected or retried, according to the decision.
-
-   Collision retry, forced collisions, and database-boundary behavior are explicitly out of scope for this story and assigned to `TASK-006` in `docs/tasks/TASK-006-checkout-integrity-and-failure-handling.md`. TASK-004 should test only the guarantee actually promised by the groomed task, not prematurely implement TASK-006’s hardening suite.
-
-   #### Persistence and migration
+   ### Successful order persistence and snapshots
 
    Likely files:
 
-   - new migration under `src/main/resources/db/migration/`, probably `V5__orders.sql`;
-   - `src/test/java/demo/supermarket/order/OrderRepositoryTest.java`, if repository behavior is non-trivial;
-   - existing Spring Boot context tests such as `CartControllerTest.java`.
+   - `src/test/java/demo/supermarket/order/OrderServiceTest.java`
+   - `src/test/java/demo/supermarket/order/OrderControllerTest.java`
+   - possibly a repository/integration test if entity mappings are complex
+
+   Assert after successful checkout:
+
+   - exactly one order exists;
+   - order status is `PLACED`;
+   - fulfilment type is `PICKUP`;
+   - source `cart_id` is non-null and unique;
+   - delivery fee is exactly `0.00`;
+   - subtotal and grand total are mathematically correct;
+   - item quantity, unit price, line total, name, and unit label are stored;
+   - submitted name, email, and phone are stored;
+   - cart state becomes `CHECKED_OUT`.
+
+   The persistence assertions are necessary because the acceptance criteria require immutable snapshots, not merely correct confirmation-page output ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:16-23, 49)).
+
+   ### Snapshot immutability
+
+   Add an integration test that:
+
+   1. Places an order.
+   2. Changes the underlying product name, unit label, price, or active state directly in the test database.
+   3. Loads the confirmation/order.
+   4. Confirms the stored order values did not change.
+
+   This is more valuable than testing Java object immutability alone: the requirement is a persisted historical snapshot. The current product model contains mutable catalog fields, including `name`, `unitLabel`, `unitPrice`, and `active` ([Product.java](src/main/java/demo/supermarket/catalog/Product.java:18-40)).
+
+   Do not test concurrent submissions, rollback injection, forced collisions, or corrupted data here; the task explicitly assigns those to TASK-006 ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:36-40)).
+
+   ### Idempotent repeated submission
+
+   Add an integration/MVC test that:
+
+   1. Creates a valid active cart.
+   2. Submits checkout successfully.
+   3. Submits the same checkout again.
+   4. Asserts another order is not created.
+   5. Asserts the response redirects to the original confirmation.
+   6. Asserts the cart remains checked out.
+
+   This test should verify both the application behavior and the database uniqueness invariant. It is not enough to assert that the second response has a redirect; it must prove order count remains unchanged ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:17, 24, 50)).
+
+   ### Checked-out cart routes and mutations
+
+   Extend `CartControllerTest` or add a focused order/cart integration test:
+
+   - `GET /cart/{checkedOutToken}` → existing cart-not-found result;
+   - `POST /cart/{checkedOutToken}/items` → rejected;
+   - quantity update → rejected;
+   - remove item → rejected;
+   - no cart contents are changed.
+
+   The current service deliberately queries only `ACTIVE` carts for reads and mutations ([CartService.java](src/main/java/demo/supermarket/cart/CartService.java:69-89, 121-128)). The new tests should lock in that boundary rather than rely only on a browser symptom.
+
+   ### Confirmation route
+
+   Add tests for:
+
+   - known order code → confirmation page;
+   - confirmation contains persisted snapshot data;
+   - order code does not expose internal cart/database IDs unless explicitly intended;
+   - unknown order code → the human-decided status and page;
+   - confirmation access behavior matches the human decision.
+
+   The current security policy permits `/cart/**` but protects all other routes by default ([SecurityConfiguration.java](src/main/java/demo/supermarket/security/SecurityConfiguration.java:12-27)). Therefore `/orders/{orderCode}/confirmation` will not be publicly reachable unless security configuration changes. This is a material gap, not a test implementation detail.
+
+   Update:
+
+   - `src/test/java/demo/supermarket/security/PublicRoutesTest.java`
+
+   to assert the chosen access policy. The existing test establishes the project’s pattern for public-route checks and protected-by-default behavior ([PublicRoutesTest.java](src/test/java/demo/supermarket/security/PublicRoutesTest.java:20-59)).
+
+   ## Database and migration verification
+
+   Likely additions:
+
+   - `src/main/resources/db/migration/V5__orders.sql`
+   - migration/startup coverage through the existing Spring Boot integration tests
 
    Verify:
 
-   - order table exists;
-   - order-item table exists;
-   - `cart_id` is non-null and unique;
+   - order and order-item tables are created;
    - foreign keys exist;
-   - status and fulfilment values support `PLACED` and `PICKUP`;
-   - monetary columns preserve two-decimal values;
-   - required snapshot columns are non-null where appropriate;
-   - Flyway and JPA schema validation succeed.
+   - `cart_id` is non-null and unique;
+   - enum/status constraints accept only the intended values;
+   - monetary columns preserve scale;
+   - item rows cannot exist without an order;
+   - migration works with Flyway and Hibernate validation.
 
-   Do not modify existing migrations. This follows both `AGENTS.md` and `docs/adrs/ADR-004-persistence-baseline.md`.
+   Do not modify existing migrations. The repository’s persistence ADR requires schema changes to be represented as new Flyway migrations, with Hibernate validating the resulting schema ([ADR-004-persistence-baseline.md](docs/adrs/ADR-004-persistence-baseline.md:13-25)).
 
-   ### Likely files to add or change
+   ## Likely files to add or change
 
    Add:
 
-   - `src/test/java/demo/supermarket/e2e/GuestCheckoutTest.java`
-   - `src/test/java/demo/supermarket/e2e/harness/CheckoutPage.java`
-   - `src/test/java/demo/supermarket/order/CheckoutControllerTest.java`
-   - `src/test/java/demo/supermarket/order/OrderServiceTest.java`
+   - `src/test/java/demo/supermarket/e2e/CheckoutTest.java`
    - `src/test/java/demo/supermarket/order/OrderControllerTest.java`
-   - possibly `src/test/java/demo/supermarket/order/OrderCodeGeneratorTest.java`
-   - possibly `src/test/java/demo/supermarket/order/OrderRepositoryTest.java`
-   - a new Flyway migration under `src/main/resources/db/migration/`
+   - `src/test/java/demo/supermarket/order/OrderServiceTest.java`
+   - `src/main/resources/db/migration/V5__orders.sql`
 
-   Change:
+   Potentially add or adapt:
 
-   - `src/test/java/demo/supermarket/security/PublicRoutesTest.java` if checkout or confirmation route accessibility is intentionally part of the security contract;
-   - existing cart controller/service tests only where checked-out-cart behavior changes their current assumptions;
-   - e2e page-object code only to expose stable, accessible checkout controls.
+   - `src/test/java/demo/supermarket/e2e/harness/CheckoutPage.java`
+   - `src/test/java/demo/supermarket/e2e/harness/HomePage.java`
+   - `src/test/java/demo/supermarket/cart/CartControllerTest.java`
+   - `src/test/java/demo/supermarket/security/PublicRoutesTest.java`
 
-   The relevant current test conventions are visible in `src/test/java/demo/supermarket/cart/CartControllerTest.java`, `CartServiceConcurrencyTest.java`, `CartServiceTokenRetryTest.java`, and `src/test/java/demo/supermarket/security/PublicRoutesTest.java`.
+   The exact package should follow the business capability boundary. The project guidance says to preserve capability-oriented packages, so an `order` or `checkout` package is preferable to a generic `controller`, `service`, or `persistence` test package.
 
-   ### Unresolved decisions requiring a human answer
+   ## Unresolved decisions requiring human answers
 
-   1. What exact public order-code format, alphabet, entropy target, and collision behavior should this story guarantee?
+   1. What exact public order-code format, alphabet, entropy target, and collision behavior should this first story guarantee?
 
-   Impact: determines generator tests, URL assertions, database constraints, and whether collision retry belongs in TASK-004 or TASK-006.
+   This determines regex assertions, uniqueness tests, fixture design, and whether collision handling belongs in this story. The task explicitly says not to choose implicitly ([TASK-004...](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:28-34)).
 
    2. Is an order confirmation public to anyone holding the code, or should this story introduce another access mechanism?
 
-   Impact: determines security configuration, privacy tests, and whether an unauthenticated browser journey is valid. This is especially important because `ADR-005` requires authentication by default.
+   This directly determines the security configuration and whether an unauthenticated browser/MVC test is required. It conflicts with the current protected-by-default policy unless `/orders/**` is explicitly permitted ([ADR-005-protected-by-default-web-security.md](docs/adrs/ADR-005-security-baseline.md:13-27); [SecurityConfiguration.java](src/main/java/demo/supermarket/security/SecurityConfiguration.java:12-27)).
 
    3. What customer-facing response should an unknown order code receive?
 
-   Impact: determines `OrderControllerTest`, browser/MVC status assertions, error-page requirements, and whether malformed and unknown codes share a response.
+   This determines whether to test `404`, `422`, a generic not-found page, or another response. It also affects information disclosure expectations.
 
-   Additional implementation-level decision: the task says “immutable snapshots,” but does not define whether immutability means application-level behavior, database constraints, or both. The tests should at minimum prove later product/customer changes cannot alter an existing order; a human should decide whether direct database updates must also be prevented.
+   4. What does “require trimmed” mean operationally?
 
-   Recommendation: **Blocked** until the three explicitly listed product/security decisions are resolved.
+   The task could mean either:
+
+   - accept surrounding whitespace but persist/display the trimmed value; or
+   - reject values that become blank after trimming while preserving the original submitted value for redisplay.
+
+   Those produce different validation and persistence tests. This is not safe to infer from `String#isBlank`, which the cart code currently uses only as a presence check ([CartService.java](src/main/java/demo/supermarket/cart/CartService.java:176-178)).
+
+   5. Should phone numbers have any format validation beyond trimmed non-blank?
+
+   The task specifies no phone-format constraint. Tests should not invent one, but this should be explicitly confirmed to prevent accidental framework or HTML validation from becoming product behavior.
+
+   6. Does “immutable snapshots” require database-level immutability, or only copying values at order creation?
+
+   The proposed update-and-read-back test verifies snapshot semantics. If rows must be technically immutable after placement, additional authorization/service tests or database constraints are required.
+
+   ## Readiness assessment
+
+   Blocked for implementation-level test finalization until the first three decisions are answered. They materially affect route status, security tests, URL assertions, and unknown-resource behavior. The rest of the test strategy can be prepared now, but those decisions should not be encoded implicitly.
    ```
 
-   For a more detailed analysis look at the logs: `/tmp/codex-agents-after.log`. This will show all interaction between the harness and the model.
+   For a detailed record of this run, inspect `/tmp/codex-agents-after.log`. It
+   contains the captured Codex session output, including its repository
+   investigation.
 
-   Contrast the amount of tokens used by the model to answer the same user prompt.
+   Extract the tokens used for the same request with `AGENTS.md` guidance.
 
    ```shell
    tokens_used="$(awk '/^tokens used$/{getline; print; exit}' '/tmp/codex-agents-after.log')"
@@ -1226,26 +1183,26 @@ a clear purpose.
    Tokens used with `AGENTS.md`
 
    ```
-   36.456
+   58.550
    ```
 
-4. Compare the plans. Do not expect identical wording or a completely different
-   conclusion: Codex may discover much of the same information from the
-   repository. Look instead for the second plan to use the agreed verification,
-   preserve the stated boundaries, keep task files read-only, and surface open
-   product decisions instead of inventing them.
+4. Compare the test strategies. Do not expect identical wording or a completely
+   different conclusion: Codex may discover much of the same information from
+   the repository. Look instead for the second strategy to propose a small set
+   of distinct browser journeys, move combinations and validation cases to
+   lower-scope tests, and identify product decisions that remain open.
 
-   The runs used 43.109 tokens without `AGENTS.md` and
-   36.456 tokens with it. Treat this as one observation, not a
-   verdict: the file adds context, so one run can use the same number of tokens
-   or more. Its more important benefit is faster, more consistent use of the
-   team’s guidance across future sessions and tasks.
+   The runs used 49.298 tokens without `AGENTS.md` and 58.550 tokens with it.
+   Treat this as one observation, not a verdict: the file adds context, so one
+   run can use the same number of tokens or more. Its more important benefit is
+   faster, more consistent use of the team’s guidance across future sessions and
+   tasks.
 
 5. Commit the reviewed guidance locally.
 
-```shell
-git add AGENTS.md
-git commit --message 'Add repository guidance for coding agents'
-```
+   ```shell
+   git add AGENTS.md
+   git commit --message 'Add repository guidance for coding agents'
+   ```
 
 > Breakpoint reached: Stop here
