@@ -5,9 +5,10 @@ demonstration scenarios.
 
 ## Workshop
 
-Workshop attendees should start with [RUNBOOK.md](RUNBOOK.md). It uses the
-canonical task backlog as read-only context and keeps all workshop changes
-local to the clone.
+Workshop attendees should start with
+[RUNBOOK.md](https://github.com/albertattard/demo-supermarket-runbook/blob/main/runbooks/README.md).
+It uses the canonical task backlog as read-only context and keeps all workshop
+changes local to the clone.
 
 The application models a small supermarket that lets customers browse a product
 catalogue, build a shopping bag, and place guest orders for pickup or delivery.
