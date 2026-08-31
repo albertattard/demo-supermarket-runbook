@@ -27,6 +27,10 @@ application repository itself.
 
 Prefer editing the appropriate runbook source and files under `fixtures/`.
 
+When creating or deliberately reformatting an attendee-facing workshop runbook,
+follow [docs/workshop-runbook-format.md](docs/workshop-runbook-format.md). It is
+an authoring standard, not an instruction to reformat unrelated runbooks.
+
 Do not manually patch generated files in `/tmp/demo-supermarket-starter` unless
 the task is specifically to inspect or debug generated output. Instead, update
 the runbook or fixtures and regenerate.
