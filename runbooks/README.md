@@ -71,7 +71,7 @@ repository and use Codex.
 - Git manages the local branches, worktrees, and commits created during the
   workshop.
 
-`curl` checks that the application has started successfully.
+- `curl` checks that the application has started successfully.
 
 - [Codex CLI](https://developers.openai.com/codex/cli) or equivalent agentic
   tool
@@ -171,9 +171,9 @@ change. Stop and resolve a failure in this section before continuing.
 
 2. **Run the application locally.**
 
-   This starts the executable JAR in the background, writes its output to
-   `target/application.log`, and records its process ID for the stop step. If it
-   exits immediately, inspect that log before continuing.
+  This starts the executable JAR in the background, writes its output to
+  `target/application.log`, and records its process ID for the stop step. If it
+  exits immediately, inspect that log before continuing.
 
    ```shell
    java -jar './target/demo-supermarket-1.0.0.jar' > './target/application.log' 2>&1 &
@@ -209,6 +209,8 @@ change. Stop and resolve a failure in this section before continuing.
    application. This is a manual smoke test: confirm that the application loads
    and that its basic navigation works before moving on to agent-assisted work.
 
+   ![Homepage](assets/images/demo-supermarket-homepage.png)
+
 4. Stop the application
 
    Stop the local process when you have finished the smoke test. This removes
@@ -218,5 +220,262 @@ change. Stop and resolve a failure in this section before continuing.
    kill "$(cat './target/application.pid')"
    rm -f './target/application.pid'
    ```
+
+## Understand the project
+
+This is your first read-only Codex exercise. Use it to form a working mental
+model of the repository before asking an agent to change it. Codex can identify
+useful starting points, but its response is evidence to inspect—not an
+authoritative description of the application.
+
+A prompt is the instruction that frames Codex’s work. A short request can be
+enough for a simple question, but ambiguous requests often produce broad or
+generic answers. Pausing to state the **goal**, **lens**, **boundaries**, and
+expected **output** helps Codex focus on the decision you need to make rather
+than trying to explain everything it can find.
+
+This structure also helps you clarify your own request. Instead of discovering
+halfway through that you wanted a plan rather than an explanation, or evidence
+rather than a suggestion, you make those expectations explicit before the work
+begins. It will not eliminate useful follow-up questions, but it reduces
+avoidable back-and-forth and makes the response easier to assess: you can see
+whether Codex stayed within scope, used repository evidence, and returned
+something that supports your next decision.
+
+1. Ask Codex to guide your initial exploration. It must not modify files,
+   branches, or task briefs.
+
+   The command below runs Codex non-interactively against the current
+   repository. The prompt defines the work; the command options define the
+   execution environment.
+
+   - `--ephemeral` keeps this exploratory session out of persistent local
+     session history.
+   - `--sandbox read-only` lets Codex inspect the repository but prevents
+     model-generated shell commands from modifying it. This is an enforced
+     guardrail: it protects the repository even if a prompt mistakenly asks
+     Codex to create or edit files.
+   - `--model 'gpt-5.6-luna'` selects an efficient model suited to
+     cost-sensitive, high-volume work. `model_reasoning_effort="low"` asks it to
+     spend less time reasoning before responding. For this bounded, read-only
+     onboarding exercise, that is a deliberate trade-off: we need a useful
+     starting map of the repository, not an exhaustive architectural assessment.
+     A more capable model or higher reasoning effort can be appropriate for
+     difficult implementation, investigation, or review work. They can also
+     increase latency and cost without improving a straightforward task. Start
+     with the least expensive configuration that produces useful evidence, then
+     increase capability or reasoning effort only when the task and results
+     justify it.
+   - `--output-last-message` tells the Codex harness, not the model, to save
+     Codex’s final response to a file. This does not give the model permission
+     to modify the repository; the read-only sandbox still prevents
+     model-generated commands from changing it. The saved response lets the
+     workshop display and discuss the result as evidence.
+
+   ```shell
+   codex exec \
+     --ephemeral \
+     --sandbox read-only \
+     --model 'gpt-5.6-luna' \
+     --config 'model_reasoning_effort="low"' \
+     --output-last-message '/tmp/codex-onboarding-guide.md' \
+     - <<'EOF' > '/tmp/codex-onboarding-guide.log' 2>&1
+   Goal
+   Build a practical mental model of this Java application before making changes.
+
+   Lens
+   Act as a technical onboarding guide and codebase investigator.
+
+   Boundaries
+   Inspect the repository only. Do not modify files. Do not attempt a complete
+   codebase tour. Base claims on specific files and identify anything you cannot verify.
+
+   Output
+   - what the application does and how to verify it locally;
+   - where feature code, configuration, data, and tests live, with file references;
+   - the current work visible in the repository and a safe first contribution to explore;
+   - a focused 90-minute onboarding plan; and
+   - repository conventions plus questions only the team can answer.
+   EOF
+   ```
+
+2. Review Codex’s response.
+
+   ~~~markdown
+   ## Application and local verification
+
+   Demo Supermarket is a server-rendered Spring Boot grocery store. Customers can browse/search products, start a guest cart, adjust quantities, and remove items. The README also describes planned or not-yet-present checkout, logistics, and inventory workflows; those are not implemented in the inspected source.
+
+   The main request flow is:
+
+   - Catalog: `GET /` and `GET /products` → `CatalogController` → `CatalogService` → JPA repositories → `catalog.html`.
+   - Cart creation: `POST /cart/start`.
+   - Cart mutations: `POST /cart/{token}/items...` → `CartController` → `CartService`.
+   - Persistence: Flyway migrations create an in-memory H2 schema at startup; Hibernate validates it.
+   - UI: Thymeleaf templates with optional HTMX fragment responses.
+
+   Relevant files:
+
+   - [README.md](/private/tmp/demo-supermarket/README.md:1)
+   - [SupermarketApplication.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/SupermarketApplication.java:1)
+   - [CatalogController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogController.java:1)
+   - [CartController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartController.java:1)
+   - [CartService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartService.java:1)
+
+   The intended local commands are:
+
+   ```bash
+   ./mvnw test
+   ./mvnw verify
+   ./mvnw spring-boot:run
+   ```
+
+   Then visit:
+
+   - `http://localhost:8080/`
+   - `http://localhost:8080/products`
+   - `http://localhost:8080/actuator/health`
+
+   `verify` includes the configured Playwright end-to-end lifecycle and may install Chromium/dependencies. The Maven build targets Java 25, defined in [pom.xml](/private/tmp/demo-supermarket/pom.xml:18).
+
+   One repository inconsistency is worth flagging: `README.md` links to `RUNBOOK.md`, but no such file exists in the repository listing. Also, the ADR README claims `/actuator/info` and form-login behavior, while the actual configuration exposes only health and configures HTTP Basic. The source configuration should be treated as authoritative until the team clarifies this.
+
+   ## Code, configuration, data, and tests
+
+   Feature code is organized by domain package:
+
+   - `src/main/java/demo/supermarket/catalog/`
+     - Entities: `Product`, `Category`
+     - Repositories: `ProductRepository`, `CategoryRepository`
+     - Application logic: `CatalogService`
+     - Web entry point: `CatalogController`
+     - View records: `CatalogView`, `CatalogProduct`, `CatalogCategory`
+   - `src/main/java/demo/supermarket/cart/`
+     - Entities: `Cart`, `CartItem`
+     - State: `CartState`
+     - Repository: `CartRepository`
+     - Application logic: `CartService`
+     - Web entry point: `CartController`
+     - Error handling: `CartExceptionHandler`
+
+   Configuration lives in:
+
+   - [application.yml](/private/tmp/demo-supermarket/src/main/resources/application.yml:1): H2, Flyway, JPA validation, actuator.
+   - [SecurityConfiguration.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/security/SecurityConfiguration.java:1): public routes and HTTP Basic.
+   - [CartConfiguration.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartConfiguration.java:1): injectable UTC clock.
+
+   Data and schema live in:
+
+   - `src/main/resources/db/migration/V1__baseline.sql`
+   - `V2__catalog.sql`: categories and seeded products
+   - `V3__guest_carts.sql`: cart tables
+   - `V4__product_slugs.sql`: product slug migration
+   - `src/main/resources/static/images/products/`: product images
+
+   Templates and styling live in:
+
+   - `src/main/resources/templates/catalog.html`
+   - `cart.html`
+   - `catalog-cart-mutation.html`
+   - `cart-not-found.html`
+   - `error.html`
+   - `src/main/resources/static/css/application.css`
+
+   Tests are present despite not appearing in the initial truncated listing:
+
+   - Unit/service and MVC tests under `src/test/java/demo/supermarket/catalog/` and `cart/`
+   - Security test: `security/PublicRoutesTest.java`
+   - Browser tests under `e2e/`, using Playwright
+
+   The tests cover catalog filtering, rendering, cart behavior, token collision retries, concurrency, public routes, and at least the home-page browser flow.
+
+   ## Current work and safe first contribution
+
+   The working tree is clean:
+
+   ```text
+   ## main...origin/main
+   ```
+
+   Recent commits show this progression:
+
+   1. Project foundation
+   2. Seed catalog and product listing
+   3. Persisted guest carts
+
+   The repository is therefore visibly at the end of the cart story, with checkout not yet implemented. The task backlog confirms this:
+
+   - [TASK-004-guest-checkout-and-order-confirmation.md](/private/tmp/demo-supermarket/docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:1)
+   - Follow-ups cover delivery, checkout integrity, pickup validation, logistics, and inventory.
+
+   A safe first contribution to explore is TASK-004: guest pickup checkout and order confirmation. It is the next coherent vertical slice, but it should begin with a readiness/design pass because the current source has no order package, order migration, checkout controller, or checkout tests. Start by identifying the intended order state model, cart transition semantics, validation rules, and confirmation-code requirements before coding.
+
+   Do not start with broad “cleanup” or a README rewrite: the source and ADR documentation already disagree, and changing either without team confirmation could conceal an intentional workshop fixture or create misleading documentation.
+
+   ## Focused 90-minute onboarding plan
+
+   - 0–15 minutes: Run `./mvnw test`, inspect failures or environment prerequisites, then run the application and verify `/products` and `/actuator/health`.
+   - 15–30 minutes: Read the catalog path from `CatalogController` through `CatalogService`, `ProductRepository`, migrations, and `catalog.html`.
+   - 30–50 minutes: Read the cart path from `CartController` through `CartService`, `Cart`, `CartItem`, `CartRepository`, and `cart.html`.
+   - 50–65 minutes: Read `CatalogControllerTest`, `CartControllerTest`, `CartServiceConcurrencyTest`, and `HomePageTest` to learn the behavioral contract.
+   - 65–80 minutes: Read TASK-004 and compare its acceptance criteria with the current absence of order code/schema.
+   - 80–90 minutes: Write a one-page implementation sketch: domain tables, endpoints, cart state transition, validation boundaries, tests, and unresolved team questions.
+
+   ## Conventions
+
+   - Standard Maven/Spring Boot layout.
+   - Java 25 is required.
+   - Package-by-feature organization.
+   - Spring MVC + Thymeleaf, with HTMX for incremental fragments.
+   - Flyway owns schema evolution; do not rely on Hibernate DDL generation.
+   - H2 is the local/test database and resets on restart.
+   - Services own business rules; controllers select full-page versus HTMX fragment responses.
+   - Product URLs use slugs, not numeric IDs.
+   - Cart mutations use `POST`; cart reads use `GET`.
+   - Cart mutations lock the persisted cart and tests explicitly cover concurrent updates.
+   - Public routes must be deliberately listed in `SecurityConfiguration`; new routes are protected by default.
+   - Tests use JUnit/Spring test support, MockMvc, and Playwright for E2E.
+   - The existing code uses final parameters/local variables heavily and uses records for view models.
+
+   ## Questions only the team can answer
+
+   - Is `RUNBOOK.md` intentionally absent, or is the repository incomplete?
+   - Which documentation is authoritative where the ADRs contradict the running security and actuator configuration?
+   - Is TASK-004 definitely the next implementation target, or is there an uncommitted/private branch for another story?
+   - What production database and deployment environment should future migrations support?
+   - What exact order lifecycle and cart transition rules are desired?
+   - Should checkout require authentication eventually, or remain a guest flow?
+   - What is the required format, uniqueness scope, and lifetime of an order confirmation code?
+   - What pickup details, customer fields, and validation rules are mandatory?
+   - Are delivery, payment, stock, and time slots intentionally excluded from the first checkout slice?
+   - Should the application add explicit test-profile configuration, given that local state is in-memory and reset on restart?
+   ~~~
+
+   Verify the response yourself. Open the two files or directories Codex
+   identifies as most important, then answer:
+
+   - What starts the application?
+   - Where is the main catalogue or order workflow implemented?
+   - Which part of the codebase would you inspect before changing `TASK-004`?
+
+   If Codex cannot name specific files, or its explanation conflicts with the
+   code, ask a narrower follow-up question and verify that answer against the
+   repository.
+
+3. Continue the conversation in your own Codex session.
+
+   Repeat the onboarding prompt in Codex desktop or the Terminal User Interface
+   (TUI), then use one follow-up question at a time. Inspect the files Codex
+   names before asking the next question.
+
+   > Which part of the application should I inspect first if I want to understand how a customer request reaches the domain logic? Trace that path with file and symbol references.
+
+   > Show me the tests that best describe the intended behaviour of the catalogue or checkout workflow. What requirement does each test protect?
+
+   > What repository conventions or architectural boundaries should I preserve when changing `TASK-004`?
+
+   > Which files are most likely to change for `TASK-004`, and which files should probably remain unchanged? Explain your reasoning from the code and task brief.
+
+   > What remains uncertain after your inspection, and which questions should I ask a teammate rather than infer from the repository?
 
 > Breakpoint reached: Stop here

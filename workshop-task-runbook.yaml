@@ -110,7 +110,7 @@ entries:
       - kind: command
         name: curl
         contents: |
-          `curl` checks that the application has started successfully.
+          - `curl` checks that the application has started successfully.
         commands: |
           curl --version
         assert:
@@ -293,15 +293,60 @@ entries:
       rm -f './target/application.pid'
     indent: 3
 
-  - type: Breakpoint
-
   - type: Heading
     level: H2
     title: Understand the project
 
   - type: Markdown
     contents: |
-      One especially useful prompt is to make Codex act as an **interactive guide**:
+      This is your first read-only Codex exercise. Use it to form a working mental
+      model of the repository before asking an agent to change it. Codex can identify
+      useful starting points, but its response is evidence to inspect—not an
+      authoritative description of the application.
+
+      A prompt is the instruction that frames Codex’s work. A short request can be
+      enough for a simple question, but ambiguous requests often produce broad or
+      generic answers. Pausing to state the **goal**, **lens**, **boundaries**, and
+      expected **output** helps Codex focus on the decision you need to make rather
+      than trying to explain everything it can find.
+
+      This structure also helps you clarify your own request. Instead of discovering
+      halfway through that you wanted a plan rather than an explanation, or evidence
+      rather than a suggestion, you make those expectations explicit before the work
+      begins. It will not eliminate useful follow-up questions, but it reduces
+      avoidable back-and-forth and makes the response easier to assess: you can see
+      whether Codex stayed within scope, used repository evidence, and returned
+      something that supports your next decision.
+
+      1. Ask Codex to guide your initial exploration. It must not modify files,
+         branches, or task briefs.
+
+         The command below runs Codex non-interactively against the current
+         repository. The prompt defines the work; the command options define the
+         execution environment.
+
+         - `--ephemeral` keeps this exploratory session out of persistent local
+           session history.
+         - `--sandbox read-only` lets Codex inspect the repository but prevents
+           model-generated shell commands from modifying it. This is an enforced
+           guardrail: it protects the repository even if a prompt mistakenly asks
+           Codex to create or edit files.
+         - `--model 'gpt-5.6-luna'` selects an efficient model suited to
+           cost-sensitive, high-volume work. `model_reasoning_effort="low"` asks it to
+           spend less time reasoning before responding. For this bounded, read-only
+           onboarding exercise, that is a deliberate trade-off: we need a useful
+           starting map of the repository, not an exhaustive architectural assessment.
+           A more capable model or higher reasoning effort can be appropriate for
+           difficult implementation, investigation, or review work. They can also
+           increase latency and cost without improving a straightforward task. Start
+           with the least expensive configuration that produces useful evidence, then
+           increase capability or reasoning effort only when the task and results
+           justify it.
+         - `--output-last-message` tells the Codex harness, not the model, to save
+           Codex’s final response to a file. This does not give the model permission
+           to modify the repository; the read-only sandbox still prevents
+           model-generated commands from changing it. The saved response lets the
+           workshop display and discuss the result as evidence.
 
   - type: Command
     commands: |
@@ -312,63 +357,70 @@ entries:
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-onboarding-guide.md' \
         - <<'EOF' > '/tmp/codex-onboarding-guide.log' 2>&1
-      Act as my technical onboarding guide for this repository. Don’t overwhelm me with a complete codebase explanation. First establish the high-level mental model, then take me through one important subsystem at a time. At each stage, point me to specific files to inspect and give me 2–3 questions I should be able to answer from them. When useful, trace actual code paths rather than relying on README documentation.
+      Goal
+      Build a practical mental model of this Java application before making changes.
+
+      Lens
+      Act as a technical onboarding guide and codebase investigator.
+
+      Boundaries
+      Inspect the repository only. Do not modify files. Do not attempt a complete
+      codebase tour. Base claims on specific files and identify anything you cannot verify.
+
+      Output
+      - what the application does and how to verify it locally;
+      - where feature code, configuration, data, and tests live, with file references;
+      - the current work visible in the repository and a safe first contribution to explore;
+      - a focused 90-minute onboarding plan; and
+      - repository conventions plus questions only the team can answer.
       EOF
     cleanup: |
       rm -f '/tmp/codex-onboarding-guide.md'
       rm -f '/tmp/codex-onboarding-guide.log'
     timeout: 5 minutes
+    indent: 3
 
   - type: Markdown
     contents: |
-      The model's response
+      2. Review Codex’s response.
 
   - type: DisplayFile
     path: /tmp/codex-onboarding-guide.md
+    indent: 3
 
   - type: Markdown
     contents: |
-      A good way to use Codex for onboarding is to move from **map → architecture → execution → deep dive → contribution**. These prompts are designed so Codex can inspect the repository rather than just explain concepts generically.
+      Verify the response yourself. Open the two files or directories Codex
+      identifies as most important, then answer:
 
-      1. **Get the 10-minute overview**
+      - What starts the application?
+      - Where is the main catalogue or order workflow implemented?
+      - Which part of the codebase would you inspect before changing `TASK-004`?
 
-         > Give me a practical onboarding overview of this repository. Explain what the project does, who/what consumes it, the major components, the main technologies/frameworks, and how the pieces fit together. Point me to the 5–10 files or directories I should understand first, and explain why each matters.
+      If Codex cannot name specific files, or its explanation conflicts with the
+      code, ask a narrower follow-up question and verify that answer against the
+      repository.
+    indent: 3
 
-      2. **Build a mental model of the architecture**
+  - type: Markdown
+    contents: |
+      3. Continue the conversation in your own Codex session.
 
-         > Analyze this codebase and explain its architecture to a new engineer. Identify the major modules/services/layers, their responsibilities, dependencies between them, important interfaces, and where state/data is stored. Trace one representative request or workflow end-to-end through the system.
+         Repeat the onboarding prompt in Codex desktop or the Terminal User Interface
+         (TUI), then use one follow-up question at a time. Inspect the files Codex
+         names before asking the next question.
 
-      3. **Explain the repository structure**
+         > Which part of the application should I inspect first if I want to understand how a customer request reaches the domain logic? Trace that path with file and symbol references.
 
-         > Walk me through the repository structure. For each important top-level directory, explain its purpose, what kinds of code live there, and whether I need to understand it immediately or can ignore it initially. Highlight generated code, third-party code, configuration, tests, build tooling, and deployment infrastructure.
+         > Show me the tests that best describe the intended behaviour of the catalogue or checkout workflow. What requirement does each test protect?
 
-      4. **Figure out how to run it**
+         > What repository conventions or architectural boundaries should I preserve when changing `TASK-004`?
 
-         > Determine how I can build and run this project locally from a clean checkout. Inspect the repository rather than guessing. Give me the commands in order, explain prerequisites and environment variables, and point to the files where you found this information. Also explain how to run the tests and common developer workflows.
+         > Which files are most likely to change for `TASK-004`, and which files should probably remain unchanged? Explain your reasoning from the code and task brief.
 
-      5. **Find the important entry points**
+         > What remains uncertain after your inspection, and which questions should I ask a teammate rather than infer from the repository?
 
-         > Identify the main entry points into this application. Show me where execution starts and trace what happens during startup. Then identify the main runtime paths an engineer working on this project is likely to encounter.
-
-      6. **Teach me the domain**
-
-         > Teach me the domain model behind this project using the code as evidence. What are the most important concepts, entities, abstractions, and terminology? For each concept, point me to representative classes/files/functions. Explain relationships between them in plain English.
-
-      7. **Understand the data flow**
-
-         > Pick one important user action/API operation/workflow and trace it end-to-end through the codebase. Start at the external entry point and follow it through validation, business logic, persistence/external calls, and the response. Include file names and key functions/classes at each step.
-
-      8. **Understand the tests**
-
-         > Explain the testing strategy of this repository. Identify the test frameworks, unit/integration/end-to-end tests, fixtures and mocks, and how tests are organized. Show me 3 representative tests that would teach me the most about how this system is intended to behave.
-
-      9. **Find the risky/complex parts**
-
-         > Analyze the repository and identify the 5 areas that are hardest or riskiest for a new engineer to modify. For each, explain why it is complex, what assumptions or invariants I should understand, what tests protect it, and what mistakes a newcomer could easily make.
-
-      10. **Give me an onboarding curriculum**
-
-         > Create a 2-hour onboarding plan for this repository. Assume I’m a new engineer who needs to become productive quickly. Give me an ordered sequence of files, concepts, and code paths to study. For each step, tell me what question I should be able to answer before moving on. Avoid making me read the entire repository.
+  - type: Breakpoint
 
   - type: Heading
     level: H2
