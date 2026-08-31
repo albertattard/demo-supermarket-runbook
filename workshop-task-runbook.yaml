@@ -695,29 +695,19 @@ entries:
       git commit --message 'Add repository guidance for coding agents'
     indent: 3
 
-  - type: Breakpoint
-
-  - type: Heading
-    level: H2
-    title: A Simple Agentic Workflow
-
   - type: Markdown
     contents: |
-      TODO: Update description!
+      `AGENTS.md` does not replace repository inspection, task discussion, or engineering
+      judgement. It makes the team’s durable guidance explicit, so Codex does not need to
+      rediscover it for every task.
 
-  - type: DisplayFile
-    path: demo-supermarket/tools/run-java-modernisation-task-v2.sh
-    start_line: 5
+      Keep the file small and groom it as the project changes. Add information that affects
+      how an agent should work; avoid copying material that is already clear from the code,
+      README, task files, or ADRs.
 
-  - type: Breakpoint
-
-  - type: Markdown
-    contents: |
-      Review the PR
-
-      ![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
-
-      This can be easily captured in a script and executed on a scheduler.
+      Use the same approach in your own repository: begin with a concise project map and a
+      few high-value working agreements, then refine them when you observe repeated agent
+      mistakes or repeated prompt instructions.
 
   - type: Heading
     level: H2
@@ -811,6 +801,30 @@ entries:
 
   - type: DisplayFile
     path: /tmp/codex-review-next-task-readiness.md
+
+  - type: Breakpoint
+
+  - type: Heading
+    level: H2
+    title: A Simple Agentic Workflow
+
+  - type: Markdown
+    contents: |
+      TODO: Update description!
+
+  - type: DisplayFile
+    path: demo-supermarket/tools/run-java-modernisation-task.sh
+    start_line: 5
+
+  - type: Breakpoint
+
+  - type: Markdown
+    contents: |
+      Review the PR
+
+      ![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
+
+      This can be easily captured in a script and executed on a scheduler.
 
   - type: Heading
     level: H2
