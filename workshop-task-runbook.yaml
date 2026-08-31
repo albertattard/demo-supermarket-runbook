@@ -425,77 +425,281 @@ entries:
 
          > What remains uncertain after your inspection, and which questions should I ask a teammate rather than infer from the repository?
 
-  - type: Breakpoint
-
   - type: Heading
     level: H2
-    title: Create the `AGENTS.md` file
+    title: Guide Codex with `AGENTS.md`
 
   - type: Markdown
     contents: |
-      Create the `AGENTS.md` file
+      A coding agent combines a model with a harness: the harness gives the model
+      access to the repository and tools, applies safeguards, and supplies relevant
+      context. The model does not automatically know a project’s rules, conventions,
+      or workflows. Without durable project guidance, you may need to repeat coding
+      standards, verification requirements, architectural decisions, and preferred
+      practices in every new session.
 
-      You can use the following TUI slash command when working with the OpenAI Codex desktop application
+      In this workshop, Codex uses an **`AGENTS.md`** file as repository-specific
+      guidance. When applicable, Codex makes that guidance available in the agent’s
+      instruction context while it works. This is separate from your task prompt: the
+      prompt says what you need done now; `AGENTS.md` records working agreements that
+      should apply across tasks.
 
-      > /init
+      ```text
+      +-------------+        +-----------------+        +-----------+
+      | User prompt | -----> |                 | -----> |           |
+      +-------------+        |  Codex harness  |        |   Model   |
+                             |                 |        |           |
+      +-------------+        | loads relevant  |        +-----------+
+      |  AGENTS.md  | -----> | project guidance|
+      +-------------+        +-----------------+
+      ```
 
-      The TUI slash command does not work from the command line. Therefore, you need to be a bit more prescriptive.
+      Think of `AGENTS.md` as a concise operational README for coding agents—not a
+      duplicate of the README, task brief, or source code. Its purpose is to reduce
+      repetitive prompting and help Codex work more consistently with the project’s
+      expectations.
+
+      `AGENTS.md` is a Codex convention, not a universal standard. Other AI harnesses
+      may use a different filename or configuration, or may not load repository
+      guidance automatically.
+
+      `AGENTS.md` is repository-owned guidance for coding agents. It records durable
+      working agreements and a concise project map that would otherwise be scattered
+      across prompts, code, and documentation. The code and task files remain the
+      source of truth.
+
+      Use it for information that materially changes how an agent should work, is hard
+      to infer quickly, or prevents a recurring mistake. In this workshop, the file
+      records the project map, verification command, local-only scope, and rules for
+      handling under-specified tasks.
+
+      Codex’s `/init` command in the interactive desktop or terminal application can
+      create a starting draft. Treat that draft as input for review, not as a finished
+      result. Here, we deliberately create a small hand-groomed file so every line has
+      a clear purpose.
+
+  - type: Markdown
+    contents: |
+      1. Compare a planning request before repository guidance exists. Codex can still
+         inspect the code and task brief, but it must infer the team's working
+         agreements from scattered evidence.
 
   - type: Command
     commands: |
       codex exec \
         --ephemeral \
-        --sandbox workspace-write \
-        --model 'gpt-5.6-terra' \
-        --config 'model_reasoning_effort="medium"' \
-        --output-last-message '/tmp/codex-create-agents_md-file.md' \
-        - <<'EOF' > '/tmp/codex-create-agents_md-file.log' 2>&1
-      Create a concise `AGENTS.md` in the repository root with durable guidance for future agents. Keep it specific to this Java/Maven/Spring Boot application. Do not change any other files. Do not only describe the file: create it. Finally, verify that `AGENTS.md` exists.
+        --sandbox read-only \
+        --model 'gpt-5.6-luna' \
+        --config 'model_reasoning_effort="low"' \
+        --output-last-message '/tmp/codex-agents-before.md' \
+        - <<'EOF' > '/tmp/codex-agents-before.log' 2>&1
+      Prepare a test strategy for
+      docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md.
+
+      Do not modify files. Inspect the task, existing code, and tests. Propose:
+      - the end-to-end user journeys that need functional browser coverage;
+      - the rules, validation cases, and input combinations better covered by unit or MVC tests;
+      - likely test files to add or change; and
+      - unresolved testing or product decisions that need a human answer.
+
+      Explain the rationale for the scope of each test and cite repository-relative files as evidence.
       EOF
     cleanup: |
-      rm -f '/tmp/codex-create-agents_md-file.md'
-      rm -f '/tmp/codex-create-agents_md-file.log'
+      rm -f '/tmp/codex-agents-before.md'
+      rm -f '/tmp/codex-agents-before.log'
     timeout: 5 minutes
+    indent: 3
 
   - type: Markdown
     contents: |
-      The newly created `AGENTS.md` file
+      Review the model’s response
+    indent: 3
 
   - type: DisplayFile
-    path: demo-supermarket/AGENTS.md
+    path: /tmp/codex-agents-before.md
+    indent: 3
 
   - type: Markdown
     contents: |
-      Commit the changes once ready
+      For a more detailed analysis look at the logs:
+      `/tmp/codex-agents-before.log`. This will show all interaction between the
+      harness and the model.
+
+      Print the number of tokens used to answer this user query without using the
+      `AGENTS.md` file.
+    indent: 3
 
   - type: Command
     commands: |
-      # Create and switch to a branch for this change.
-      git switch --create '004-create-agents_md-file'
+      tokens_used="$(awk '/^tokens used$/{getline; print; exit}' '/tmp/codex-agents-before.log')"
+      printf '%s\n' "${tokens_used}"
+    output:
+      caption: |
+        Tokens used without `AGENTS.md`
+    capture:
+      - name: agents_before_tokens
+        source: stdout
+        stage: rewritten
+        pattern: (\d+(?:\.\d+)?)
+    indent: 3
 
-      # Commit all changes.
-      git add .
-      git commit --message 'Create AGENTS.md file' \
-                 --message 'Add repository guidance for coding agents'
+  - type: Markdown
+    contents: |
+      Numbers are easy to compare, but one cannot simply conclude that one approach
+      is better than the other by just looking at the number of tokens used. The
+      main important thing here is the message prodcued by the model, which cannot
+      be compared using quantitative measures. We are showing the tokens uses as a
+      measure of efficiency.
+    indent: 3
 
-      # Push this branch to GitHub and set its remote tracking branch.
-      git push --set-upstream origin '004-create-agents_md-file'
+  - type: Markdown
+    contents: |
+      2. Add a concise, reviewed `AGENTS.md`. This file is a curated index and set of
+         working agreements, not a second README.
 
-      # Create the pull request and save its link for the merge helper.
-      owner="$(gh api user --jq '.login')"
-      pr_url_file='target/pr-004-create-agents_md-file.log'
-      gh pr create \
-        --repo "${owner}/demo-supermarket" \
-        --base main \
-        --head '004-create-agents_md-file' \
-        --title 'Create AGENTS.md file' \
-        --body 'Add repository guidance for coding agents' > "${pr_url_file}"
-      cat "${pr_url_file}"
+         Codex—and some other coding harnesses—can generate a starting `AGENTS.md`
+         after inspecting a project. This can be convenient, but treat the result as a
+         draft rather than finished guidance. Generated files often repeat information
+         already available in `README.md` and may omit team conventions that cannot be
+         inferred from the repository, such as testing preferences.
 
-      # Wait for required checks, then merge without bypassing branch policy.
-      ./tools/merge-pull-request.sh "${pr_url_file}"
-      rm -f "${pr_url_file}"
-    timeout: 15 minutes
+         Create a concise, hand-reviewed `AGENTS.md` file.
+
+  - type: Command
+    commands: |
+      cat > AGENTS.md <<'EOF'
+      # Demo Supermarket agent guidance
+
+      ## Project map and test strategy
+
+      - This is a Maven project. Build and verify it with `./mvnw clean verify`;
+        project configuration is in `pom.xml`.
+      - Application entry point:
+        `src/main/java/demo/supermarket/SupermarketApplication.java`.
+      - Feature code is organised by business capability, such as `catalog/` and
+        `cart/`. Preserve those package boundaries; do not create cross-cutting
+        technical-layer packages.
+      - Flyway migrations own schema changes: `src/main/resources/db/migration/`. Add
+        new migrations; never change an existing migration.
+      - Server-rendered views are under `src/main/resources/templates/`.
+      - Architecture decisions are recorded in `docs/adrs/`. Read relevant ADRs before
+        changing an established architectural boundary.
+      - Product work is recorded in `docs/tasks/`; this project has no separate
+        specification directory.
+      - Functional browser tests in `src/test/java/demo/supermarket/e2e/` cover
+        distinct end-to-end user journeys. Keep them few and non-overlapping.
+      - Cover decision branches, validation, and input combinations with focused unit
+        or MVC tests organised by feature.
+
+      ## Working agreements
+
+      - Treat `docs/tasks/` as read-only task context. Current code describes existing
+        behaviour; task files describe requested change.
+      - A task differing from current code may be intentional. If a task conflicts
+        with a relevant ADR or stated constraint, or leaves behaviour ambiguous, cite
+        the conflicting files and ask for a decision. Do not silently rewrite task
+        files, change an ADR, or invent product behaviour.
+      - Keep workshop work local. Do not create, push, or merge pull requests.
+      EOF
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      The `AGENTS.md` file should look like the following.
+    indent: 3
+
+  - type: DisplayFile
+    path: demo-supermarket/AGENTS.md
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      3. Start a fresh Codex session and repeat exactly the same planning request. A
+         fresh session makes the comparison clear: only the repository guidance has
+         changed.
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox read-only \
+        --model 'gpt-5.6-luna' \
+        --config 'model_reasoning_effort="low"' \
+        --output-last-message '/tmp/codex-agents-after.md' \
+        - <<'EOF' > '/tmp/codex-agents-after.log' 2>&1
+      Prepare a test strategy for
+      docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md.
+
+      Do not modify files. Inspect the task, existing code, and tests. Propose:
+      - the end-to-end user journeys that need functional browser coverage;
+      - the rules, validation cases, and input combinations better covered by unit or MVC tests;
+      - likely test files to add or change; and
+      - unresolved testing or product decisions that need a human answer.
+
+      Explain the rationale for the scope of each test and cite repository-relative files as evidence.
+      EOF
+    cleanup: |
+      rm -f '/tmp/codex-agents-after.md'
+      rm -f '/tmp/codex-agents-after.log'
+    timeout: 5 minutes
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      The user prompt is the same as before.
+
+      Review the model’s response.
+    indent: 3
+
+  - type: DisplayFile
+    path: /tmp/codex-agents-after.md
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      For a more detailed analysis look at the logs: `/tmp/codex-agents-after.log`. This will show all interaction between the harness and the model.
+
+      Contrast the amount of tokens used by the model to answer the same user prompt.
+    indent: 3
+
+  - type: Command
+    commands: |
+      tokens_used="$(awk '/^tokens used$/{getline; print; exit}' '/tmp/codex-agents-after.log')"
+      printf '%s\n' "${tokens_used}"
+    output:
+      caption: |
+        Tokens used with `AGENTS.md`
+    capture:
+      - name: agents_after_tokens
+        source: stdout
+        stage: rewritten
+        pattern: (\d+(?:\.\d+)?)
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      4. Compare the plans. Do not expect identical wording or a completely different
+         conclusion: Codex may discover much of the same information from the
+         repository. Look instead for the second plan to use the agreed verification,
+         preserve the stated boundaries, keep task files read-only, and surface open
+         product decisions instead of inventing them.
+
+         The runs used @{agents_before_tokens} tokens without `AGENTS.md` and
+         @{agents_after_tokens} tokens with it. Treat this as one observation, not a
+         verdict: the file adds context, so one run can use the same number of tokens
+         or more. Its more important benefit is faster, more consistent use of the
+         team’s guidance across future sessions and tasks.
+
+  - type: Markdown
+    contents: |
+      5. Commit the reviewed guidance locally.
+
+  - type: Command
+    commands: |
+      git add AGENTS.md
+      git commit --message 'Add repository guidance for coding agents'
+
+  - type: Breakpoint
 
   - type: Heading
     level: H2
