@@ -365,12 +365,17 @@ entries:
 
       Boundaries
       Inspect the repository only. Do not modify files. Do not attempt a complete
-      codebase tour. Base claims on specific files and identify anything you cannot verify.
+      codebase tour. Base claims on specific files and identify anything you cannot
+      verify. When citing files, use paths relative to the repository root, such as
+      `src/main/java/demo/supermarket/SupermarketApplication.java`. Never use absolute
+      paths, temporary-directory paths, or local-file links.
 
       Output
       - what the application does and how to verify it locally;
-      - where feature code, configuration, data, and tests live, with file references;
-      - the current work visible in the repository and a safe first contribution to explore;
+      - where feature code, configuration, data, and tests live, with
+        repository-relative file references;
+      - the current work visible in the repository and a safe first contribution to
+        explore;
       - a focused 90-minute onboarding plan; and
       - repository conventions plus questions only the team can answer.
       EOF

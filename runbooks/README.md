@@ -288,12 +288,17 @@ something that supports your next decision.
 
    Boundaries
    Inspect the repository only. Do not modify files. Do not attempt a complete
-   codebase tour. Base claims on specific files and identify anything you cannot verify.
+   codebase tour. Base claims on specific files and identify anything you cannot
+   verify. When citing files, use paths relative to the repository root, such as
+   `src/main/java/demo/supermarket/SupermarketApplication.java`. Never use absolute
+   paths, temporary-directory paths, or local-file links.
 
    Output
    - what the application does and how to verify it locally;
-   - where feature code, configuration, data, and tests live, with file references;
-   - the current work visible in the repository and a safe first contribution to explore;
+   - where feature code, configuration, data, and tests live, with
+     repository-relative file references;
+   - the current work visible in the repository and a safe first contribution to
+     explore;
    - a focused 90-minute onboarding plan; and
    - repository conventions plus questions only the team can answer.
    EOF
@@ -302,27 +307,41 @@ something that supports your next decision.
 2. Review Codex’s response.
 
    ~~~markdown
-   ## Application and local verification
+   ## Application model
 
-   Demo Supermarket is a server-rendered Spring Boot grocery store. Customers can browse/search products, start a guest cart, adjust quantities, and remove items. The README also describes planned or not-yet-present checkout, logistics, and inventory workflows; those are not implemented in the inspected source.
+   Demo Supermarket is a server-rendered Spring Boot grocery store. Customers can browse/search products, create an opaque-token guest cart, adjust quantities, and remove items. Checkout, orders, logistics, and inventory are described in the backlog but are not implemented yet.
+
+   The current implemented flow is:
+
+   1. `GET /` or `/products` displays the seeded catalogue.
+   2. `POST /cart/start` creates an `ACTIVE` cart, optionally with an initial product.
+   3. `GET /cart/{cartToken}` displays the cart.
+   4. Cart mutations use normal form submissions and HTMX-enhanced fragment updates.
+   5. Cart data is persisted in H2 for the application process lifetime.
 
    The main request flow is:
 
-   - Catalog: `GET /` and `GET /products` → `CatalogController` → `CatalogService` → JPA repositories → `catalog.html`.
-   - Cart creation: `POST /cart/start`.
-   - Cart mutations: `POST /cart/{token}/items...` → `CartController` → `CartService`.
-   - Persistence: Flyway migrations create an in-memory H2 schema at startup; Hibernate validates it.
-   - UI: Thymeleaf templates with optional HTMX fragment responses.
+   `CatalogController` → `CatalogService` → Spring Data repositories → JPA entities → Thymeleaf templates
 
-   Relevant files:
+   Cart changes follow:
 
-   - [README.md](/private/tmp/demo-supermarket/README.md:1)
-   - [SupermarketApplication.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/SupermarketApplication.java:1)
-   - [CatalogController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/catalog/CatalogController.java:1)
-   - [CartController.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartController.java:1)
-   - [CartService.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartService.java:1)
+   `CartController` → `CartService` → locked `Cart` entity and `Product` lookup → `CartView` → `cart.html` or HTMX fragment
 
-   The intended local commands are:
+   Relevant entry points:
+
+   - `src/main/java/demo/supermarket/SupermarketApplication.java`
+   - `src/main/java/demo/supermarket/catalog/CatalogController.java`
+   - `src/main/java/demo/supermarket/cart/CartController.java`
+   - `src/main/java/demo/supermarket/catalog/CatalogService.java`
+   - `src/main/java/demo/supermarket/cart/CartService.java`
+
+   One thing I cannot verify without running it: `SupermarketApplication.main` is package-private rather than `public`. That may be intentional for this Java/toolchain setup, but it is worth checking immediately because it is the application launcher.
+
+   ## Running and verifying locally
+
+   The project requires Java 25 and Maven 3.6.3 or newer, as specified in `pom.xml`.
+
+   Typical commands:
 
    ```bash
    ./mvnw test
@@ -330,125 +349,154 @@ something that supports your next decision.
    ./mvnw spring-boot:run
    ```
 
-   Then visit:
+   Then inspect:
 
    - `http://localhost:8080/`
    - `http://localhost:8080/products`
    - `http://localhost:8080/actuator/health`
 
-   `verify` includes the configured Playwright end-to-end lifecycle and may install Chromium/dependencies. The Maven build targets Java 25, defined in [pom.xml](/private/tmp/demo-supermarket/pom.xml:18).
+   Manual customer verification:
 
-   One repository inconsistency is worth flagging: `README.md` links to `RUNBOOK.md`, but no such file exists in the repository listing. Also, the ADR README claims `/actuator/info` and form-login behavior, while the actual configuration exposes only health and configures HTTP Basic. The source configuration should be treated as authoritative until the team clarifies this.
+   1. Open the catalogue.
+   2. Search or filter for a product.
+   3. Add it to the cart.
+   4. Confirm the redirect contains an opaque cart token.
+   5. Reopen `/cart/{token}`.
+   6. Change quantity and remove the line.
+   7. Try an unknown token and confirm the error response.
 
-   ## Code, configuration, data, and tests
+   `verify` also includes an optional Playwright E2E lifecycle. The relevant Maven configuration is in `pom.xml`; E2E tests are tagged `e2e`, and the harness is under `src/test/java/demo/supermarket/e2e`.
 
-   Feature code is organized by domain package:
+   The README links to `RUNBOOK.md`, but that file is not present in the repository listing. That documentation path is currently broken.
 
-   - `src/main/java/demo/supermarket/catalog/`
-     - Entities: `Product`, `Category`
-     - Repositories: `ProductRepository`, `CategoryRepository`
-     - Application logic: `CatalogService`
-     - Web entry point: `CatalogController`
-     - View records: `CatalogView`, `CatalogProduct`, `CatalogCategory`
-   - `src/main/java/demo/supermarket/cart/`
-     - Entities: `Cart`, `CartItem`
-     - State: `CartState`
-     - Repository: `CartRepository`
-     - Application logic: `CartService`
-     - Web entry point: `CartController`
-     - Error handling: `CartExceptionHandler`
+   ## Where things live
 
-   Configuration lives in:
+   Feature code is organized by domain:
 
-   - [application.yml](/private/tmp/demo-supermarket/src/main/resources/application.yml:1): H2, Flyway, JPA validation, actuator.
-   - [SecurityConfiguration.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/security/SecurityConfiguration.java:1): public routes and HTTP Basic.
-   - [CartConfiguration.java](/private/tmp/demo-supermarket/src/main/java/demo/supermarket/cart/CartConfiguration.java:1): injectable UTC clock.
+   - Catalogue: `src/main/java/demo/supermarket/catalog`
+   - Guest cart: `src/main/java/demo/supermarket/cart`
+   - Security baseline: `src/main/java/demo/supermarket/security`
+   - Application entry point: `src/main/java/demo/supermarket/SupermarketApplication.java`
 
-   Data and schema live in:
+   Configuration and infrastructure:
 
-   - `src/main/resources/db/migration/V1__baseline.sql`
-   - `V2__catalog.sql`: categories and seeded products
-   - `V3__guest_carts.sql`: cart tables
-   - `V4__product_slugs.sql`: product slug migration
-   - `src/main/resources/static/images/products/`: product images
+   - Spring configuration: `src/main/resources/application.yml`
+   - Security rules: `src/main/java/demo/supermarket/security/SecurityConfiguration.java`
+   - Maven/dependencies/test lifecycle: `pom.xml`
+   - Flyway migrations and seed data: `src/main/resources/db/migration`
+   - HTML templates: `src/main/resources/templates`
+   - CSS and images: `src/main/resources/static`
 
-   Templates and styling live in:
+   The database is an in-memory H2 database configured for PostgreSQL compatibility. Hibernate validates the schema; Flyway owns schema creation.
 
-   - `src/main/resources/templates/catalog.html`
-   - `cart.html`
-   - `catalog-cart-mutation.html`
-   - `cart-not-found.html`
-   - `error.html`
-   - `src/main/resources/static/css/application.css`
+   Data currently comes from:
 
-   Tests are present despite not appearing in the initial truncated listing:
+   - `src/main/resources/db/migration/V2__catalog.sql`
+   - `src/main/resources/db/migration/V3__guest_carts.sql`
+   - `src/main/resources/db/migration/V4__product_slugs.sql`
 
-   - Unit/service and MVC tests under `src/test/java/demo/supermarket/catalog/` and `cart/`
-   - Security test: `security/PublicRoutesTest.java`
-   - Browser tests under `e2e/`, using Playwright
+   Tests are split between unit/full-stack-style tests and browser tests:
 
-   The tests cover catalog filtering, rendering, cart behavior, token collision retries, concurrency, public routes, and at least the home-page browser flow.
+   - `src/test/java/demo/supermarket/catalog`
+   - `src/test/java/demo/supermarket/cart`
+   - `src/test/java/demo/supermarket/security`
+   - `src/test/java/demo/supermarket/e2e`
 
-   ## Current work and safe first contribution
+   The tests notably include cart concurrency and token-collision behavior, which is more substantial than the currently visible UI scope suggests.
 
-   The working tree is clean:
+   ## Current repository work
 
-   ```text
-   ## main...origin/main
-   ```
+   The working tree is clean; there are no uncommitted changes visible.
 
-   Recent commits show this progression:
+   Recent history shows completed work through persisted guest carts:
 
-   1. Project foundation
-   2. Seed catalog and product listing
-   3. Persisted guest carts
+   - `TASK-001`: project foundation — done
+   - `TASK-002`: seeded catalogue/product listing — done
+   - `TASK-003`: persisted guest cart — done
 
-   The repository is therefore visibly at the end of the cart story, with checkout not yet implemented. The task backlog confirms this:
+   The next dependency in the customer journey is:
 
-   - [TASK-004-guest-checkout-and-order-confirmation.md](/private/tmp/demo-supermarket/docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:1)
-   - Follow-ups cover delivery, checkout integrity, pickup validation, logistics, and inventory.
+   - `TASK-004`: guest pickup checkout and order confirmation — `needs-grooming`
 
-   A safe first contribution to explore is TASK-004: guest pickup checkout and order confirmation. It is the next coherent vertical slice, but it should begin with a readiness/design pass because the current source has no order package, order migration, checkout controller, or checkout tests. Start by identifying the intended order state model, cart transition semantics, validation rules, and confirmation-code requirements before coding.
+   Several later tasks are marked `ready`, including delivery checkout, security/users, logistics, inventory, validation, documentation, and UI polish. Starting `TASK-005` would be premature because it depends on `TASK-004`.
 
-   Do not start with broad “cleanup” or a README rewrite: the source and ADR documentation already disagree, and changing either without team confirmation could conceal an intentional workshop fixture or create misleading documentation.
+   A safe first contribution to explore is `TASK-004`, beginning with a readiness review rather than implementation. Trace the intended checkout state transition against:
+
+   - `docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md`
+   - `src/main/java/demo/supermarket/cart/Cart.java`
+   - `src/main/resources/db/migration/V3__guest_carts.sql`
+   - `src/main/java/demo/supermarket/cart/CartService.java`
+   - existing cart tests under `src/test/java/demo/supermarket/cart`
+
+   The task deliberately leaves order-code format, confirmation privacy, and unknown-order behavior unresolved. Those are team decisions, not safe assumptions for an implementation.
 
    ## Focused 90-minute onboarding plan
 
-   - 0–15 minutes: Run `./mvnw test`, inspect failures or environment prerequisites, then run the application and verify `/products` and `/actuator/health`.
-   - 15–30 minutes: Read the catalog path from `CatalogController` through `CatalogService`, `ProductRepository`, migrations, and `catalog.html`.
-   - 30–50 minutes: Read the cart path from `CartController` through `CartService`, `Cart`, `CartItem`, `CartRepository`, and `cart.html`.
-   - 50–65 minutes: Read `CatalogControllerTest`, `CartControllerTest`, `CartServiceConcurrencyTest`, and `HomePageTest` to learn the behavioral contract.
-   - 65–80 minutes: Read TASK-004 and compare its acceptance criteria with the current absence of order code/schema.
-   - 80–90 minutes: Write a one-page implementation sketch: domain tables, endpoints, cart state transition, validation boundaries, tests, and unresolved team questions.
+   0–15 minutes: establish the baseline
 
-   ## Conventions
+   - Run `./mvnw test`.
+   - Start the application.
+   - Verify `/`, `/products`, and `/actuator/health`.
+   - Record whether the launcher and Flyway/H2 startup behave as expected.
 
-   - Standard Maven/Spring Boot layout.
-   - Java 25 is required.
+   15–35 minutes: follow the catalogue path
+
+   - Read `CatalogController`, `CatalogService`, `ProductRepository`, and `CategoryRepository`.
+   - Inspect `V2__catalog.sql` and `V4__product_slugs.sql`.
+   - Exercise search, category filtering, and archived-product assumptions.
+
+   35–55 minutes: follow the cart path
+
+   - Read `CartController`, `CartService`, `Cart`, `CartItem`, `CartRepository`, and `CartState`.
+   - Exercise cart creation, token-based reopening, quantity limits, and removal.
+   - Note where locking, transactions, and database uniqueness are relied upon.
+
+   55–70 minutes: inspect the test strategy
+
+   - Read `CartControllerTest`, `CartServiceConcurrencyTest`, `CartServiceTokenRetryTest`, and `HomePageTest`.
+   - Compare what is tested with what is only manually verifiable.
+   - Run the normal test suite before attempting E2E tests.
+
+   70–85 minutes: assess the next story
+
+   - Read `TASK-004` end to end.
+   - Identify required schema, domain, controller, template, and test additions.
+   - Resolve the three explicitly open product decisions with the team.
+
+   85–90 minutes: write a small implementation map
+
+   - List the smallest vertical slice for pickup checkout.
+   - Identify transaction and cart-state invariants.
+   - Confirm acceptance-test shape before coding.
+
+   ## Conventions visible in the repository
+
+   - Spring Boot with Maven.
+   - Java 25.
    - Package-by-feature organization.
-   - Spring MVC + Thymeleaf, with HTMX for incremental fragments.
-   - Flyway owns schema evolution; do not rely on Hibernate DDL generation.
-   - H2 is the local/test database and resets on restart.
-   - Services own business rules; controllers select full-page versus HTMX fragment responses.
-   - Product URLs use slugs, not numeric IDs.
-   - Cart mutations use `POST`; cart reads use `GET`.
-   - Cart mutations lock the persisted cart and tests explicitly cover concurrent updates.
-   - Public routes must be deliberately listed in `SecurityConfiguration`; new routes are protected by default.
-   - Tests use JUnit/Spring test support, MockMvc, and Playwright for E2E.
-   - The existing code uses final parameters/local variables heavily and uses records for view models.
+   - Server-rendered Thymeleaf HTML.
+   - HTMX only as progressive enhancement.
+   - H2 in-memory persistence with Flyway migrations.
+   - JPA schema validation via `ddl-auto: validate`.
+   - Opaque cart tokens rather than session-backed carts.
+   - Immutable view records such as `CartView` and `CatalogView`.
+   - Business logic in services, HTTP behavior in controllers.
+   - No frontend framework or frontend build tool.
+   - E2E tests use Java Playwright and `@Tag("e2e")`.
+   - Public customer routes are permitted; all other routes currently require authentication, although staff-specific features do not yet exist.
+   - The repository currently has no visible `AGENTS.md` file despite the instructions supplied in this conversation.
 
    ## Questions only the team can answer
 
-   - Is `RUNBOOK.md` intentionally absent, or is the repository incomplete?
-   - Which documentation is authoritative where the ADRs contradict the running security and actuator configuration?
-   - Is TASK-004 definitely the next implementation target, or is there an uncommitted/private branch for another story?
-   - What production database and deployment environment should future migrations support?
-   - What exact order lifecycle and cart transition rules are desired?
-   - Should checkout require authentication eventually, or remain a guest flow?
-   - What is the required format, uniqueness scope, and lifetime of an order confirmation code?
-   - What pickup details, customer fields, and validation rules are mandatory?
-   - Are delivery, payment, stock, and time slots intentionally excluded from the first checkout slice?
-   - Should the application add explicit test-profile configuration, given that local state is in-memory and reset on restart?
+   - What exact order-code format and collision/entropy guarantee should `TASK-004` use?
+   - Is an order confirmation intentionally public to anyone possessing the code?
+   - What response should an unknown order code produce?
+   - Should the missing `RUNBOOK.md` be restored, or should the README link be removed?
+   - Is the package-private application `main` method an intentional Java 25 convention?
+   - Is H2’s in-memory lifetime sufficient for all workshop scenarios?
+   - Which backlog item is the actual next priority after checkout grooming?
+   - Are logistics and inventory intended to share users or remain strictly separated?
+   - What level of browser/E2E coverage is expected before accepting each task?
    ~~~
 
    Verify the response yourself. Open the two files or directories Codex
