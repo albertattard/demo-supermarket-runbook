@@ -1154,29 +1154,323 @@ entries:
       project-specific skills when a team has a repeatable workflow that deserves its
       own method and evidence standard.
 
-  - type: Breakpoint
-
   - type: Heading
     level: H2
     title: A Simple Agentic Workflow
 
   - type: Markdown
     contents: |
-      TODO: Update description!
+      One challenge for engineers is turning the techniques explored in this workshop
+      (repository instructions, skills, and well-scoped agent prompts) into useful
+      day-to-day practice.
 
-  - type: DisplayFile
-    path: demo-supermarket/tools/run-java-modernisation-task.sh
-    start_line: 5
+      Code-quality and modernisation work is a practical place to start. The work is
+      often valuable but repeatedly deferred, and it can be scoped so that an agent
+      assesses one small opportunity, explains its rationale, and produces evidence
+      for review. The goal is not to modernise code because newer syntax exists; it is
+      to identify a focused change that makes the code clearer, safer, or easier to
+      maintain.
 
-  - type: Breakpoint
+      Once this workflow has proved useful interactively, packaging it in a script
+      makes it repeatable and suitable for scheduled execution. The result is a pull
+      request with evidence for a human reviewer—not an automatic decision to change
+      or merge code.
 
   - type: Markdown
     contents: |
-      Review the PR
+      1. Create the local branch on which the agent may work.
 
-      ![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
+         Creating a branch is an engineering decision: it selects the checkout that
+         may receive changes and authorises the later local commit. An agent could
+         create or switch branches, but keeping that responsibility outside the prompt
+         prevents it from choosing Git state on the engineer’s behalf. The agent can
+         then focus on its bounded task: assess one modernisation opportunity, make
+         the focused change, and provide verification evidence.
 
-      This can be easily captured in a script and executed on a scheduler.
+         Keeping Git operations outside the prompt makes the workflow easier to
+         control and review, but it also makes it more prescriptive. The branch name,
+         commit step, and pull-request publication are now explicit commands that must
+         be maintained as the workflow changes.
+
+         A prompt-driven workflow is more flexible: changing the task or the desired
+         Git behaviour can require only a prompt change, and the agent can adapt the
+         surrounding steps. The cost is less predictability and a broader
+         responsibility for the agent.
+
+         Choose the boundary deliberately. Put stable, high-impact operations—such as
+         branch selection, publication, and other permission-sensitive actions—in
+         explicit commands when control matters most. Keep task-specific judgment and
+         evolving implementation detail in the prompt when flexibility matters most.
+
+         **Local Git side effect:** this command creates and switches to a local
+         branch named `codex/modernisation`. Confirm the next command reports that
+         exact branch. Stop if the branch already exists or Git cannot create it;
+         inspect the existing branch before deciding whether it is safe to use.
+
+  - type: Command
+    commands: |
+      git switch --create 'codex/modernisation'
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      Confirm that Git is using the branch created in the previous step. This
+      command prints the current branch name. Stop if it does not print
+      `codex/modernisation`, because the agent must work only on that branch.
+    indent: 3
+
+  - type: Command
+    commands: |
+      git branch --show-current
+    output:
+      caption: |
+        The current branch
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      2. Assess a bounded improvement task
+
+         This workflow asks the agent to identify at most one Java 25 modernisation
+         that materially improves maintainability while preserving behaviour.
+
+         The agent returns one of three outcomes:
+
+         - `no-improvement`: no focused change is worth making;
+         - `blocked`: a worthwhile change was identified, but an engineer must prepare
+           the required local Git branch; or
+         - `modernised`: the agent implemented and verified the change, ready for an
+           engineer to review and commit on the prepared branch.
+
+         **Local Git side effect:** the agent may modify files on the existing
+         `codex/modernisation` branch. It must not create or switch branches, stage
+         changes, commit, push, or create a pull request.
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox workspace-write \
+        --output-last-message '/tmp/codex-modernisation-handoff.json' \
+        - <<'EOF' > '/tmp/codex-modernisation-handoff.log' 2>&1
+      ## Goal
+
+      Identify at most one worthwhile Java 25 modernisation opportunity and, only when
+      an appropriate local branch already exists, implement it as a focused,
+      uncommitted change.
+
+      ## Constraints
+
+      - Keep the project on Java 25. Do not alter the runtime or toolchain baseline.
+      - Consider unnecessarily Java-8-era code, such as mutable value objects,
+        boilerplate `equals`, `hashCode`, or `toString`, manual collection processing,
+        avoidable nullable control flow, and verbose conditional logic.
+      - Choose one cohesive opportunity only. Do not perform a broad refactor or mix
+        unrelated cleanup into the change.
+      - Preserve observable behaviour, public routes, persistence behaviour, and test
+        intent.
+      - Modernise only where a Java 25 idiom materially improves clarity, safety, or
+        maintainability. Do not make changes for novelty.
+      - Do not overwrite, revert, stage, or commit unrelated existing changes.
+      - Do not stage or commit any changes. Leave the reviewed change for an engineer
+        to commit.
+      - Do not create or switch branches. Do not run `git push` or `gh pr create`.
+
+      ## Process
+
+      1. Inspect the codebase and relevant tests. Select the strongest single
+         candidate, if one exists.
+      2. If no candidate provides a material benefit, do not change source files or
+         commit. Return the `no-improvement` hand-off below.
+      3. If a candidate is justified but the current branch does not match
+         `codex/modernisation`, do not change source files or commit. Return the
+         `blocked` hand-off below, including a suggested branch name.
+      4. Otherwise, implement only the selected change. Add or adjust tests where
+         necessary to demonstrate that behaviour remains correct.
+      5. Run `./mvnw test` and `./mvnw verify`. Resolve failures caused by the change.
+      6. Review the final diff for scope and correctness. Leave the change unstaged.
+
+      ## Final response
+
+      Your final response is the machine-readable hand-off. Output only valid JSON:
+      no Markdown fences, explanation, or surrounding text.
+
+      If no improvement is justified:
+
+      {"outcome":"no-improvement","summary":"<why no candidate justified a change>"}
+
+      If an engineer must prepare a branch:
+
+      {"outcome":"blocked","title":"<proposed pull-request title>","summary":"<the candidate and why it is worthwhile>","branch":"codex/modernisation","required_action":"Create and switch to the suggested local branch, then rerun this command."}
+
+      If you implemented and verified a modernisation:
+
+      {"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"},{"command":"./mvnw verify","result":"passed"}],"review_focus":"<compatibility risks or review considerations>"}
+      EOF
+    timeout: 5 minutes
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      Review the model’s hand-off file at `/tmp/codex-modernisation-handoff.json`.
+
+      This file records the workflow outcome and, when a modernisation is proposed,
+      the evidence needed for the next decision. Stop and investigate if the file
+      is missing or does not contain valid JSON.
+    indent: 3
+
+  - type: DisplayFile
+    path: /tmp/codex-modernisation-handoff.json
+    content_type: json
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      The hand-off may be compact JSON. Use `jq` to display it in a readable,
+      formatted form.
+    indent: 3
+
+  - type: Command
+    commands: |
+      jq . '/tmp/codex-modernisation-handoff.json'
+    output:
+      caption: |
+        Formatted modernisation hand-off
+      content_type: json
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      This example contains a worthwhile modernisation opportunity. Use the `outcome`
+      field to decide what to do next:
+
+      - `no-improvement`: stop here. Do not run the remaining change, verification, or
+        commit steps.
+      - `blocked`: stop here and complete the action described in `required_action`
+        before rerunning the workflow.
+      - `modernised`: review the proposed change, then continue with verification and
+        commit.
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      3. Verify that that tests pass
+
+  - type: Command
+    commands: |
+      ./mvnw clean verify
+    output:
+      caption: |
+        All test should pass
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      4. Commit the reviewed changes
+
+         The hand-off names the files the agent changed and provides the proposed
+         commit subject. This command stages only those files and creates the local
+         commit.
+
+         Stop if the hand-off is not `modernised`, if unrelated changes are already
+         staged, or if Git reports an unexpected diff.
+
+  - type: Command
+    commands: |
+      # Read the structured hand-off produced by the model.
+      handoff_file='/tmp/codex-modernisation-handoff.json'
+
+      # Continue only when the model completed a modernisation that is ready for
+      # review and commit. For `no-improvement` or `blocked`, display the hand-off
+      # and stop.
+      if [[ "$(jq --raw-output '.outcome' "$handoff_file")" != 'modernised' ]]; then
+        jq . "$handoff_file"
+        echo 'The agent did not produce a change ready to commit.' >&2
+        exit 1
+      fi
+
+      # Stop if the Git index already contains staged changes. This prevents the
+      # commit from accidentally including work that existed before this workflow.
+      if ! git diff --cached --quiet; then
+        echo 'Stop: the index already contains staged changes.' >&2
+        exit 1
+      fi
+
+      # Check the agent’s unstaged changes for whitespace errors before staging them.
+      git diff --check
+
+      # Stage only the files named in the hand-off, rather than every changed file in
+      # the working tree.
+      jq --raw-output '.files_changed[]' "$handoff_file" |
+        while IFS= read -r file; do
+          git add -- "$file"
+        done
+
+      # Check the exact staged diff for whitespace errors before creating the
+      # commit.
+      git diff --cached --check
+
+      # Create the local commit using the commit subject proposed in the hand-off.
+      git commit --message "$(jq --raw-output '.commit_message' "$handoff_file")"
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      5. Optional: Create a pull request
+
+         **GitHub side effects:** these commands push the current branch and create a pull
+         request. They are not part of the local workshop flow. Run them only in a repository
+         where you have permission to push and open pull requests.
+
+         The commands use the `modernised` hand-off to build a pull-request body. Review the
+         generated title and body before creating the pull request.
+
+         ```shell
+         handoff_file='/tmp/codex-modernisation-handoff.json'
+
+         # Continue only when the hand-off reports a verified modernisation ready for publication.
+         if [[ "$(jq --raw-output '.outcome' "$handoff_file")" != 'modernised' ]]; then
+           jq . "$handoff_file"
+           echo 'The hand-off does not describe a modernisation ready for publication.' >&2
+           exit 1
+         fi
+
+         # Build a pull-request body from the hand-off and write it to a temporary file.
+         pr_body_file="$(mktemp /tmp/codex-modernisation-pr.XXXXXX.md)"
+         {
+           printf '%s\n\n' '## Summary'
+           jq --raw-output '.summary' "$handoff_file"
+           printf '\n%s\n' '## Files changed'
+           jq --raw-output '.files_changed[] | "- `\(.)`"' "$handoff_file"
+           printf '\n%s\n' '## Validation'
+           jq --raw-output '.validation[] | "- `\(.command)`: \(.result)"' "$handoff_file"
+           printf '\n%s\n\n' '## Review focus'
+           jq --raw-output '.review_focus' "$handoff_file"
+         } > "$pr_body_file"
+
+         # Push the current branch to GitHub and configure it to track the remote branch.
+         git push --set-upstream origin "$(git branch --show-current)"
+
+         # Create a pull request using the title and body generated from the hand-off.
+         gh pr create \
+           --title "$(jq --raw-output '.title' "$handoff_file")" \
+           --body-file "$pr_body_file"
+         ```
+
+         Review the pull request and its evidence before deciding whether to merge it.
+
+         ![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
+
+         Confirm that the change is focused, preserves the intended behaviour, and that the
+         reported validation results support the change. A passing build and a well-formed
+         hand-off are evidence, not approval.
+
+         Once this workflow has proved useful, the same hand-off and publication steps can be
+         packaged in a script and scheduled. A scheduled workflow should retain its
+         guardrails, such as avoiding duplicate open pull requests, and should still require
+         human review before merge.
+
+  - type: Breakpoint
 
   - type: Heading
     level: H2

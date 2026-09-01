@@ -307,34 +307,26 @@ something that supports your next decision.
 2. Review Codex’s response.
 
    ~~~markdown
-   ## Application mental model
+   ## Application and local verification
 
-   This is a Spring Boot, server-rendered grocery catalogue with guest shopping carts.
+   This is a Spring Boot 4.1.1, Java 25, Maven application for a server-rendered grocery store. Customers can browse/search products, create a guest cart, adjust quantities, and remove items. Checkout, staff workflows, and inventory management are represented in the backlog but are not implemented yet. See `README.md`.
 
-   The verified implemented flow is:
+   The main flow is:
 
    1. `CatalogController` serves `/` and `/products`.
-   2. `CatalogService` loads active categories/products and applies optional category/search filtering.
-   3. A guest starts a cart through `POST /cart/start`.
-   4. `CartService` creates a persisted cart with a unique token.
-   5. Cart items can be added, updated, or removed through `CartController`.
-   6. Thymeleaf renders full pages or HTMX fragments.
+   2. `CatalogService` queries active categories/products and maps entities to views.
+   3. `CartController` starts and mutates guest carts.
+   4. `CartService` persists carts and cart items, enforcing quantities from 1–99.
+   5. Thymeleaf renders HTML; HTMX progressively enhances cart mutations.
 
-   Key entry points:
+   Relevant entry points:
 
-   - Application startup: `src/main/java/demo/supermarket/SupermarketApplication.java`
-   - Catalogue: `src/main/java/demo/supermarket/catalog/`
-   - Guest carts: `src/main/java/demo/supermarket/cart/`
-   - HTML views: `src/main/resources/templates/`
-   - Database schema and seed data: `src/main/resources/db/migration/`
-   - Configuration: `src/main/resources/application.yml`
-   - Security rules: `src/main/java/demo/supermarket/security/SecurityConfiguration.java`
+   - `src/main/java/demo/supermarket/SupermarketApplication.java`
+   - `src/main/java/demo/supermarket/catalog/CatalogController.java`
+   - `src/main/java/demo/supermarket/cart/CartController.java`
+   - `src/main/java/demo/supermarket/cart/CartService.java`
 
-   A notable inconsistency: `README.md` describes guest ordering, pickup, delivery, logistics workflows, and inventory administration, but no corresponding order, fulfillment, or inventory packages are present in this checkout. I cannot verify those capabilities from the code inspected; they appear to be planned or documented beyond the current implementation.
-
-   ## Verify locally
-
-   Requirements are Java 25 and Maven, as declared in `pom.xml`.
+   Local database state is an in-memory H2 database, initialized by Flyway migrations. It disappears when the process stops.
 
    Run the application:
 
@@ -342,101 +334,112 @@ something that supports your next decision.
    ./mvnw spring-boot:run
    ```
 
-   Then open:
+   Then verify:
 
-   ```text
-   http://localhost:8080/
+   ```bash
+   curl -i http://localhost:8080/actuator/health
+   curl -i http://localhost:8080/products
    ```
 
-   Useful manual checks:
+   The expected evidence is a successful health response and rendered product HTML. Browser verification can be done at `http://localhost:8080/`.
 
-   - Browse `/` or `/products`.
-   - Filter with `/products?category=...`.
-   - Search with `/products?q=...`.
-   - Start a cart using the product controls.
-   - Add, change, and remove items.
-   - Check health at `/actuator/health`.
-
-   Run non-E2E tests:
+   Run unit/controller tests:
 
    ```bash
    ./mvnw test
    ```
 
-   The Maven Surefire configuration excludes tests tagged `e2e`. Full verification is configured through Failsafe:
+   The Maven build excludes the `e2e` group from ordinary tests. Full end-to-end verification is configured through:
 
    ```bash
    ./mvnw verify
    ```
 
-   That path installs Chromium with dependencies and runs the tagged browser test in `src/test/java/demo/supermarket/e2e/`. I did not execute tests during this read-only investigation.
+   That lifecycle may install Playwright Chromium and its dependencies, so it is more expensive and environment-sensitive.
 
-   ## Feature, data, and test layout
+   ## Where things live
 
-   - Catalogue domain and web layer: `src/main/java/demo/supermarket/catalog/`
-   - Cart domain, persistence, service, and web layer: `src/main/java/demo/supermarket/cart/`
-   - Security: `src/main/java/demo/supermarket/security/SecurityConfiguration.java`
-   - Database migrations:
-     - `src/main/resources/db/migration/V1__baseline.sql`
-     - `src/main/resources/db/migration/V2__catalog.sql`
-     - `src/main/resources/db/migration/V3__guest_carts.sql`
-     - `src/main/resources/db/migration/V4__product_slugs.sql`
-   - Product images: `src/main/resources/static/images/products/`
-   - Templates: `src/main/resources/templates/`
-   - Catalogue tests: `src/test/java/demo/supermarket/catalog/`
-   - Cart tests: `src/test/java/demo/supermarket/cart/`
-   - Security tests: `src/test/java/demo/supermarket/security/PublicRoutesTest.java`
-   - Browser tests and harness: `src/test/java/demo/supermarket/e2e/`
+   Feature code is organized by domain:
 
-   The application uses an in-memory H2 database configured in `src/main/resources/application.yml`; Flyway applies the migrations at startup. Data is therefore reset between application runs.
+   - Catalog: `src/main/java/demo/supermarket/catalog/`
+   - Guest carts: `src/main/java/demo/supermarket/cart/`
+   - Security: `src/main/java/demo/supermarket/security/`
+   - Application entry point: `src/main/java/demo/supermarket/SupermarketApplication.java`
 
-   ## Current repository work
+   Configuration and operational setup:
 
-   The worktree appears clean: the repository has no visible uncommitted diff. The latest committed feature is persisted guest carts, represented by commit history and files including:
+   - `pom.xml` — Java version, dependencies, test groups, Playwright, Maven lifecycle
+   - `src/main/resources/application.yml` — H2, Flyway, JPA validation, health endpoint
+   - `src/main/java/demo/supermarket/security/SecurityConfiguration.java` — public/protected routes
+   - `docs/adrs/` — architectural decisions
 
-   - `src/main/java/demo/supermarket/cart/CartService.java`
-   - `src/main/java/demo/supermarket/cart/CartRepository.java`
-   - `src/main/resources/db/migration/V3__guest_carts.sql`
-   - `src/main/resources/db/migration/V4__product_slugs.sql`
+   Data and presentation:
 
-   The safest first contribution is test-only: add a focused catalogue behavior test, such as verifying that search escaping treats `%` and `_` literally. `CatalogService` explicitly escapes those characters in `src/main/java/demo/supermarket/catalog/CatalogService.java`, but the current visible test inventory does not clearly establish coverage for that behavior.
+   - `src/main/resources/db/migration/` — Flyway schema and seed data
+   - `src/main/resources/templates/` — Thymeleaf pages and HTMX fragments
+   - `src/main/resources/static/css/application.css` — styling
+   - `src/main/resources/static/images/` — product imagery
 
-   Before implementing anything larger, I would first confirm the intended backlog and whether orders are deliberately out of scope. Adding an order feature based only on the README would be premature.
+   Tests:
+
+   - `src/test/java/demo/supermarket/catalog/` — catalog tests
+   - `src/test/java/demo/supermarket/cart/` — cart behavior, retry, and concurrency tests
+   - `src/test/java/demo/supermarket/security/PublicRoutesTest.java` — route security
+   - `src/test/java/demo/supermarket/e2e/` — Playwright end-to-end tests and harness
+
+   ## Current work and a safe first contribution
+
+   The repository history shows three completed foundation slices:
+
+   - `TASK-001` project foundation
+   - `TASK-002` seeded catalog and product listing
+   - `TASK-003` persisted guest cart
+
+   These are marked `done` in `docs/tasks/`.
+
+   The next work is largely backlog-driven. Most tasks are marked `ready`, but `docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md` is explicitly `needs-grooming` and contains unresolved questions. That is the safest first contribution to explore: perform a readiness review, trace its dependency on the existing cart model, and identify the decisions needed before implementation.
+
+   I could not reliably verify the working-tree cleanliness: Git emitted macOS developer-cache permission errors while running status/diff commands. Do not assume there are no local changes until `git status --short` works in a normal environment.
 
    ## Focused 90-minute onboarding plan
 
-   - 0–10 minutes: Run the application and inspect `/`, catalogue search, and cart creation.
-   - 10–25 minutes: Read `README.md`, `pom.xml`, `application.yml`, and `SecurityConfiguration.java`.
-   - 25–45 minutes: Trace one request end-to-end:
-     `CatalogController` → `CatalogService` → repository → `CatalogView` → `catalog.html`.
-   - 45–65 minutes: Trace cart mutation:
-     `CartController` → `CartService` → `Cart`/`CartItem` → `cart.html` or HTMX fragment.
-   - 65–75 minutes: Read `V2__catalog.sql`, `V3__guest_carts.sql`, and `V4__product_slugs.sql` to connect Java entities to the schema.
-   - 75–85 minutes: Run `./mvnw test` and inspect the existing catalogue/cart tests.
-   - 85–90 minutes: Write down one verified small gap and one question for the team; do not begin a broad feature.
+   - 0–10 minutes: Read `README.md`, `pom.xml`, and `docs/adrs/README.md`. Record the stack, runtime, persistence model, and security defaults.
 
-   ## Conventions and team questions
+   - 10–25 minutes: Start the application and verify `/actuator/health`, `/`, and `/products`. Confirm that the catalog is populated.
 
-   Observed conventions:
+   - 25–45 minutes: Trace one customer journey:
+     `/products` → `POST /cart/start` → `/cart/{token}` → cart item mutation.
+     Read `CatalogController`, `CartController`, `CatalogService`, and `CartService`.
 
-   - Package-by-feature organization: `catalog`, `cart`, and `security`.
-   - Controllers return Thymeleaf view names rather than JSON APIs.
-   - Services contain domain behavior and transaction boundaries.
-   - DTO-like Java records/views separate persistence entities from templates.
-   - Database changes use ordered Flyway migrations.
-   - Active catalogue records are filtered at repository/service level.
-   - Cart mutations use locking repository methods and enforce quantities from 1 to 99.
-   - HTMX requests are detected through the `HX-Request` header.
-   - Tests are primarily Spring integration tests; browser coverage is explicitly tagged `e2e`.
+   - 45–60 minutes: Read `V2__catalog.sql`, `V3__guest_carts.sql`, and `V4__product_slugs.sql`. Match database columns to `Product`, `Cart`, and `CartItem`.
 
-   Questions only the team can answer:
+   - 60–72 minutes: Run `./mvnw test`. Read the cart concurrency/token-retry tests and one catalog controller test. Treat passing tests as evidence, not as approval of unfinished features.
 
-   - Are ordering, pickup, delivery, logistics, and inventory features intentionally future work, or is this checkout incomplete?
-   - What is the authoritative backlog for the next contribution?
-   - Should catalogue search be case-insensitive according to database behavior, or only according to application intent?
-   - Is the in-memory H2 database sufficient for all workshop scenarios, or should a persistent/local profile exist?
-   - Are migrations expected to remain seed-data migrations, or should seed data move elsewhere?
-   - What is the expected policy for invalid or unknown cart tokens from a user perspective?
+   - 72–85 minutes: Read `docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md` and its acceptance criteria. Compare proposed checkout behavior with the current `CartState` and cart persistence model.
+
+   - 85–90 minutes: Write a short readiness note: known flow, missing domain concepts, unresolved product decisions, and the smallest testable vertical slice.
+
+   ## Repository conventions
+
+   - Use Maven and Java 25; see `pom.xml` and `docs/adrs/ADR-001-spring-boot-and-maven.md`.
+   - Use server-rendered Thymeleaf with HTMX for incremental interaction; see `docs/adrs/ADR-003-server-rendered-web-baseline.md`.
+   - Put schema changes in Flyway migrations under `src/main/resources/db/migration/`; Hibernate validates rather than creates the schema.
+   - New routes are protected by default unless explicitly permitted in `SecurityConfiguration`.
+   - Keep domain code grouped by feature rather than by technical layer.
+   - Add or update focused tests alongside feature changes.
+   - Treat `docs/tasks/` as the canonical backlog and check task dependencies before implementation.
+   - The repository’s architecture documentation says only health is exposed operationally, but `docs/adrs/README.md` also mentions `/actuator/info` as public. That inconsistency should be resolved by the team; the current `application.yml` exposes only health.
+
+   ## Questions for the team
+
+   - Is the current checkout guaranteed clean, given that Git status could not be verified here?
+   - What is the intended production database, since H2 is explicitly local/test-only?
+   - Should checkout create immutable order snapshots when product names or prices later change?
+   - What are the exact guest-order retention, lookup, cancellation, and security requirements?
+   - Which routes should eventually be public versus authenticated staff routes?
+   - Are the backlog task statuses maintained manually, and what constitutes “ready”?
+   - Should `TASK-004` be groomed before any implementation begins?
+   - Is `/actuator/info` intended to be exposed, or is the ADR text stale?
 
    ~~~
 
@@ -532,9 +535,9 @@ a clear purpose.
    Review the model’s response
 
    ```markdown
-   Demo Supermarket is a small server-rendered web application built with Java 25, Spring Boot 4.1.1, and Maven. It follows a conventional Spring MVC structure: controllers handle HTTP requests, services contain application logic, repositories use Spring Data JPA for persistence, and domain code is organized around catalog and cart features. Thymeleaf renders the HTML views, with HTMX providing lightweight dynamic page updates rather than a separate single-page frontend.
+   This is a small Java 25 web application built with Spring Boot 4.1.1 and Maven. It uses Spring MVC for request handling, Thymeleaf for server-rendered HTML templates, and HTMX for lightweight interactive updates without a separate frontend application or JavaScript build pipeline. Static CSS, images, and templates live under `src/main/resources`; the main code is organized into domain-oriented packages such as `catalog`, `cart`, and `security`.
 
-   The application uses an in-memory H2 database configured in PostgreSQL compatibility mode, with Flyway managing schema migrations and Hibernate validating the schema. Spring Security protects application routes, while Spring Validation and Actuator provide input validation and health endpoints. Tests include Spring MVC/service tests and browser-level end-to-end tests using Microsoft Playwright; Maven Surefire runs the regular tests, while Failsafe handles the e2e suite.
+   Persistence uses Spring Data JPA with an in-memory H2 database for local development and tests, while Flyway owns schema migrations under `src/main/resources/db/migration`. Spring Security provides authentication and authorization, Spring Validation handles input validation, and Actuator supplies operational endpoints. Testing combines Spring Boot’s test stack with Microsoft Playwright for end-to-end browser tests; ordinary tests run through Surefire, while E2E tests are separated into the Failsafe lifecycle.
    ```
 
    For a detailed record of this run, inspect `/tmp/codex-agents-before.log`.
@@ -551,7 +554,7 @@ a clear purpose.
    Tokens used without `AGENTS.md`
 
    ```
-   12.038
+   14.038
    ```
 
    Token counts are a useful efficiency signal, not a quality score. They do not
@@ -667,9 +670,9 @@ a clear purpose.
    Review the model’s response.
 
    ```markdown
-   This is a Java 25 application built with Spring Boot 4.1.1 and Maven. It uses Spring Web MVC for HTTP request handling, Thymeleaf for server-rendered HTML templates, and HTMX for incremental browser interactions without introducing a separate frontend framework or build pipeline. The code is organised by business capability, currently including areas such as `catalog` and `cart`.
+   This is a Java 25 application built with Spring Boot 4.1.1 and Maven. It uses Spring Web MVC with Thymeleaf for server-rendered HTML pages, static CSS/assets, and HTMX for incremental browser interactivity without a separate frontend application or JavaScript build pipeline. Business code is organised by capability, currently including catalog and cart features.
 
-   Persistence uses Spring Data JPA with an in-memory H2 database configured for PostgreSQL compatibility. Flyway owns database schema changes through versioned migrations under `src/main/resources/db/migration`, while Hibernate validates the schema rather than generating it. Spring Security provides protected-by-default HTTP Basic authentication, Spring Boot Actuator exposes health checks, and tests use Spring’s testing support plus Microsoft Playwright for end-to-end browser journeys.
+   Persistence uses Spring Data JPA with an in-memory H2 database for local development and tests; Flyway migrations under `src/main/resources/db/migration/` own the schema. Spring Security provides the security baseline, Spring Validation handles input validation, and Actuator supplies operational endpoints. Testing combines Spring’s test support and security test utilities with Microsoft Playwright for end-to-end browser tests; ordinary tests run through Surefire, while browser tests run as Maven integration tests via Failsafe.
    ```
 
    For a detailed record of this run, inspect `/tmp/codex-agents-after.log`. It
@@ -686,7 +689,7 @@ a clear purpose.
    Tokens used with `AGENTS.md`
 
    ```
-   13.334
+   13.696
    ```
 
 4. Compare the test strategies. Do not expect identical wording or a completely
@@ -695,7 +698,7 @@ a clear purpose.
    of distinct browser journeys, move combinations and validation cases to
    lower-scope tests, and identify product decisions that remain open.
 
-   The runs used 12.038 tokens without `AGENTS.md` and 13.334 tokens with it.
+   The runs used 14.038 tokens without `AGENTS.md` and 13.696 tokens with it.
    Treat this as one observation, not a verdict: the file adds context, so one
    run can use the same number of tokens or more. Its more important benefit is
    faster, more consistent use of the team’s guidance across future sessions and
@@ -985,18 +988,23 @@ ancestor commit, or content fetched later from a mutable URL.
    Review the model’s analysis.
 
    ```markdown
-   Assessment only; this is not approval.
+   ## Structured review
 
-   | Finding                                                          | Evidence                                              | Risk                                                                                                    | Human evidence needed before approval                                                                                        |
-   | ---------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-   | Read issue metadata, including linked issues and PRs             | `.agents/skills/review-task-readiness/SKILL.md:12`    | Medium — may require GitHub/API/browser access and expose private issue or PR content to the agent.     | Identify the issue source and access method; confirm the agent is authorized to view linked issues/PRs and their comments.   |
-   | Read repository instructions, code, and documentation            | `.agents/skills/review-task-readiness/SKILL.md:13`    | Low–Medium — filesystem read access extends beyond the task text, though scoped by “needed.”            | Define the repository boundary and confirm access to source, docs, and instruction files is acceptable.                      |
-   | Update the canonical task/story/ticket when explicitly requested | `.agents/skills/review-task-readiness/SKILL.md:30-32` | High — an external or persistent write can alter planning records; “canonical” may be a remote tracker. | Confirm the canonical system, authenticated identity, exact target, requested text, and whether remote edits are authorized. |
-   | Inspect every referenced or dependent task after an update       | `.agents/skills/review-task-readiness/SKILL.md:36-39` | Medium — potentially broad filesystem or issue-tracker access, especially across linked work items.     | Provide the allowed dependency scope and confirm authorization to access all referenced tasks.                               |
+   | Finding | Evidence | Risk | Human evidence before approval |
+   |---|---|---|---|
+   | Read GitHub issue metadata, comments, and linked issues/PRs | [SKILL.md](/private/tmp/demo-supermarket/.agents/skills/review-task-readiness/SKILL.md:12) | Medium — accessing GitHub data may require network access and could expose private project context to the configured integration. No specific tool is named. | Confirm the intended GitHub account, repository scope, and whether linked PRs/issues may be accessed. |
+   | Read repository instructions, code, and documentation | [SKILL.md](/private/tmp/demo-supermarket/.agents/skills/review-task-readiness/SKILL.md:13) | Low–Medium — filesystem read access may include sensitive repository material; scope is constrained only by “needed.” | Identify the allowed repository/worktree and any directories excluded from review. |
+   | Inspect referenced or dependent tasks | [SKILL.md](/private/tmp/demo-supermarket/.agents/skills/review-task-readiness/SKILL.md:38) | Medium — expands filesystem or GitHub-read scope to related work items. | Confirm which dependency sources and repositories are in scope. |
+   | Update a canonical task/story/ticket when explicitly requested | [SKILL.md](/private/tmp/demo-supermarket/.agents/skills/review-task-readiness/SKILL.md:30), [SKILL.md](/private/tmp/demo-supermarket/.agents/skills/review-task-readiness/SKILL.md:32) | High — this is an external side effect: it can modify shared project-tracking data or repository files. | Explicit task-owner authorization; exact canonical target; proposed diff/text; confirmation that only the stated decision is being recorded. |
+   | Resume the readiness review after an update | [SKILL.md](/private/tmp/demo-supermarket/.agents/skills/review-task-readiness/SKILL.md:32) | Low — no independent side effect, but it may rely on the preceding write. | Approval of the update itself and confirmation that the review should continue. |
 
-   No tool names are explicitly requested in either file. No credential access is explicitly requested. No network access is explicitly required by the text, but reading issue/PR content and updating a canonical ticket may entail network access depending on where those records live.
+   No specific tools are requested by name.
 
-   `agents/openai.yaml` contains only display metadata and a default prompt (`.agents/skills/review-task-readiness/agents/openai.yaml:1-4`); no capability, access, or side-effect finding arises from that file.
+   No credential access is requested or described.
+
+   No direct network operation is explicitly requested. However, reading GitHub issues, comments, labels, and linked PRs implies network-backed access if those records are not already local.
+
+   The manifest contains only display metadata and a default prompt; it requests no tools, filesystem access, network access, credentials, or side effects. [openai.yaml](/private/tmp/demo-supermarket/.agents/skills/review-task-readiness/agents/openai.yaml:1)
    ```
 
    Review the model’s analysis. Check every cited file and line yourself.
@@ -1040,13 +1048,13 @@ ancestor commit, or content fetched later from a mutable URL.
    - **Decision:** Approved for this local, task-readiness exercise.
    - **Reviewed commit:** ${reviewed_commit}
    - **Reviewed files:**
-     - `.agents/skills/review-task-readiness/SKILL.md`
-     - `.agents/skills/review-task-readiness/agents/openai.yaml`
-   - **Evidence:** No remote instruction sources or command-bearing helpers found;
-     expected files are tracked and have no local changes.
-   - **Rationale:** I reviewed the skill’s purpose and instructions. I understand
-     that it reads task and repository evidence, and may update a task only when I
-     explicitly request that update.
+     - \`.agents/skills/review-task-readiness/SKILL.md\`
+     - \`.agents/skills/review-task-readiness/agents/openai.yaml\`
+   - **Evidence:** No remote instruction sources or command-bearing helpers
+     found; expected files are tracked and have no local changes.
+   - **Rationale:** I reviewed the skill’s purpose and instructions. I
+     understand that it reads task and repository evidence, and may update a
+     task only when I explicitly request that update.
    EOF
    ```
 
@@ -1056,7 +1064,7 @@ ancestor commit, or content fetched later from a mutable URL.
    # Skill review: review-task-readiness
 
    - **Decision:** Approved for this local, task-readiness exercise.
-   - **Reviewed commit:** 1a78082acd9c9d1991a03f243a01fb3adf5476fb
+   - **Reviewed commit:** c734de4eaa30e52a7078fbbfe8c0952653d4f66b
    - **Reviewed files:**
      - `.agents/skills/review-task-readiness/SKILL.md`
      - `.agents/skills/review-task-readiness/agents/openai.yaml`
@@ -1104,7 +1112,11 @@ baseline for a team policy: package skills with their reference material, pin
 and review changes, restrict tools to the minimum necessary, and require
 separate approval for external, destructive, or privileged actions.
 
-### Use the reviewed skill
+### Use the approved skill
+
+Continue only if you approved `review-task-readiness` and recorded that
+decision. If you rejected the skill or need more evidence, skip this section. Do
+not invoke a skill merely to see what it does.
 
 1. Try the approved skill interactively in the Codex desktop application or
    terminal interface.
@@ -1170,20 +1182,17 @@ separate approval for external, destructive, or privileged actions.
    acceptance criteria owned by TASK-007.
 
    ```markdown
-   Recorded the decisions in [TASK-004](</private/tmp/demo-supermarket/docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:16>) and corrected TASK-005’s conflicting “public confirmation” wording to preserve session-only access.
+   Updated [TASK-004](docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md:20) with every settled decision and matching acceptance criteria. TASK-007 and TASK-006 remain consistent; no dangling ownership found. `git diff --check` passes.
 
-   `git diff --check` passes. No tests run; this was documentation-only.
+   **Ready to implement** — the requirements are now clear and testable. The front matter still says `needs-grooming`; I left it unchanged because you asked to record decisions, not change status.
 
-   The task metadata still says `needs-grooming`, which conflicts with this assessment; I left that status unchanged because you asked to record decisions, not change workflow status.
-
-   **Ready to implement**
    ```
 
 2. Review the task changes.
 
-   Verify that they accurately record the settled decisions, keep behaviour
-   owned by TASK-007 out of scope, and do not introduce new requirements or
-   assumptions.
+  Verify that they accurately record the settled decisions, keep behaviour
+  owned by TASK-007 out of scope, and do not introduce new requirements or
+  assumptions.
 
    ```shell
    git diff -- 'docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md'
@@ -1193,25 +1202,24 @@ separate approval for external, destructive, or privileged actions.
 
    ```diff
    diff --git a/docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md b/docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md
-   index 6368bd4..6c05f10 100644
+   index 6368bd4..9b15cc4 100644
    --- a/docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md
    +++ b/docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md
-   @@ -16,27 +16,25 @@ This deliberately excludes delivery and the more demanding checkout-integrity wo
-    - Add order and order-item tables.
+   @@ -17,26 +17,23 @@ This deliberately excludes delivery and the more demanding checkout-integrity wo
     - An order references its source cart through a non-null, unique `cart_id`; a cart can have at most one order.
     - Add the `PICKUP` fulfilment type and the `PLACED` order status.
-   +- Give each order an eight-character uppercase public reference drawn from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. It is not an access credential.
-   +- Enforce order-reference uniqueness in the database. A uniqueness collision uses the existing generic error response; collision retry is deferred to TASK-006.
     - Add `GET` and `POST /cart/{cartToken}/checkout` for active carts.
    -- Collect full name, email, and phone number. Require trimmed, non-blank values and validate email using Jakarta Bean Validation's `@Email` constraint.
-   +- Collect full name, email, and phone number for the successful checkout path. TASK-007 owns validation failures and submitted-value handling.
-    - Create immutable snapshots of product name, unit label, unit price, quantity, line total, submitted customer data, fulfilment type, goods subtotal, delivery fee, and grand total.
+   -- Create immutable snapshots of product name, unit label, unit price, quantity, line total, submitted customer data, fulfilment type, goods subtotal, delivery fee, and grand total.
+   +- Collect full name, email, and phone number as customer data. TASK-007 owns validation failures and their customer-facing response.
+   +- Create an immutable order snapshot containing the order reference, placed time, fulfilment type, submitted customer data, product name, unit label, unit price, quantity, line total, goods subtotal, delivery fee, and grand total.
     - Pickup delivery fee is `0.00`.
    -- Mark the cart `CHECKED_OUT` only when order creation succeeds; reject empty carts and carts containing archived products.
-   +- Mark the cart `CHECKED_OUT` only when order creation succeeds.
-    - A repeated submission for a checked-out cart redirects to its existing order instead of creating another order.
+   -- A repeated submission for a checked-out cart redirects to its existing order instead of creating another order.
+   +- Generate an eight-character uppercase order reference using only `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. It is not an access credential, and the database enforces its uniqueness.
+   +- Mark the cart `CHECKED_OUT` only when order creation succeeds. TASK-007 owns empty-cart and archived-product checkout failures.
     - Checked-out carts retain the existing cart-not-found behaviour on cart routes.
-    - Add a confirmation route at `/orders/{orderCode}/confirmation`.
+   -- Add a confirmation route at `/orders/{orderCode}/confirmation`.
    -
    -## Questions to resolve during readiness review
    -
@@ -1220,34 +1228,35 @@ separate approval for external, destructive, or privileged actions.
    -- What customer-facing response should an unknown order code receive?
    -
    -Do not choose answers to these questions implicitly in implementation. The groomed fixture resolves them for the workshop demo.
-   +- Only the browser session that placed an order may view its confirmation. Durable cross-session confirmation access is deferred to a follow-up task.
+   +- A repeated checkout `POST` is the exception to checked-out cart routing: it redirects to the existing confirmation without creating another order.
+   +- Add a confirmation route at `/orders/{orderReference}/confirmation`. Only the browser session that placed the order may view it; durable cross-session confirmation access is deferred to a follow-up task.
    +- An unknown order reference, or a missing required session association, returns `404 Not Found` with a generic `Order not found` page.
+   +- If order-reference uniqueness is violated, use the existing generic error response. TASK-006 owns retry behaviour.
 
     ## Out of Scope
 
     - Delivery addresses, delivery postal-code eligibility, and delivery fees (story 5).
    -- Concurrent-submission, forced-collision, rollback-injection, and corrupted-data scenarios (story 6).
-   +- Validation failures, empty-cart failures, and archived-product failures (TASK-007).
-   +- Collision retry, concurrent-submission, forced-collision, rollback-injection, and corrupted-data scenarios (TASK-006).
+   +- Customer-input validation, empty-cart failures, and archived-product failures (story 7).
+   +- Order-reference collision retry, concurrent-submission, rollback-injection, and corrupted-data scenarios (story 6).
    +- Durable cross-session confirmation access.
     - Payments, accounts, cancellation, time slots, notifications, editing orders, and lifecycle transitions beyond `PLACED`.
 
     ## Acceptance Criteria
-   @@ -44,8 +42,10 @@ Do not choose answers to these questions implicitly in implementation. The groom
+   @@ -44,8 +41,10 @@ Do not choose answers to these questions implicitly in implementation. The groom
     - `./mvnw test` and `./mvnw verify` succeed.
     - A full-stack or end-to-end test completes pickup checkout from an active cart.
     - A valid checkout returns `303 See Other` to the canonical confirmation URL.
    -- Validation failures return `422 Unprocessable Content`, preserve submitted values, and show programmatically associated field errors.
    -- Empty-cart and archived-product checkout failures return `422 Unprocessable Content` with a clear form-level error.
    -- Pickup checkout creates one `PLACED` order with immutable product and customer snapshots, a `0.00` delivery fee, and the correct totals.
-   +- Pickup checkout creates one `PLACED` order with an eight-character uppercase reference from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, immutable placed-time, product, customer, and fulfilment snapshots, a `0.00` delivery fee, and the correct totals.
-   +- The database rejects a duplicate order reference; TASK-004 does not retry the collision and uses the existing generic error response.
+   +- Pickup checkout creates one `PLACED` order with an eight-character uppercase reference using only `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`; the database rejects duplicate references.
+   +- Pickup checkout creates immutable snapshots of the order reference, placed time, fulfilment, customer data, purchased lines, and all totals, with a `0.00` delivery fee and correct totals.
     - A repeated checkout creates no additional order and resolves to the original confirmation page.
-   -- Checked-out carts cannot be modified.
-   +- Only the browser session that placed an order can load its confirmation; another session receives `404 Not Found` with a generic `Order not found` page.
-   +- An unknown order reference and a missing required session association each return `404 Not Found` with a generic `Order not found` page.
-   +- Checked-out carts cannot be modified, and their cart routes retain the existing cart-not-found response; the repeated checkout `POST` is the sole exception.
-   +- The confirmation page displays the immutable order reference, placed time, fulfilment, customer data, purchased lines, and all totals.
+    - Checked-out carts cannot be modified.
+   +- An authorized confirmation request displays the immutable order snapshot: order reference, placed time, fulfilment, customer data, purchased lines, and all totals.
+   +- The confirmation is available only in the browser session that placed the order. An unknown order reference, or a request without its required session association, returns `404 Not Found` with an `Order not found` page.
+   +- An order-reference uniqueness collision returns the existing generic error response and creates no duplicate order; retry behaviour is not implemented in this story.
    ```
 
 3. Commit the reviewed task locally.
@@ -1276,5 +1285,308 @@ separate approval for external, destructive, or privileged actions.
 This exercise applies existing skills. Later exercises can add small,
 project-specific skills when a team has a repeatable workflow that deserves its
 own method and evidence standard.
+
+## A Simple Agentic Workflow
+
+One challenge for engineers is turning the techniques explored in this workshop
+(repository instructions, skills, and well-scoped agent prompts) into useful
+day-to-day practice.
+
+Code-quality and modernisation work is a practical place to start. The work is
+often valuable but repeatedly deferred, and it can be scoped so that an agent
+assesses one small opportunity, explains its rationale, and produces evidence
+for review. The goal is not to modernise code because newer syntax exists; it is
+to identify a focused change that makes the code clearer, safer, or easier to
+maintain.
+
+Once this workflow has proved useful interactively, packaging it in a script
+makes it repeatable and suitable for scheduled execution. The result is a pull
+request with evidence for a human reviewer—not an automatic decision to change
+or merge code.
+
+1. Create the local branch on which the agent may work.
+
+   Creating a branch is an engineering decision: it selects the checkout that
+   may receive changes and authorises the later local commit. An agent could
+   create or switch branches, but keeping that responsibility outside the prompt
+   prevents it from choosing Git state on the engineer’s behalf. The agent can
+   then focus on its bounded task: assess one modernisation opportunity, make
+   the focused change, and provide verification evidence.
+
+   Keeping Git operations outside the prompt makes the workflow easier to
+   control and review, but it also makes it more prescriptive. The branch name,
+   commit step, and pull-request publication are now explicit commands that must
+   be maintained as the workflow changes.
+
+   A prompt-driven workflow is more flexible: changing the task or the desired
+   Git behaviour can require only a prompt change, and the agent can adapt the
+   surrounding steps. The cost is less predictability and a broader
+   responsibility for the agent.
+
+   Choose the boundary deliberately. Put stable, high-impact operations—such as
+   branch selection, publication, and other permission-sensitive actions—in
+   explicit commands when control matters most. Keep task-specific judgment and
+   evolving implementation detail in the prompt when flexibility matters most.
+
+   **Local Git side effect:** this command creates and switches to a local
+   branch named `codex/modernisation`. Confirm the next command reports that
+   exact branch. Stop if the branch already exists or Git cannot create it;
+   inspect the existing branch before deciding whether it is safe to use.
+
+   ```shell
+   git switch --create 'codex/modernisation'
+   ```
+
+   Confirm that Git is using the branch created in the previous step. This
+   command prints the current branch name. Stop if it does not print
+   `codex/modernisation`, because the agent must work only on that branch.
+
+   ```shell
+   git branch --show-current
+   ```
+
+   The current branch
+
+   ```
+   codex/modernisation
+   ```
+
+2. Assess a bounded improvement task
+
+   This workflow asks the agent to identify at most one Java 25 modernisation
+   that materially improves maintainability while preserving behaviour.
+
+   The agent returns one of three outcomes:
+
+   - `no-improvement`: no focused change is worth making;
+   - `blocked`: a worthwhile change was identified, but an engineer must prepare
+     the required local Git branch; or
+   - `modernised`: the agent implemented and verified the change, ready for an
+     engineer to review and commit on the prepared branch.
+
+   **Local Git side effect:** the agent may modify files on the existing
+   `codex/modernisation` branch. It must not create or switch branches, stage
+   changes, commit, push, or create a pull request.
+
+   ```shell
+   codex exec \
+     --ephemeral \
+     --sandbox workspace-write \
+     --output-last-message '/tmp/codex-modernisation-handoff.json' \
+     - <<'EOF' > '/tmp/codex-modernisation-handoff.log' 2>&1
+   ## Goal
+
+   Identify at most one worthwhile Java 25 modernisation opportunity and, only when
+   an appropriate local branch already exists, implement it as a focused,
+   uncommitted change.
+
+   ## Constraints
+
+   - Keep the project on Java 25. Do not alter the runtime or toolchain baseline.
+   - Consider unnecessarily Java-8-era code, such as mutable value objects,
+     boilerplate `equals`, `hashCode`, or `toString`, manual collection processing,
+     avoidable nullable control flow, and verbose conditional logic.
+   - Choose one cohesive opportunity only. Do not perform a broad refactor or mix
+     unrelated cleanup into the change.
+   - Preserve observable behaviour, public routes, persistence behaviour, and test
+     intent.
+   - Modernise only where a Java 25 idiom materially improves clarity, safety, or
+     maintainability. Do not make changes for novelty.
+   - Do not overwrite, revert, stage, or commit unrelated existing changes.
+   - Do not stage or commit any changes. Leave the reviewed change for an engineer
+     to commit.
+   - Do not create or switch branches. Do not run `git push` or `gh pr create`.
+
+   ## Process
+
+   1. Inspect the codebase and relevant tests. Select the strongest single
+      candidate, if one exists.
+   2. If no candidate provides a material benefit, do not change source files or
+      commit. Return the `no-improvement` hand-off below.
+   3. If a candidate is justified but the current branch does not match
+      `codex/modernisation`, do not change source files or commit. Return the
+      `blocked` hand-off below, including a suggested branch name.
+   4. Otherwise, implement only the selected change. Add or adjust tests where
+      necessary to demonstrate that behaviour remains correct.
+   5. Run `./mvnw test` and `./mvnw verify`. Resolve failures caused by the change.
+   6. Review the final diff for scope and correctness. Leave the change unstaged.
+
+   ## Final response
+
+   Your final response is the machine-readable hand-off. Output only valid JSON:
+   no Markdown fences, explanation, or surrounding text.
+
+   If no improvement is justified:
+
+   {"outcome":"no-improvement","summary":"<why no candidate justified a change>"}
+
+   If an engineer must prepare a branch:
+
+   {"outcome":"blocked","title":"<proposed pull-request title>","summary":"<the candidate and why it is worthwhile>","branch":"codex/modernisation","required_action":"Create and switch to the suggested local branch, then rerun this command."}
+
+   If you implemented and verified a modernisation:
+
+   {"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"},{"command":"./mvnw verify","result":"passed"}],"review_focus":"<compatibility risks or review considerations>"}
+   EOF
+   ```
+
+   Review the model’s hand-off file at `/tmp/codex-modernisation-handoff.json`.
+
+   This file records the workflow outcome and, when a modernisation is proposed,
+   the evidence needed for the next decision. Stop and investigate if the file is
+   missing or does not contain valid JSON.
+
+   ```json
+   {"outcome":"modernised","title":"Modernise catalog view as a record","commit_message":"Convert catalog view to a record","summary":"Converted CatalogView to a record, removing manual value-object boilerplate while preserving JavaBean getters, equality semantics, and the existing string representation. The focused change remains unstaged.","files_changed":["src/main/java/demo/supermarket/catalog/CatalogView.java"],"validation":[{"command":"./mvnw test","result":"passed"},{"command":"./mvnw verify","result":"blocked: Playwright Chromium could not launch because the sandbox denied its macOS Mach service; permission escalation was unavailable"}],"review_focus":"Rerun ./mvnw verify in an environment permitted to launch Playwright Chromium before committing. Unit and MVC tests passed; verify reached the end-to-end suite before the environmental launch failure."}
+   ```
+
+   The hand-off may be compact JSON. Use `jq` to display it in a readable,
+   formatted form.
+
+   ```shell
+   jq . '/tmp/codex-modernisation-handoff.json'
+   ```
+
+   Formatted modernisation hand-off
+
+   ```json
+   {
+     "outcome": "modernised",
+     "title": "Modernise catalog view as a record",
+     "commit_message": "Convert catalog view to a record",
+     "summary": "Converted CatalogView to a record, removing manual value-object boilerplate while preserving JavaBean getters, equality semantics, and the existing string representation. The focused change remains unstaged.",
+     "files_changed": [
+       "src/main/java/demo/supermarket/catalog/CatalogView.java"
+     ],
+     "validation": [
+       {
+         "command": "./mvnw test",
+         "result": "passed"
+       },
+       {
+         "command": "./mvnw verify",
+         "result": "blocked: Playwright Chromium could not launch because the sandbox denied its macOS Mach service; permission escalation was unavailable"
+       }
+     ],
+     "review_focus": "Rerun ./mvnw verify in an environment permitted to launch Playwright Chromium before committing. Unit and MVC tests passed; verify reached the end-to-end suite before the environmental launch failure."
+   }
+   ```
+
+   This example contains a worthwhile modernisation opportunity. Use the `outcome`
+   field to decide what to do next:
+
+   - `no-improvement`: stop here. Do not run the remaining change, verification, or
+     commit steps.
+   - `blocked`: stop here and complete the action described in `required_action`
+     before rerunning the workflow.
+   - `modernised`: review the proposed change, then continue with verification and
+     commit.
+
+3. Verify that that tests pass
+
+   ```shell
+   ./mvnw clean verify
+   ```
+
+4. Commit the reviewed changes
+
+   The hand-off names the files the agent changed and provides the proposed
+   commit subject. This command stages only those files and creates the local
+   commit.
+
+   Stop if the hand-off is not `modernised`, if unrelated changes are already
+   staged, or if Git reports an unexpected diff.
+
+   ```shell
+   # Read the structured hand-off produced by the model.
+   handoff_file='/tmp/codex-modernisation-handoff.json'
+
+   # Continue only when the model completed a modernisation that is ready for
+   # review and commit. For `no-improvement` or `blocked`, display the hand-off
+   # and stop.
+   if [[ "$(jq --raw-output '.outcome' "$handoff_file")" != 'modernised' ]]; then
+     jq . "$handoff_file"
+     echo 'The agent did not produce a change ready to commit.' >&2
+     exit 1
+   fi
+
+   # Stop if the Git index already contains staged changes. This prevents the
+   # commit from accidentally including work that existed before this workflow.
+   if ! git diff --cached --quiet; then
+     echo 'Stop: the index already contains staged changes.' >&2
+     exit 1
+   fi
+
+   # Check the agent’s unstaged changes for whitespace errors before staging them.
+   git diff --check
+
+   # Stage only the files named in the hand-off, rather than every changed file in
+   # the working tree.
+   jq --raw-output '.files_changed[]' "$handoff_file" |
+     while IFS= read -r file; do
+       git add -- "$file"
+     done
+
+   # Check the exact staged diff for whitespace errors before creating the
+   # commit.
+   git diff --cached --check
+
+   # Create the local commit using the commit subject proposed in the hand-off.
+   git commit --message "$(jq --raw-output '.commit_message' "$handoff_file")"
+   ```
+
+5. Optional: Create a pull request
+
+   **GitHub side effects:** these commands push the current branch and create a pull
+   request. They are not part of the local workshop flow. Run them only in a repository
+   where you have permission to push and open pull requests.
+
+   The commands use the `modernised` hand-off to build a pull-request body. Review the
+   generated title and body before creating the pull request.
+
+   ```shell
+   handoff_file='/tmp/codex-modernisation-handoff.json'
+
+   # Continue only when the hand-off reports a verified modernisation ready for publication.
+   if [[ "$(jq --raw-output '.outcome' "$handoff_file")" != 'modernised' ]]; then
+     jq . "$handoff_file"
+     echo 'The hand-off does not describe a modernisation ready for publication.' >&2
+     exit 1
+   fi
+
+   # Build a pull-request body from the hand-off and write it to a temporary file.
+   pr_body_file="$(mktemp /tmp/codex-modernisation-pr.XXXXXX.md)"
+   {
+     printf '%s\n\n' '## Summary'
+     jq --raw-output '.summary' "$handoff_file"
+     printf '\n%s\n' '## Files changed'
+     jq --raw-output '.files_changed[] | "- `\(.)`"' "$handoff_file"
+     printf '\n%s\n' '## Validation'
+     jq --raw-output '.validation[] | "- `\(.command)`: \(.result)"' "$handoff_file"
+     printf '\n%s\n\n' '## Review focus'
+     jq --raw-output '.review_focus' "$handoff_file"
+   } > "$pr_body_file"
+
+   # Push the current branch to GitHub and configure it to track the remote branch.
+   git push --set-upstream origin "$(git branch --show-current)"
+
+   # Create a pull request using the title and body generated from the hand-off.
+   gh pr create \
+     --title "$(jq --raw-output '.title' "$handoff_file")" \
+     --body-file "$pr_body_file"
+   ```
+
+   Review the pull request and its evidence before deciding whether to merge it.
+
+   ![Modernise catalog view record](assets/images/codex-modernise-catalog-view-record.png)
+
+   Confirm that the change is focused, preserves the intended behaviour, and that the
+   reported validation results support the change. A passing build and a well-formed
+   hand-off are evidence, not approval.
+
+   Once this workflow has proved useful, the same hand-off and publication steps can be
+   packaged in a script and scheduled. A scheduled workflow should retain its
+   guardrails, such as avoiding duplicate open pull requests, and should still require
+   human review before merge.
 
 > Breakpoint reached: Stop here
