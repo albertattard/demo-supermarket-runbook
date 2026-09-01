@@ -8,7 +8,7 @@ depends_on: []
 
 Create the baseline Spring Boot project for the Demo Supermarket application so future feature work can be built, tested, and reviewed consistently.
 
-This issue establishes the build, application skeleton, configuration, database migration setup, CI workflow, repository-local Codex skills, and basic documentation. It should not implement supermarket business features yet.
+This issue establishes the build, application skeleton, configuration, database migration setup, local verification lifecycle, and basic documentation. It should not implement supermarket business features yet.
 
 ## Context
 
@@ -50,7 +50,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - Configure Flyway to load migrations from the standard `src/main/resources/db/migration` location.
 - Add an initial Flyway migration file so Flyway runs successfully on startup. The migration may be intentionally minimal, but it must contain executable SQL, be valid for H2, and must not create supermarket business tables.
 - Add default application configuration for local development and tests.
-- Expose `/actuator/health` through Actuator for local readiness checks and CI.
+- Expose `/actuator/health` through Actuator for local readiness checks.
 - Add a minimal server-rendered home page at `/` with the application name and a short placeholder message.
 - Keep the home page deliberately small; it exists as an initial smoke-test target until the catalogue issue replaces `/` with the product catalogue.
 - Add a minimal local CSS file used by the home page.
@@ -68,9 +68,6 @@ Engineers working on later issues should be able to clone the repository, run th
 - Add a minimal Playwright smoke test that opens `/` and verifies the initial home page renders.
 - Add Maven Wrapper pinned to Apache Maven 3.9.16.
 - Add `.gitignore` and `.editorconfig`.
-- Add the repository-local Codex skills under `.agents/skills` so contributors share the same issue-readiness, implementation, orchestration, and implementation-review workflows.
-- Add GitHub Actions workflow running `./mvnw verify`.
-- Use `oracle-actions/setup-java` to install Oracle Java 25 in GitHub Actions.
 - Add initial `README.md` with setup, run, and test instructions.
 - Add `docs/adrs/README.md` with the architectural decisions made in this issue.
 
@@ -98,6 +95,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - Deployment configuration
 - Docker or container setup
 - Frontend build tooling
+- Repository-local Codex skills; these are delivered by [TASK-014](TASK-014-repository-local-agent-skills.md) in a separate, dedicated baseline commit.
 
 ## Acceptance Criteria
 
@@ -106,8 +104,6 @@ Engineers working on later issues should be able to clone the repository, run th
 - `./mvnw verify` succeeds.
 - `./mvnw verify` runs the normal test suite and then the E2E suite.
 - E2E tests are selected by `@Tag("e2e")`, not only by class name.
-- GitHub Actions runs `./mvnw verify` on pull requests and pushes to `main`.
-- GitHub Actions uses `oracle-actions/setup-java` to install Oracle Java 25.
 - Application starts locally with `./mvnw spring-boot:run`.
 - `/actuator/health` returns HTTP 200 when the app is running.
 - `/` returns HTTP 200 and renders a minimal server-side home page.
@@ -117,7 +113,7 @@ Engineers working on later issues should be able to clone the repository, run th
 - The E2E Maven lifecycle starts the Spring Boot application before browser tests and stops it after the tests complete.
 - The E2E Maven lifecycle starts the application on port `18080` without requiring a dedicated `application-e2e.yml` file.
 - E2E tests wait for `/actuator/health` before opening browser pages.
-- Playwright installs and runs Chromium headless locally and in GitHub Actions.
+- Playwright installs and runs Chromium headless locally.
 - The initial E2E smoke test opens `/` and verifies the home page renders.
 - Automated tests verify that the local CSS asset and HTMX WebJar asset are available without authentication.
 - Flyway runs during application startup using `src/main/resources/db/migration`.
@@ -126,7 +122,6 @@ Engineers working on later issues should be able to clone the repository, run th
 - Maven Wrapper files are committed, documented, and pinned to Apache Maven 3.9.16.
 - `.gitignore` excludes build outputs, IDE metadata, and local runtime files that should not be committed.
 - `.editorconfig` defines consistent formatting basics for the repository.
-- Repository-local Codex skills are committed under `.agents/skills` for reviewing issue readiness, implementing issues, orchestrating alternative implementations, and reviewing implementations.
 - README explains the project purpose, stack, how to run/test it, and that the first `./mvnw verify` run may download the Playwright Chromium browser binary.
 - `docs/adrs/README.md` records the key architectural decisions made so far.
 - The application does not require Node, npm, Docker, or an external database to run locally.

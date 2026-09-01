@@ -15,7 +15,7 @@ entries:
 
   - type: Markdown
     contents: |
-      Run this only from a clean, disposable working directory. It deletes and recreates the `demo-supermarket-starter` GitHub repository. You need Java 25 or newer, Git, and an authenticated GitHub CLI session with permission to create and delete repositories, configure branch protection, and create and merge pull requests.
+      Run this only from a clean, disposable working directory. It deletes and recreates the `demo-supermarket-starter` GitHub repository. You need Java 25 or newer, Git, and an authenticated GitHub CLI session with permission to create and delete repositories.
 
   - type: Prerequisite
     checks:
@@ -28,7 +28,7 @@ entries:
       - kind: command
         name: Git
         contents: |
-          Git creates the local history and pushes each baseline story.
+          Git creates the local history for the baseline.
         commands: |
           git --version
         assert:
@@ -37,7 +37,8 @@ entries:
       - kind: command
         name: Authenticated GitHub CLI
         contents: |
-          The GitHub CLI creates, protects, and administers the disposable repository.
+          The GitHub CLI creates and administers the disposable repository after the
+          local baseline is complete.
         commands: |
           gh auth status --active
         assert:
@@ -55,11 +56,69 @@ entries:
   - type: Command
     commands: |
       rsync --archive '../fixtures/repository-overlays/000-starter/' .
+
       git init
       git add .
+      git diff --cached --check
       git commit \
         --message 'Initial commit' \
         --message 'Establish the repository baseline so the workshop starts from a consistent, documented, and licensed project.'
+
+  - type: Markdown
+    contents: |
+      Apply each overlay directly on the local default branch. Each commit is a verified, coherent starter state. These are facilitator provisioning actions, not attendee instructions.
+
+  - type: Command
+    commands: |
+      rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
+
+      git add .
+      git diff --cached --check
+      git commit \
+        --message 'Create Spring Boot project foundation' \
+        --message 'Provide a verified application foundation so attendees can focus on delivering supermarket features rather than project setup.'
+
+  - type: Command
+    commands: |
+      rsync --archive '../fixtures/repository-overlays/002-repository-local-agent-skills/' .
+
+      git add .agents
+      git diff --cached --check
+      git commit \
+        --message 'Add repository-local agent skills' \
+        --message 'Provide version-controlled local skills that support the workshop workflow and can be reviewed before use.'
+
+  - type: Command
+    commands: |
+      rsync --archive '../fixtures/repository-overlays/003-seed-catalog-and-product-listing/' .
+      rm -f src/main/java/demo/supermarket/home/HomeController.java src/main/resources/templates/home.html
+
+      git add .
+      git diff --cached --check
+      git commit \
+        --message 'Seed catalog categories and products' \
+        --message 'Make a realistic product catalog available so shoppers can discover products and the workshop can build on meaningful business data.'
+
+  - type: Command
+    commands: |
+      rsync --archive '../fixtures/repository-overlays/004-persisted-guest-cart/' .
+
+      git add .
+      git diff --cached --check
+      git commit \
+        --message 'Implement persisted guest carts' \
+        --message 'Preserve a guest shopper’s selected items across requests so they can continue toward checkout without losing their basket.'
+
+  - type: Command
+    commands: |
+      chmod +x mvnw
+      ./mvnw clean verify
+    timeout: 2 minutes
+
+  - type: Markdown
+    contents: |
+      Publish the completed local history once. This does not create branches or pull
+      requests.
 
   - type: Command
     commands: |
@@ -70,97 +129,9 @@ entries:
 
   - type: Command
     commands: |
-      gh repo create 'demo-supermarket-starter' --public --source=. --remote=origin --push
-
-  - type: Markdown
-    contents: |
-      Require passing verification and pull requests on `main`.
-
-  - type: Command
-    commands: |
-      owner="$(gh repo view 'demo-supermarket-starter' --json owner --jq '.owner.login')"
-      gh api --method PUT "repos/${owner}/demo-supermarket-starter/branches/main/protection" --input - <<'JSON'
-      {
-        "required_status_checks": {
-          "strict": true,
-          "contexts": [
-            "verify"
-          ]
-        },
-        "enforce_admins": true,
-        "required_pull_request_reviews": {
-          "required_approving_review_count": 0,
-          "dismiss_stale_reviews": true,
-          "require_code_owner_reviews": false
-        },
-        "restrictions": null,
-        "required_linear_history": false,
-        "allow_force_pushes": false,
-        "allow_deletions": false,
-        "block_creations": false,
-        "required_conversation_resolution": true,
-        "lock_branch": false,
-        "allow_fork_syncing": false
-      }
-      JSON
-
-  - type: Heading
-    level: H2
-    title: Build the three-story baseline
-
-  - type: Markdown
-    contents: |
-      Apply each approved overlay, verify it, and merge it through the protected canonical repository. These are facilitator provisioning actions, not attendee instructions.
-
-  - type: Command
-    commands: |
-      git switch --create '001-project-foundation'
-      rsync --archive '../fixtures/repository-overlays/001-project-foundation/' .
-      chmod +x mvnw
-      ./mvnw clean verify
-      git add .
-      git commit \
-        --message 'Create Spring Boot project foundation' \
-        --message 'Provide a verified application foundation so attendees can focus on delivering supermarket features rather than project setup.'
-      git push --set-upstream origin '001-project-foundation'
-      gh pr create \
-        --title 'Create Spring Boot project foundation' \
-        --body-file '../fixtures/pr/PR-001-project-foundation.md' \
-        > '../fixtures/pr/PR-001-project-foundation.out'
-      ./tools/merge-pull-request.sh '../fixtures/pr/PR-001-project-foundation.out'
-    timeout: 15 minutes
-
-  - type: Command
-    commands: |
-      git switch --create '002-seed-catalog-and-product-listing'
-      rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
-      rm -f src/main/java/demo/supermarket/home/HomeController.java src/main/resources/templates/home.html
-      ./mvnw clean verify
-      git add .
-      git commit \
-        --message 'Seed catalog categories and products' \
-        --message 'Make a realistic product catalog available so shoppers can discover products and the workshop can build on meaningful business data.'
-      git push --set-upstream origin '002-seed-catalog-and-product-listing'
-      gh pr create \
-        --title 'Seed catalog categories and products' \
-        --body-file '../fixtures/pr/PR-002-seed-catalog-and-product-listing.md' \
-        > '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
-      ./tools/merge-pull-request.sh '../fixtures/pr/PR-002-seed-catalog-and-product-listing.out'
-    timeout: 15 minutes
-
-  - type: Command
-    commands: |
-      git switch --create '003-persisted-guest-cart'
-      rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
-      ./mvnw clean verify
-      git add .
-      git commit \
-        --message 'Implement persisted guest carts' \
-        --message 'Preserve a guest shopper’s selected items across requests so they can continue toward checkout without losing their basket.'
-      git push --set-upstream origin '003-persisted-guest-cart'
-      gh pr create \
-        --title 'Implement persisted guest carts' \
-        --body-file '../fixtures/pr/PR-003-persisted-guest-cart.md' \
-        > '../fixtures/pr/PR-003-persisted-guest-cart.out'
-      ./tools/merge-pull-request.sh '../fixtures/pr/PR-003-persisted-guest-cart.out'
-    timeout: 15 minutes
+      gh repo \
+        create 'demo-supermarket-starter' \
+        --public \
+        --source=. \
+        --remote=origin \
+        --push

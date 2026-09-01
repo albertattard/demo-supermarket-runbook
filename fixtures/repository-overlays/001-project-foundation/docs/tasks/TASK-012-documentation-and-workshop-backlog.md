@@ -6,7 +6,7 @@ depends_on: []
 ---
 ## Goal
 
-Document the project decisions, local workflow, CI behaviour, and future workshop backlog.
+Document the project decisions, local workflow, local verification, and future workshop backlog.
 
 The documentation should make the repository usable as a baseline for AI-assisted development.
 
@@ -21,7 +21,7 @@ The documentation should make the repository usable as a baseline for AI-assiste
   - how to run locally
   - how to run tests
   - how E2E tests work
-  - GitHub Actions summary
+  - local verification summary
   - workshop automation flow
   - intentionally missing features
 - Add or update `docs/adrs/README.md` with key architectural decisions:
