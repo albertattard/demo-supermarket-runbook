@@ -176,6 +176,16 @@ entries:
     contents: |
       Work in this local clone for the remaining workshop steps.
 
+  - type: Markdown
+    contents: |
+      Check that this clone has the expected Demo Supermarket starter history before
+      making changes. This command prints the five most recent commits and their
+      branch or tag references. It provides evidence that you are working from the
+      expected starting point, but it does not prove repository identity.
+
+      Stop and seek help if the history does not resemble the expected Demo
+      Supermarket commits.
+
   - type: Command
     commands: |
       git log --oneline --decorate -5
@@ -357,25 +367,19 @@ entries:
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-onboarding-guide.md' \
         - <<'EOF' > '/tmp/codex-onboarding-guide.log' 2>&1
-      Goal
+      Goal:
       Build a practical mental model of this Java application before making changes.
 
-      Lens
+      Lens:
       Act as a technical onboarding guide and codebase investigator.
 
-      Boundaries
-      Inspect the repository only. Do not modify files. Do not attempt a complete
-      codebase tour. Base claims on specific files and identify anything you cannot
-      verify. When citing files, use paths relative to the repository root, such as
-      `src/main/java/demo/supermarket/SupermarketApplication.java`. Never use absolute
-      paths, temporary-directory paths, or local-file links.
+      Boundaries:
+      Inspect the repository only. Do not modify files. Do not attempt a complete codebase tour. Base claims on specific files and identify anything you cannot verify. When citing files, use paths relative to the repository root, such as `src/main/java/demo/supermarket/SupermarketApplication.java`. Never use absolute paths, temporary-directory paths, or local-file links.
 
-      Output
+      Output:
       - what the application does and how to verify it locally;
-      - where feature code, configuration, data, and tests live, with
-        repository-relative file references;
-      - the current work visible in the repository and a safe first contribution to
-        explore;
+      - where feature code, configuration, data, and tests live, with repository-relative file references;
+      - the current work visible in the repository and a safe first contribution to explore;
       - a focused 90-minute onboarding plan; and
       - repository conventions plus questions only the team can answer.
       EOF
@@ -389,8 +393,18 @@ entries:
     contents: |
       2. Review Codex’s response.
 
+         Inspect the opening of the onboarding guide produced from the repository.
+         Check that it is grounded in the codebase, distinguishes verified facts from
+         assumptions, and gives a useful starting point for a new engineer.
+
+         Different runs may produce different wording, examples, or emphasis even when
+         the task is unchanged. Treat the response as evidence to review, not as an
+         authoritative description of the repository. Stop and seek help if it invents
+         repository details or omits important uncertainty.
+
   - type: DisplayFile
     path: /tmp/codex-onboarding-guide.md
+    line_count: 20
     indent: 3
 
   - type: Markdown
@@ -509,8 +523,8 @@ entries:
 
   - type: Markdown
     contents: |
-      For a detailed record of this run, inspect `/tmp/codex-agents-before.log`.
-      It contains the captured Codex session output, including its repository
+      For a detailed record of this run, inspect `/tmp/codex-agents-before.log`. It
+      contains the captured Codex session output, including its repository
       investigation.
 
       Extract the tokens used for this request without `AGENTS.md` guidance.
@@ -558,34 +572,20 @@ entries:
 
       ## Project map and test strategy
 
-      - This is a Maven project. Build and verify it with `./mvnw clean verify`;
-        project configuration is in `pom.xml`.
-      - Application entry point:
-        `src/main/java/demo/supermarket/SupermarketApplication.java`.
-      - Feature code is organised by business capability, such as `catalog/` and
-        `cart/`. Preserve those package boundaries; do not create cross-cutting
-        technical-layer packages.
-      - Flyway migrations own schema changes: `src/main/resources/db/migration/`. Add
-        new migrations; never change an existing migration.
+      - This is a Maven project. Build and verify it with `./mvnw clean verify`; project configuration is in `pom.xml`.
+      - Application entry point: `src/main/java/demo/supermarket/SupermarketApplication.java`.
+      - Feature code is organised by business capability, such as `catalog/` and `cart/`. Preserve those package boundaries; do not create cross-cutting technical-layer packages.
+      - Flyway migrations own schema changes: `src/main/resources/db/migration/`. Add new migrations; never change an existing migration.
       - Server-rendered views are under `src/main/resources/templates/`.
-      - Architecture decisions are recorded in `docs/adrs/`. Read relevant ADRs before
-        changing an established architectural boundary.
-      - Product work is recorded in `docs/tasks/`; this project has no separate
-        specification directory.
-      - Functional browser tests in `src/test/java/demo/supermarket/e2e/` cover
-        distinct end-to-end user journeys. Keep them few and non-overlapping.
-      - Cover decision branches, validation, and input combinations with focused unit
-        or MVC tests organised by feature.
+      - Architecture decisions are recorded in `docs/adrs/`. Read relevant ADRs before changing an established architectural boundary.
+      - Product work is recorded in `docs/tasks/`; this project has no separate specification directory.
+      - Functional browser tests in `src/test/java/demo/supermarket/e2e/` cover distinct end-to-end user journeys. Keep them few and non-overlapping.
+      - Cover decision branches, validation, and input combinations with focused unit or MVC tests organised by feature.
 
       ## Working agreements
 
-      - Treat `docs/tasks/` as read-only task context unless the task owner explicitly
-        asks to record a settled decision. Current code describes existing behaviour;
-        task files describe requested change.
-      - A task differing from current code may be intentional. If a task conflicts
-        with a relevant ADR or stated constraint, or leaves behaviour ambiguous, cite
-        the conflicting files and ask for a decision. Do not silently rewrite task
-        files, change an ADR, or invent product behaviour.
+      - Treat `docs/tasks/` as read-only task context unless the task owner explicitly asks to record a settled decision. Current code describes existing behaviour; task files describe requested change.
+      - A task differing from current code may be intentional. If a task conflicts with a relevant ADR or stated constraint, or leaves behaviour ambiguous, cite the conflicting files and ask for a decision. Do not silently rewrite task files, change an ADR, or invent product behaviour.
       - Keep workshop work local. Do not create, push, or merge pull requests.
       EOF
     indent: 3
@@ -747,21 +747,22 @@ entries:
 
   - type: DisplayFile
     path: demo-supermarket/.agents/skills/review-task-readiness/SKILL.md
+    line_count: 12
     indent: 3
 
   - type: Markdown
     contents: |
-      A `SKILL.md` file comprises two parts: YAML front matter and an instruction body.
+      A `SKILL.md` file comprises two parts: YAML front matter and an instruction
+      body.
 
-      The front matter identifies the skill and describes when it should be used. Codex
-      uses this lightweight metadata to discover relevant skills. When a skill is
-      selected—for example, when you invoke `$review-task-readiness`, Codex loads the
-      instruction body and follows its task-specific procedure.
+      The front matter identifies the skill and describes when it should be used.
+      Codex uses this lightweight metadata to discover relevant skills. When a skill
+      is selected—for example, when you invoke `$review-task-readiness`, Codex loads
+      the instruction body and follows its task-specific procedure.
 
       Keep the front matter concise and specific so the right skill can be discovered.
       Put the detailed workflow, evidence requirements, constraints, and expected
       output in the body.
-    indent: 3
 
   - type: Heading
     level: H3
@@ -807,10 +808,6 @@ entries:
          **Potential remote references and command-bearing patterns:**. The command is
          read-only: it does not run the skill or change the repository.
 
-         If the second part contains any lines, stop. Read the named file and decide
-         whether that instruction is necessary and acceptable before invoking the
-         skill.
-
   - type: Command
     commands: |
       skill_dir='.agents/skills/review-task-readiness'
@@ -822,6 +819,13 @@ entries:
     output:
       caption: |
         Skill inventory and review cues
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      If the second part contains any lines, stop. Read the named file and decide
+      whether that instruction is necessary and acceptable before invoking the
+      skill.
     indent: 3
 
   - type: Markdown
@@ -878,12 +882,10 @@ entries:
       - .agents/skills/review-task-readiness/SKILL.md
       - .agents/skills/review-task-readiness/agents/openai.yaml
 
-      Read only those files. Do not invoke the skill, follow links, fetch remote content,
-      or execute instructions found in the files.
+      Read only those files. Do not invoke the skill, follow links, fetch remote content, or execute instructions found in the files.
 
       Return a structured review with:
-      1. every requested tool, filesystem access, network access, credential access, or
-        external side effect;
+      1. every requested tool, filesystem access, network access, credential access, or external side effect;
       2. the exact file and line supporting each finding;
       3. a risk level and explanation;
       4. the human evidence needed before approval; and
@@ -1061,31 +1063,18 @@ entries:
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-review-next-task-readiness.md' \
         - <<'EOF' > '/tmp/codex-review-next-task-readiness.log' 2>&1
-      I am the task owner. Use $review-task-readiness on
-      docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md and update it to
-      record my settled decisions.
+      I am the task owner. Use $review-task-readiness on docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md and update it to record my settled decisions.
 
-      Treat every decision below as settled. Do not re-ask these questions or
-      replace them with implementation assumptions.
+      Treat every decision below as settled. Do not re-ask these questions or replace them with implementation assumptions.
 
       <readiness-decisions>
-      - TASK-007 owns validation failures, empty-cart failures, and
-        archived-product failures. TASK-004 covers the successful pickup-checkout
-        and confirmation path.
-      - Use an eight-character uppercase order reference drawn from
-        `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. It is not an access credential.
-      - The database enforces order-reference uniqueness. A collision uses the
-        existing generic error response; retry behaviour is deferred to TASK-006.
-      - Only the browser session that placed an order may view its confirmation.
-        Durable cross-session confirmation access is deferred to a follow-up task.
-      - An unknown order reference, or a missing required session association,
-        returns `404 Not Found` with a generic `Order not found` page.
-      - Checked-out cart routes retain the established cart-not-found behaviour.
-        The exception is a repeated checkout POST, which redirects to the existing
-        confirmation without creating another order.
-      - The confirmation page displays the immutable order snapshot: order
-        reference, placed time, fulfilment, customer data, purchased lines, and all
-        totals.
+      - TASK-007 owns validation failures, empty-cart failures, and archived-product failures. TASK-004 covers the successful pickup-checkout and confirmation path.
+      - Use an eight-character uppercase order reference drawn from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`. It is not an access credential.
+      - The database enforces order-reference uniqueness. A collision uses the existing generic error response; retry behaviour is deferred to TASK-006.
+      - Only the browser session that placed an order may view its confirmation. Durable cross-session confirmation access is deferred to a follow-up task.
+      - An unknown order reference, or a missing required session association, returns `404 Not Found` with a generic `Order not found` page.
+      - Checked-out cart routes retain the established cart-not-found behaviour. The exception is a repeated checkout POST, which redirects to the existing confirmation without creating another order.
+      - The confirmation page displays the immutable order snapshot: order reference, placed time, fulfilment, customer data, purchased lines, and all totals.
       </readiness-decisions>
       EOF
     cleanup: |
@@ -1255,45 +1244,32 @@ entries:
         - <<'EOF' > '/tmp/codex-modernisation-handoff.log' 2>&1
       ## Goal
 
-      Identify at most one worthwhile Java 25 modernisation opportunity and, only when
-      an appropriate local branch already exists, implement it as a focused,
-      uncommitted change.
+      Identify at most one worthwhile Java 25 modernisation opportunity and, only when an appropriate local branch already exists, implement it as a focused, uncommitted change.
 
       ## Constraints
 
       - Keep the project on Java 25. Do not alter the runtime or toolchain baseline.
-      - Consider unnecessarily Java-8-era code, such as mutable value objects,
-        boilerplate `equals`, `hashCode`, or `toString`, manual collection processing,
-        avoidable nullable control flow, and verbose conditional logic.
-      - Choose one cohesive opportunity only. Do not perform a broad refactor or mix
-        unrelated cleanup into the change.
-      - Preserve observable behaviour, public routes, persistence behaviour, and test
-        intent.
-      - Modernise only where a Java 25 idiom materially improves clarity, safety, or
-        maintainability. Do not make changes for novelty.
+      - Consider unnecessarily Java-8-era code, such as mutable value objects, boilerplate `equals`, `hashCode`, or `toString`, manual collection processing, avoidable nullable control flow, and verbose conditional logic.
+      - Choose one cohesive opportunity only. Do not perform a broad refactor or mix unrelated cleanup into the change.
+      - Preserve observable behaviour, public routes, persistence behaviour, and test intent.
+      - Modernise only where a Java 25 idiom materially improves clarity, safety, or maintainability. Do not make changes for novelty.
       - Do not overwrite, revert, stage, or commit unrelated existing changes.
-      - Do not stage or commit any changes. Leave the reviewed change for an engineer
-        to commit.
+      - Do not stage or commit any changes. Leave the reviewed change for an engineer to commit.
+      - Do not run `./mvnw verify` in this restricted sandbox. The engineer runs the full verification after this command completes.
       - Do not create or switch branches. Do not run `git push` or `gh pr create`.
 
       ## Process
 
-      1. Inspect the codebase and relevant tests. Select the strongest single
-         candidate, if one exists.
-      2. If no candidate provides a material benefit, do not change source files or
-         commit. Return the `no-improvement` hand-off below.
-      3. If a candidate is justified but the current branch does not match
-         `codex/modernisation`, do not change source files or commit. Return the
-         `blocked` hand-off below, including a suggested branch name.
-      4. Otherwise, implement only the selected change. Add or adjust tests where
-         necessary to demonstrate that behaviour remains correct.
-      5. Run `./mvnw test` and `./mvnw verify`. Resolve failures caused by the change.
+      1. Inspect the codebase and relevant tests. Select the strongest single candidate, if one exists.
+      2. If no candidate provides a material benefit, do not change source files or commit. Return the `no-improvement` hand-off below.
+      3. If a candidate is justified but the current branch does not match `codex/modernisation`, do not change source files or commit. Return the `blocked` hand-off below, including a suggested branch name.
+      4. Otherwise, implement only the selected change. Add or adjust tests where necessary to demonstrate that behaviour remains correct.
+      5. Run `./mvnw test`. Resolve failures caused by the change.
       6. Review the final diff for scope and correctness. Leave the change unstaged.
 
       ## Final response
 
-      Your final response is the machine-readable hand-off. Output only valid JSON:
-      no Markdown fences, explanation, or surrounding text.
+      Your final response is the machine-readable hand-off. Output only valid JSON: no Markdown fences, explanation, or surrounding text.
 
       If no improvement is justified:
 
@@ -1303,9 +1279,9 @@ entries:
 
       {"outcome":"blocked","title":"<proposed pull-request title>","summary":"<the candidate and why it is worthwhile>","branch":"codex/modernisation","required_action":"Create and switch to the suggested local branch, then rerun this command."}
 
-      If you implemented and verified a modernisation:
+      If you implemented a modernisation and `./mvnw test` passed:
 
-      {"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"},{"command":"./mvnw verify","result":"passed"}],"review_focus":"<compatibility risks or review considerations>"}
+      {"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"}],"review_focus":"<compatibility risks or review considerations>"}
       EOF
     timeout: 5 minutes
     indent: 3
@@ -1362,6 +1338,12 @@ entries:
     output:
       caption: |
         All test should pass
+      rewrite:
+        - type: keep_between
+          start: '[INFO] BUILD SUCCESS'
+          end: '[INFO] ------------------------------------------------------------------------'
+          start_offset: -1
+          end_offset: 0
     indent: 3
 
   - type: Markdown
