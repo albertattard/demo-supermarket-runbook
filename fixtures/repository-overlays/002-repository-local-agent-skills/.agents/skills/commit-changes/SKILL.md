@@ -1,11 +1,13 @@
 ---
 name: commit-changes
-description: Use this skill when I ask you to commit changes, create a Git commit, or otherwise commit the current changes.
+description: Use this skill when I want you to review the current Git changes and create a focused, coherent commit.
 ---
 
-# Commit behavior
+# Commit behaviour
 
-Treat a request to commit as permission to inspect and prepare the proposed commit. Do not treat it as permission to overlook material issues or silently split unrelated work.
+Act as a careful software engineer responsible for preserving a reviewable Git history. Create commits that represent one coherent, independently understandable unit of delivered value. Treat a commit request as permission to inspect and prepare the proposed commit, not as permission to bypass material concerns or absorb unrelated work.
+
+Do not edit, reformat, generate, delete, or otherwise alter files under review. This skill may inspect Git state, stage selected existing changes, and create a commit, but must not change the working tree. If it finds a typo, incomplete change, defect, or other concern, stop, identify it, and ask the user for direction.
 
 ## Before committing
 
@@ -21,15 +23,19 @@ If changes contain independently meaningful work, such as an unrelated fix, refa
 
 ## Commit messages and identity
 
-Use a concise imperative subject (for example, `Add`, `Fix`, `Update`, `Refactor`, `Remove`, `Document`, or `Improve`). Add a body only when the rationale, user impact, or a significant trade-off would help a future reader.
+Use a concise imperative subject that describes the user, business, operational, or workshop value delivered by the commit, rather than its implementation mechanism.
 
-Use the repository's configured Git author identity and any established signing convention. Do not invent either. If Git lacks an author identity or signing is required but cannot be completed, stop and ask the user for the necessary direction.
+Prefer `Enable guests to confirm pickup orders` over `Add order confirmation controller`. Prefer `Record approved task-readiness decisions` over `Update TASK-004`. Use implementation terms only when the commit has no meaningful externally visible outcome, such as a narrowly scoped build or maintenance correction.
+
+Add a body only when the rationale, user impact, or a significant trade-off would help a future reader.
+
+Create the commit using the repository's configured Git author identity and signing configuration. Preserve automatic signing when it is enabled. Do not force signing, bypass it, or invent an identity. If the configured or required signing cannot be completed, stop and ask the user for direction.
 
 ## Create and verify the commit
 
-After selecting a coherent commit shape and message, stage only the intended files or hunks. Do not use a broad staging command that includes unrelated, pre-existing, generated, or suspicious changes.
+After selecting a coherent commit shape and message, stage only the intended files or hunks. Do not use a broad staging command that includes unrelated, pre-existing, generated, or suspicious changes. Inspect `git diff --cached` and run `git diff --cached --check` before committing.
 
-Create the commit with the selected subject and optional body. Then inspect the commit and Git status to confirm that the new commit contains only the intended change set and that any remaining worktree changes are intentionally uncommitted. If the commit fails or this final check reveals a material concern, stop and report it; do not claim that the commit succeeded.
+Create the commit with the selected subject and optional body. Then inspect it with `git show --check --stat HEAD` and inspect `git status --short` to confirm that the new commit contains only the intended change set and that any remaining worktree changes are intentionally uncommitted. If the commit fails or this final check reveals a material concern, stop and report it; do not claim that the commit succeeded.
 
 ## Report
 
