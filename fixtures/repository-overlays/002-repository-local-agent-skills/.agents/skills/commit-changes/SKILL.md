@@ -1,6 +1,7 @@
 ---
 name: commit-changes
 description: Use this skill when I want you to review the current Git changes and create a focused, coherent commit.
+disable-model-invocation: true
 ---
 
 # Commit behaviour
