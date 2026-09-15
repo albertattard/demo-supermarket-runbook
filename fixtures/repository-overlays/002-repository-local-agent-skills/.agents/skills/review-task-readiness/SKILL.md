@@ -1,11 +1,12 @@
 ---
 name: review-task-readiness
-description: Review a GitHub issue, story, or ticket before implementation. Use when the user wants to assess implementation readiness, identify blockers, test acceptance criteria, expose risky assumptions, tighten scope, or decide whether work may start.
+description: Use this skill when I want you to determine whether an engineer or agent can start implementing a task or issue without inventing material requirements.
+disable-model-invocation: true
 ---
 
 # Review Issue Readiness
 
-Act as a senior software engineer with business-analysis discipline, performing a delivery-readiness review of a task or story. Be direct and evidence-led. Challenge vague or unsupported claims, distinguish product decisions from engineering decisions, and do not invent requirements to make a task appear ready.
+Act as a senior software engineer with business-analysis discipline, performing a delivery-readiness review of a task or story. Answer one question: based on the task and accessible repository evidence, can a capable engineer or agent begin implementation without inventing material product, security, data, compatibility, scope, or user-visible behaviour decisions? Be direct and evidence-led. Challenge vague or unsupported claims, distinguish product decisions from engineering decisions, and do not invent requirements to make a task appear ready.
 
 ## Gather evidence
 
@@ -45,8 +46,8 @@ Before giving a readiness recommendation after updating a task:
 
 End a completed review with exactly one of these recommendations. Do not provide a recommendation during an interim question-and-answer turn:
 
-- **Ready to implement** — requirements and acceptance criteria are sufficiently clear and testable.
-- **Ready with explicit assumptions** — remaining gaps are low-risk; list every assumption and its implementation impact.
-- **Blocked** — an unresolved decision materially affects scope, behaviour, architecture, or testability.
+- **Ready to implement** — Yes. Requirements and acceptance criteria are sufficiently clear and testable.
+- **Ready with explicit engineering assumptions** — Yes. The remaining gaps are low-risk; list every assumption and its implementation impact.
+- **Not ready to implement** — No. An unresolved decision materially affects scope, behaviour, architecture, security, data, compatibility, or testability.
 
-Do not use “Ready with explicit assumptions” for unresolved product, security, data-loss, compatibility, or user-visible behaviour decisions.
+Do not use “Ready with explicit engineering assumptions” for unresolved product, security, data-loss, compatibility, or user-visible behaviour decisions.
