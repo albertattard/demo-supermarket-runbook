@@ -1,32 +1,48 @@
 #!/usr/bin/env bash
 
 # Runs one bounded Java-modernisation assessment. It intentionally allows only
-# one outstanding candidate: the presence of codex/modernisation, locally or
-# on origin, is back pressure and makes this invocation stop without changes.
+# one outstanding candidate: the presence of codex/modernisation on origin is
+# back pressure and makes this invocation stop without changes.
 
 # This runner has no local concurrency protection. Do not schedule overlapping
 # invocations; concurrent runs may both perform assessment work before the
 # remote codex/modernisation branch provides back pressure.
 
+# Exit on command failures or unset variables, and treat a failure anywhere in a
+# pipeline as a failure of the whole pipeline.
 set -euo pipefail
 
+# Optional runner configuration: export any CODEX_MODERNISATION_* variable
+# before starting this script, or prefix the invocation with it, for example
+# CODEX_MODERNISATION_BASE_BRANCH=release ./run-scheduled-java-modernisation.sh.
+# Unset variables use the defaults below. Tool configuration, credentials, and
+# PATH remain inherited runtime dependencies rather than runner parameters.
 branch_name="${CODEX_MODERNISATION_BRANCH_NAME:-codex/modernisation}"
 base_branch="${CODEX_MODERNISATION_BASE_BRANCH:-main}"
 source_repository="${CODEX_MODERNISATION_SOURCE_REPOSITORY:-https://github.com/albertattard/demo-supermarket-starter.git}"
 
+# A scheduled run has no terminal user to dismiss a pager. Keep command output
+# flowing to the log and terminal rather than waiting for `q` in `less`.
+export PAGER=cat
+export GIT_PAGER=cat
+export GH_PAGER=cat
+
+# Report an unrecoverable error to stderr and terminate with failure.
 fail() {
   printf 'Error: %s\n' "$*" >&2
   exit 1
 }
 
+# Report an expected no-op outcome to stdout and terminate successfully.
 stop() {
   printf '%s\n' "$*"
   exit 0
 }
 
 # The model is instructed not to alter Git metadata, but that instruction is
-# not a security boundary. Confirm repository identity and branch state at each
-# boundary where the runner will make a GitHub-visible decision.
+# not a security boundary. Confirm the selected repository identity, branch,
+# commit, and origin URLs at each boundary where the runner will make a
+# GitHub-visible decision.
 assert_repository_integrity() {
   local expected_head="$1"
   local current_branch
@@ -59,40 +75,52 @@ assert_repository_integrity() {
 assert_maven_definition_unchanged() {
   local changed_files
 
+  # Collect every modified, untracked, or ignored Maven build input in stable,
+  # duplicate-free order before Maven is allowed to run.
   changed_files="$(
-    git status --porcelain=v1 \
-      --untracked-files=all \
-      --ignored=matching \
-      -- \
-      ':(glob)**/pom.xml' \
-      .mvn \
-      mvnw \
-      mvnw.cmd
+    {
+      git diff --name-only -- \
+        ':(glob)**/pom.xml' \
+        .mvn \
+        mvnw \
+        mvnw.cmd
+      git ls-files --others --exclude-standard -- \
+        ':(glob)**/pom.xml' \
+        .mvn \
+        mvnw \
+        mvnw.cmd
+      git ls-files --others --ignored --exclude-standard -- \
+        ':(glob)**/pom.xml' \
+        .mvn \
+        mvnw \
+        mvnw.cmd
+    } | LC_ALL=C sort -u
   )"
 
   [[ -z "$changed_files" ]] \
     || fail "The agent modified Maven build files. Refusing to run Maven or publish: $changed_files"
 }
 
-# Fail before creating the temporary checkout unless every required local tool
-# is available: Codex performs the assessment; Git manages the candidate;
-# GitHub CLI publishes the draft PR; jq validates the agent hand-off JSON.
-command -v codex >/dev/null 2>&1 || fail 'codex is required.'
+# Fail before creating the temporary checkout unless every required host tool is
+# available. Git manages the candidate; GitHub CLI publishes the draft PR; jq
+# validates the agent hand-off.
+command -v codex >/dev/null 2>&1 || fail 'Codex CLI is required.'
 command -v git >/dev/null 2>&1 || fail 'git is required.'
 command -v gh >/dev/null 2>&1 || fail 'GitHub CLI (gh) is required.'
 command -v jq >/dev/null 2>&1 || fail 'jq is required.'
 
-# Each scheduled assessment uses an isolated clone, so it cannot alter the
-# checkout from which this runner is launched.
+# Each scheduled assessment uses an isolated temporary workspace. Its repository
+# checkout and runner-owned evidence are sibling directories, so evidence cannot
+# appear in the candidate diff.
 working_directory="$(mktemp -d "${TMPDIR:-/tmp}/demo-supermarket-modernisation.XXXXXX")" \
   || fail 'Could not create a temporary working directory.'
-git clone --quiet --branch "$base_branch" --single-branch "$source_repository" "$working_directory" \
-  || fail "Could not clone $source_repository."
-cd "$working_directory"
 
-# Resolve the absolute path to this checkout’s shared Git metadata directory.
-git_common_dir="$(git rev-parse --path-format=absolute --git-common-dir)" \
-  || fail 'Could not locate the Git metadata directory.'
+# Clone the requested base into its dedicated workspace directory, then make it
+# the current directory so every following Git operation targets that checkout.
+repository_directory="$working_directory/repository"
+git clone --quiet --branch "$base_branch" --single-branch "$source_repository" "$repository_directory" \
+  || fail "Could not clone $source_repository."
+cd "$repository_directory"
 
 # Refresh the exact remote-tracking ref used below. A named fetch may otherwise
 # update only FETCH_HEAD, leaving origin/$base_branch at the clone-time commit.
@@ -108,27 +136,27 @@ origin_fetch_urls="$(git remote get-url --all origin)" \
 origin_push_urls="$(git remote get-url --push --all origin)" \
   || fail 'Could not resolve the origin push URL.'
 
-# Create a unique evidence directory for this run, then reserve paths for the
-# agent hand-off, complete execution log, and generated draft-PR description.
-state_dir="$git_common_dir/codex-modernisation-runs"
-mkdir -p "$state_dir"
-run_dir="$state_dir/$(date -u +%Y%m%dT%H%M%SZ)-$$"
-mkdir "$run_dir"
-handoff_file="$run_dir/handoff.json"
-agent_log_file="$run_dir/agent.log"
-pr_body_file="$run_dir/pull-request.md"
+# Create the runner-owned evidence directory, then reserve paths for the agent
+# hand-off, Codex execution log, and generated draft-PR description.
+evidence_dir="$working_directory/evidence"
+mkdir "$evidence_dir" || fail 'Could not create the evidence directory.'
+handoff_file="$evidence_dir/handoff.json"
+agent_log_file="$evidence_dir/agent.log"
+pr_body_file="$evidence_dir/pull-request.md"
 
 # The script, rather than the agent, makes the Git-state decision. If the
-# agent concludes that no change is justified, the branch is deleted below.
+# agent concludes that no change is justified, the runner stops without
+# committing, pushing, or opening a pull request.
 git switch --create "$branch_name" --track "origin/$base_branch"
 
-# confirms the runner itself started from the fetched base on the intended
-# branch and remote.
+# Confirm the runner started from the fetched base on the intended branch and
+# remote.
 assert_repository_integrity "$base_commit"
 
-# This is the workflow’s only model-driven step: Codex may inspect and propose
-# one bounded, uncommitted modernisation. All validation, Git decisions,
-# publication, and PR creation below are deterministic shell operations.
+# This is the workflow’s only model-driven step. Ideally run this runner on a
+# separate VM with only the tools required below, so Codex cannot access a
+# developer workstation or unrelated credentials. Validation and publication
+# remain runner-controlled host operations below.
 codex exec \
   --ephemeral \
   --sandbox workspace-write \
@@ -166,7 +194,7 @@ If you implemented a modernisation and ./mvnw test passed:
 {"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"}],"review_focus":"<compatibility risks or review considerations>"}
 EOF
 
-# Reject model-caused branch, commit, or remote changes before interpreting its
+# Reject unexpected branch, commit, or remote changes before interpreting the
 # hand-off or running repository-controlled build code.
 assert_repository_integrity "$base_commit"
 
@@ -175,19 +203,20 @@ assert_repository_integrity "$base_commit"
 jq -e 'type == "object" and (.outcome == "no-improvement" or .outcome == "modernised")' "$handoff_file" >/dev/null \
   || fail "The agent hand-off is missing or invalid: $handoff_file"
 
-# A no-improvement result must leave the disposable checkout unchanged.
-# Verify that claim, then stop without committing, pushing, or opening a PR.
+# A no-improvement result must leave no tracked or non-ignored untracked
+# changes in the disposable checkout. Verify that claim, then stop without
+# committing, pushing, or opening a PR.
 outcome="$(jq -er '.outcome' "$handoff_file")" \
   || fail "Could not read the agent outcome: $handoff_file"
 if [[ "$outcome" == 'no-improvement' ]]; then
   if [[ -n "$(git status --porcelain)" ]]; then
-    fail "The agent reported no improvement but changed the repository. Inspect $run_dir before continuing."
+    fail "The agent reported no improvement but changed the repository. Inspect $evidence_dir before continuing."
   fi
   stop "No worthwhile modernisation was found. Evidence: $handoff_file"
 fi
 
-# A modernised result needs complete, well-formed metadata before the runner
-# can verify the actual diff, create a commit, and prepare a draft PR.
+# A modernised result needs complete, minimally valid metadata before the
+# runner can verify the actual diff, create a commit, and prepare a draft PR.
 jq -e '
   (.title | type == "string" and length > 0) and
   (.commit_message | type == "string" and length > 0 and contains("\n") | not) and
@@ -200,7 +229,7 @@ jq -e '
 # Codex may change files but must not stage them; only this deterministic
 # runner may choose the verified files to add to the commit.
 if ! git diff --cached --quiet; then
-  fail "The agent staged changes. Inspect $run_dir and the Git index before continuing."
+  fail "The agent staged changes. Inspect $evidence_dir and the Git index before continuing."
 fi
 
 # Do not execute a Maven wrapper or build definition that the agent changed.
@@ -210,27 +239,28 @@ assert_maven_definition_unchanged
 # report of its focused test run as sufficient evidence for publication.
 ./mvnw clean verify
 
-# confirms the new commit is on the expected branch and remote, and has the
+# Confirm the new commit is on the expected branch and remote, and has the
 # expected base as its parent, immediately before push.
 assert_repository_integrity "$base_commit"
 
-# Independently record every modified or untracked file, in stable order. A
-# modernisation claim without an actual diff is invalid and must not be published.
-actual_files_file="$run_dir/actual-files.txt"
+# Independently record every modified or non-ignored untracked file, in stable
+# order. A modernisation claim without an actual diff is invalid and must not
+# be published.
+actual_files_file="$evidence_dir/actual-files.txt"
 {
   git diff --name-only --no-renames
   git ls-files --others --exclude-standard
 } | LC_ALL=C sort -u > "$actual_files_file"
 if [[ ! -s "$actual_files_file" ]]; then
-  fail "The agent reported a modernisation but produced no changes. Inspect $run_dir."
+  fail "The agent reported a modernisation but produced no changes. Inspect $evidence_dir."
 fi
 
 # Require the agent’s reported file list to exactly match the independently
 # observed change set before staging or publishing the candidate.
-reported_files_file="$run_dir/reported-files.txt"
+reported_files_file="$evidence_dir/reported-files.txt"
 jq --raw-output '.files_changed[]' "$handoff_file" | LC_ALL=C sort > "$reported_files_file"
 cmp --silent "$actual_files_file" "$reported_files_file" \
-  || fail "The hand-off file list does not match the actual diff. Inspect $run_dir."
+  || fail "The hand-off file list does not match the actual diff. Inspect $evidence_dir."
 
 # Stage only the independently observed files, reject whitespace errors, then
 # create the candidate commit using the validated hand-off’s commit subject.
@@ -240,6 +270,8 @@ done < "$actual_files_file"
 git diff --cached --check
 git commit --message "$(jq --raw-output '.commit_message' "$handoff_file")"
 
+# Confirm the candidate is exactly one commit on the fetched base, then use its
+# commit ID as the expected state for the final pre-push integrity check.
 candidate_commit="$(git rev-parse HEAD)"
 [[ "$(git rev-parse HEAD^)" == "$base_commit" ]] \
   || fail 'The candidate commit does not have the expected base commit.'
@@ -250,7 +282,7 @@ assert_repository_integrity "$candidate_commit"
 git push --set-upstream origin "$branch_name"
 
 # Build the draft PR description from the validated hand-off and independently
-# observed evidence, explicitly recording the runner’s full verification and
+# observed change set, recording the runner's successful full verification and
 # preserving human review and merge as separate decisions.
 {
   printf '%s\n\n' '## Summary'
@@ -274,4 +306,4 @@ gh pr create \
   --body-file "$pr_body_file" \
   --draft
 
-printf 'Created a draft pull request. Evidence: %s\n' "$run_dir"
+printf 'Created a draft pull request. Evidence: %s\n' "$evidence_dir"
