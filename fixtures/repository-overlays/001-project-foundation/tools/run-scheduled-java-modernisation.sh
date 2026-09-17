@@ -75,8 +75,9 @@ assert_repository_integrity() {
 assert_maven_definition_unchanged() {
   local changed_files
 
-  # Collect every modified, untracked, or ignored Maven build input in stable,
-  # duplicate-free order before Maven is allowed to run.
+  # Staged changes were rejected earlier. Collect every unstaged, untracked, or
+  # ignored Maven build input in stable, duplicate-free order before Maven is
+  # allowed to run.
   changed_files="$(
     {
       git diff --name-only -- \
@@ -239,8 +240,9 @@ assert_maven_definition_unchanged
 # report of its focused test run as sufficient evidence for publication.
 ./mvnw clean verify
 
-# Confirm the new commit is on the expected branch and remote, and has the
-# expected base as its parent, immediately before push.
+# Confirm the branch, HEAD, and remote URLs still match the fetched base before
+# the runner identifies and stages the candidate diff. The candidate commit and
+# its parent are checked separately immediately before push.
 assert_repository_integrity "$base_commit"
 
 # Independently record every modified or non-ignored untracked file, in stable
