@@ -16,6 +16,22 @@ Inspect the repository state and complete relevant diff. Check for accidental or
 
 If a material concern is found, stop and state the issue, where it appears, and why it matters. Wait for explicit direction before committing. Do not block a commit for purely subjective or trivial stylistic preferences.
 
+## Sensitive-information check
+
+Before staging or committing, inspect every intended changed file for credentials and secret material, including passwords, API keys, access tokens, private keys, connection strings containing credentials, cookies, and `.env`-style values.
+
+Use an available secret scanner against the intended diff or staged changes where possible. Also review changed text for obvious credential assignments and high-entropy token-like values.
+
+If potential sensitive information is found:
+
+- Stop before staging or committing.
+- Alert the engineer with the file path, line number, and credential category.
+- Do not print the suspected value in the report, commit message, or chat.
+- Treat it as a material concern unless the engineer explicitly confirms it is a non-secret fixture or placeholder.
+- Ask the engineer whether to remove it, replace it with a safe placeholder, move it to approved secret management, or explicitly document an exception.
+
+Do not rely on `.gitignore` as a secret-control mechanism.
+
 ## Decide the commit shape
 
 Create a single commit without another approval only when the changes are clean and form one coherent logical unit: they share a clear purpose and can reasonably be reviewed, reverted, and described together.
