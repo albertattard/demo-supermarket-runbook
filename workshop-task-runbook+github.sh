@@ -34,9 +34,9 @@ if [[ "${ORIGINAL_GITHUB_USER}" != "${WORKSHOP_GITHUB_USER}" ]]; then
     --user "${WORKSHOP_GITHUB_USER}"
 fi
 
-sw format --input-file workshop-task-runbook.yaml
+sw format --input-file 'workshop-task-runbook.yaml'
 sw run \
-  --input-file workshop-task-runbook.yaml \
+  --input-file 'workshop-task-runbook.yaml' \
   --working-directory "${PARENT}" \
-  --output-file "runbooks/README.md" \
+  --output-file 'runbooks/README.md' \
   --verbose
