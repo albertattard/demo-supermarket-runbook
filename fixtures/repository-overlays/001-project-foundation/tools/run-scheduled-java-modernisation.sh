@@ -11,15 +11,27 @@
 # Exit on command failures or unset variables, and treat a failure anywhere in a
 # pipeline as a failure of the whole pipeline.
 set -euo pipefail
+umask 077
 
 # Optional runner configuration: export any CODEX_MODERNISATION_* variable
 # before starting this script, or prefix the invocation with it, for example
 # CODEX_MODERNISATION_BASE_BRANCH=release ./run-scheduled-java-modernisation.sh.
-# Unset variables use the defaults below. Tool configuration, credentials, and
-# PATH remain inherited runtime dependencies rather than runner parameters.
+# The controller needs Git/GitHub credentials; Codex authentication belongs to
+# the VM's agent account. Never forward controller credentials or the SSH agent.
+# Required: CODEX_MODERNISATION_WORKER_HOST (the oci-worker public_ip output).
+# Optional: CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH; otherwise use local SSH
+# configuration or ssh-agent. SSH always connects as opc, then switches to agent.
 branch_name="${CODEX_MODERNISATION_BRANCH_NAME:-codex/modernisation}"
 base_branch="${CODEX_MODERNISATION_BASE_BRANCH:-main}"
 source_repository="${CODEX_MODERNISATION_SOURCE_REPOSITORY:-https://github.com/albertattard/demo-supermarket-starter.git}"
+worker_host="${CODEX_MODERNISATION_WORKER_HOST:-92.5.173.118}"
+ssh_options=(-o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1
+  -o StrictHostKeyChecking=accept-new -o ForwardAgent=no -o ClearAllForwardings=yes
+  -o ServerAliveInterval=15 -o ServerAliveCountMax=3)
+ssh_private_key_path="${CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH:-$HOME/.ssh/oracle_id_ed25519}"
+if [[ -n "$ssh_private_key_path" ]]; then
+  ssh_options+=(-i "$ssh_private_key_path" -o IdentitiesOnly=yes)
+fi
 
 # A scheduled run has no terminal user to dismiss a pager. Keep command output
 # flowing to the log and terminal rather than waiting for `q` in `less`.
@@ -102,13 +114,32 @@ assert_maven_definition_unchanged() {
     || fail "The agent modified Maven build files. Refusing to run Maven or publish: $changed_files"
 }
 
-# Fail before creating the temporary checkout unless every required host tool is
-# available. Git manages the candidate; GitHub CLI publishes the draft PR; jq
-# validates the agent hand-off.
-command -v codex >/dev/null 2>&1 || fail 'Codex CLI is required.'
+# Require complete publication metadata before verification or publication.
+assert_modernised_handoff() {
+  local handoff_file="$1"
+  jq -e '
+    (.title | type == "string" and length > 0) and
+    (.commit_message | type == "string" and length > 0 and contains("\n") | not) and
+    (.summary | type == "string" and length > 0) and
+    (.files_changed | type == "array" and length > 0 and all(.[]; type == "string" and length > 0)) and
+    (.validation | type == "array" and length > 0) and
+    (.review_focus | type == "string" and length > 0)
+  ' "$handoff_file" >/dev/null || fail "The modernised hand-off is incomplete: $handoff_file"
+}
+
+# Fail before cloning unless the controller has its required tools and worker
+# address. The controller needs Java 25 for its independent Maven build.
+[[ "$worker_host" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] \
+  || fail 'Set CODEX_MODERNISATION_WORKER_HOST to the OCI worker IPv4 address or hostname.'
+command -v ssh >/dev/null 2>&1 || fail 'OpenSSH client is required.'
+worker_ssh() {
+  ssh "${ssh_options[@]}" "opc@$worker_host" "$@"
+}
 command -v git >/dev/null 2>&1 || fail 'git is required.'
 command -v gh >/dev/null 2>&1 || fail 'GitHub CLI (gh) is required.'
 command -v jq >/dev/null 2>&1 || fail 'jq is required.'
+command -v java >/dev/null 2>&1 || fail 'Java 25 is required on the controller.'
+command -v javac >/dev/null 2>&1 || fail 'JDK 25 is required on the controller.'
 
 # Each scheduled assessment uses an isolated temporary workspace. Its repository
 # checkout and runner-owned evidence are sibling directories, so evidence cannot
@@ -116,9 +147,14 @@ command -v jq >/dev/null 2>&1 || fail 'jq is required.'
 working_directory="$(mktemp -d "${TMPDIR:-/tmp}/demo-supermarket-modernisation.XXXXXX")" \
   || fail 'Could not create a temporary working directory.'
 
+# Keep each invocation in its own directory; retain files for demo inspection.
+repository_directory="$working_directory/repository"
+evidence_dir="$working_directory/evidence"
+mkdir "$evidence_dir"
+worker_script="$working_directory/worker.sh"
+
 # Clone the requested base into its dedicated workspace directory, then make it
 # the current directory so every following Git operation targets that checkout.
-repository_directory="$working_directory/repository"
 git clone --quiet --branch "$base_branch" --single-branch "$source_repository" "$repository_directory" \
   || fail "Could not clone $source_repository."
 cd "$repository_directory"
@@ -137,10 +173,8 @@ origin_fetch_urls="$(git remote get-url --all origin)" \
 origin_push_urls="$(git remote get-url --push --all origin)" \
   || fail 'Could not resolve the origin push URL.'
 
-# Create the runner-owned evidence directory, then reserve paths for the agent
-# hand-off, Codex execution log, and generated draft-PR description.
-evidence_dir="$working_directory/evidence"
-mkdir "$evidence_dir" || fail 'Could not create the evidence directory.'
+# Reserve evidence paths for the agent hand-off, Codex execution log, and
+# generated draft-PR description. The directory was created before cloning.
 handoff_file="$evidence_dir/handoff.json"
 agent_log_file="$evidence_dir/agent.log"
 pr_body_file="$evidence_dir/pull-request.md"
@@ -154,15 +188,54 @@ git switch --create "$branch_name" --track "origin/$base_branch"
 # remote.
 assert_repository_integrity "$base_commit"
 
-# This is the workflow’s only model-driven step. Ideally run this runner on a
-# separate VM with only the tools required below, so Codex cannot access a
-# developer workstation or unrelated credentials. Validation and publication
-# remain runner-controlled host operations below.
+# Send repository history as a bundle, without controller Git configuration,
+# credentials, hooks, or a forwarded SSH agent. Each run gets its own VM workspace.
+worker_directory="$(worker_ssh 'sudo -n -iu agent mktemp -d /home/agent/work/modernisation.XXXXXX')"
+[[ "$worker_directory" =~ ^/home/agent/work/modernisation\.[a-zA-Z0-9]+$ ]] \
+  || fail 'The worker returned an invalid workspace path.'
+printf 'Controller evidence: %s\nWorker evidence: %s:%s\n' \
+  "$evidence_dir" "$worker_host" "$worker_directory"
+git bundle create "$working_directory/input.bundle" "$branch_name"
+worker_ssh "sudo -n -iu agent tee '$worker_directory/input.bundle' >/dev/null" \
+  < "$working_directory/input.bundle"
+
+# Build the worker script for checkout preparation, Codex, and result export.
+# Validation, the authoritative build, and publication stay on the controller.
+{
+  printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' 'umask 077'
+  printf 'branch_name=%q\n' "$branch_name"
+  cat <<'WORKER'
+# sudo -iu agent supplies JAVA_HOME and PATH through the worker's login profile.
+# Send output directly to logs so interactive pagers cannot block this unattended run.
+export PAGER=cat GIT_PAGER=cat GH_PAGER=cat
+
+# Require the unprivileged agent account so Codex cannot inherit opc or root privileges.
+[[ "$(id -un)" == agent ]] || { printf '%s\n' 'Worker must run as agent.' >&2; exit 1; }
+
+# Stop if bootstrap has not completed successfully; required tools or sandbox setup may be missing.
+[[ -f /var/lib/java-worker/ready && ! -f /var/lib/java-worker/failed ]] \
+  || { printf '%s\n' 'Worker bootstrap is not ready.' >&2; exit 1; }
+
+# Fail before starting the task if Codex is unavailable in the worker login environment.
+command -v codex >/dev/null
+
+# Confirm the worker uses JDK 25 so any permitted tests match the project Java baseline.
+"$JAVA_HOME/bin/javac" -version 2>&1 | grep -E '^javac 25([.]|$)' >/dev/null
+
+# Enter the workspace containing the bundle uploaded by the controller, clone
+# its prepared branch with Git history, and work from that checkout. This gives
+# Codex the repository files without requiring GitHub access or credentials.
+cd "$1"
+git clone --quiet --branch "$branch_name" input.bundle repository
+cd repository
+
 codex exec \
   --ephemeral \
   --sandbox workspace-write \
-  --output-last-message "$handoff_file" \
-  - <<'EOF' > "$agent_log_file" 2>&1
+  --model 'gpt-6.1-sol' \
+  --config 'model_reasoning_effort="medium"' \
+  --output-last-message "$1/handoff.json" \
+  - <<'PROMPT' > "$1/agent.log" 2>&1
 Goal:
 Identify at most one worthwhile Java 25 modernisation opportunity and implement it as a focused, uncommitted change on the already-prepared branch.
 
@@ -175,12 +248,15 @@ Constraints:
 - Do not overwrite, revert, stage, or commit unrelated existing changes.
 - Do not create or switch branches. Do not stage, commit, push, or create a pull request.
 - Do not write the hand-off into the repository. Your final response is captured separately by the caller.
+- Do not modify pom.xml files, .mvn, mvnw, or mvnw.cmd.
+- Do not run Maven verify, including ./mvnw clean verify. The controller runs the authoritative verification independently.
+- Respect the existing execution and network policy. Do not request approval or attempt to bypass restrictions in this unattended run.
 
 Process:
 1. Inspect the codebase and relevant tests. Select the strongest single candidate, if one exists.
 2. If no candidate provides a material benefit, do not change source files. Return the no-improvement hand-off below.
 3. Otherwise, implement only the selected change. Add or adjust tests where necessary to demonstrate that behaviour remains correct.
-4. Run ./mvnw test. Resolve failures caused by the change.
+4. Run ./mvnw test. Resolve failures caused by the change. If execution or dependency downloads are blocked, record validation as blocked; if tests cannot be attempted, record not-run. Do not claim tests passed unless they did.
 5. Review the final unstaged diff for scope and correctness.
 
 Final response:
@@ -190,10 +266,61 @@ If no improvement is justified:
 
 {"outcome":"no-improvement","summary":"<why no candidate justified a change>"}
 
-If you implemented a modernisation and ./mvnw test passed:
+If you implemented a modernisation (the controller will independently verify it):
 
-{"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"}],"review_focus":"<compatibility risks or review considerations>"}
-EOF
+{"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"<passed|blocked|not-run>"}],"review_focus":"<compatibility risks or review considerations>"}
+PROMPT
+
+# Record the worker's Git state, then package all the agent's file changes into
+# one patch. The controller downloads both, checks the state, applies the patch
+# to its own checkout, and runs clean verify there. Record whether the agent
+# staged changes before the patch preparation below touches the Git index.
+staged_changes=false
+git diff --cached --quiet || staged_changes=true
+jq -n \
+  --arg branch "$(git branch --show-current)" \
+  --arg head "$(git rev-parse HEAD)" \
+  --arg origin_fetch_urls "$(git remote get-url --all origin)" \
+  --arg origin_push_urls "$(git remote get-url --push --all origin)" \
+  --argjson staged_changes "$staged_changes" \
+  '{branch: $branch, head: $head, origin_fetch_urls: $origin_fetch_urls,
+    origin_push_urls: $origin_push_urls, staged_changes: $staged_changes}' > "$1/repository-state.json"
+# Include tracked changes and new files (including binary content) in the patch.
+while IFS= read -r -d '' file; do
+  git add --intent-to-add -- "$file"
+done < <(git ls-files --others --exclude-standard -z)
+git diff --binary --no-ext-diff --no-textconv HEAD > "$1/candidate.patch"
+WORKER
+} > "$worker_script"
+
+# Keep failed workspaces and logs on the VM for diagnosis. An SSH, Codex, or
+# execution failure stops publication. Retrieve the patch and evidence for
+# independent validation and a build on the controller.
+worker_ssh "sudo -n -iu agent bash -s -- '$worker_directory'" \
+  < "$worker_script" > "$evidence_dir/worker.log" 2>&1 \
+  || fail "Worker execution failed. Inspect $evidence_dir/worker.log and $worker_host:$worker_directory."
+worker_ssh "sudo -n -iu agent cat '$worker_directory/handoff.json'"          > "$handoff_file"
+worker_ssh "sudo -n -iu agent cat '$worker_directory/agent.log'"             > "$agent_log_file"
+worker_ssh "sudo -n -iu agent cat '$worker_directory/candidate.patch'"       > "$evidence_dir/candidate.patch"
+worker_ssh "sudo -n -iu agent cat '$worker_directory/repository-state.json'" > "$evidence_dir/repository-state.json"
+
+# The patch alone cannot reveal staged files or changed worker Git metadata.
+# Validate the exported observations on the controller before applying it.
+jq -e \
+  --arg branch "$branch_name" \
+  --arg head "$base_commit" \
+  --arg origin "$worker_directory/input.bundle" '
+  .branch == $branch
+    and .head == $head
+    and .origin_fetch_urls == $origin
+    and .origin_push_urls == $origin
+    and .staged_changes == false
+' "$evidence_dir/repository-state.json" >/dev/null \
+  || fail "The worker repository state changed unexpectedly. Inspect $evidence_dir."
+if [[ -s "$evidence_dir/candidate.patch" ]]; then
+  git apply --check "$evidence_dir/candidate.patch"
+  git apply "$evidence_dir/candidate.patch"
+fi
 
 # Reject unexpected branch, commit, or remote changes before interpreting the
 # hand-off or running repository-controlled build code.
@@ -218,14 +345,7 @@ fi
 
 # A modernised result needs complete, minimally valid metadata before the
 # runner can verify the actual diff, create a commit, and prepare a draft PR.
-jq -e '
-  (.title | type == "string" and length > 0) and
-  (.commit_message | type == "string" and length > 0 and contains("\n") | not) and
-  (.summary | type == "string" and length > 0) and
-  (.files_changed | type == "array" and length > 0 and all(.[]; type == "string" and length > 0)) and
-  (.validation | type == "array" and length > 0) and
-  (.review_focus | type == "string" and length > 0)
-' "$handoff_file" >/dev/null || fail "The modernised hand-off is incomplete: $handoff_file"
+assert_modernised_handoff "$handoff_file"
 
 # Codex may change files but must not stage them; only this deterministic
 # runner may choose the verified files to add to the commit.
@@ -236,9 +356,11 @@ fi
 # Do not execute a Maven wrapper or build definition that the agent changed.
 assert_maven_definition_unchanged
 
-# The runner repeats the full verification rather than treating the model’s
-# report of its focused test run as sufficient evidence for publication.
+# Independently build the returned change on the controller. Worker test reports
+# are evidence only and never replace this publication gate.
 ./mvnw clean verify
+assert_maven_definition_unchanged
+git diff --cached --quiet || fail 'The controller build staged changes.'
 
 # Confirm the branch, HEAD, and remote URLs still match the fetched base before
 # the runner identifies and stages the candidate diff. The candidate commit and
@@ -293,7 +415,7 @@ git push --set-upstream origin "$branch_name"
   sed 's/^/- `/' "$actual_files_file" | sed 's/$/`/'
   printf '\n%s\n' '## Validation'
   jq --raw-output '.validation[] | "- `\(.command)`: \(.result)"' "$handoff_file"
-  printf '%s\n' '- `./mvnw clean verify`: passed (scheduled runner)'
+  printf '%s\n' '- `./mvnw clean verify`: passed (controller, scheduled runner)'
   printf '\n%s\n\n' '## Review focus'
   jq --raw-output '.review_focus' "$handoff_file"
   printf '%s\n' 'This pull request was created by a scheduled workflow. Human review and an explicit merge decision are required.'
