@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 022
+
+# Prepare the bootstrap status directory, record command failures, and clear
+# markers from any previous run.
+install -d -m 0755 /var/lib/java-worker
+trap 'touch /var/lib/java-worker/failed' ERR
+rm -f /var/lib/java-worker/ready /var/lib/java-worker/failed
+
+# Require Oracle Linux 10 on x86_64; stop bootstrap if either check fails.
+. /etc/os-release
+[[ "$ID" == "ol" && "$VERSION_ID" == 10* ]]
+[[ "$(uname -m)" == "x86_64" ]]
+
+# Configure the OCI regional mirror explicitly: some platform images leave
+# ociregion empty and ol10_oci_included disabled. The public mirror does not
+# supply the OCI Included repository. Use IMDSv2 (legacy IMDS is disabled).
+# Install prerequisites before querying metadata and enabling the repository.
+# - ca-certificates: Trusted certificates for HTTPS package and tool downloads.
+# - curl, jq: Fetch and parse metadata; also used by the worker below.
+# - dnf-plugins-core: Provides config-manager to enable the OCI repository.
+dnf -y install \
+  ca-certificates \
+  curl \
+  jq \
+  dnf-plugins-core
+
+if [[ ! -s /etc/dnf/vars/ociregion ]] || ! grep -q '[^[:space:]]' /etc/dnf/vars/ociregion; then
+  oci_region="$(curl --fail --silent --show-error --retry 3 --noproxy '*' \
+    --connect-timeout 3 --max-time 10 \
+    --header 'Authorization: Bearer Oracle' \
+    http://169.254.169.254/opc/v2/instance/ \
+    | jq -er '.regionInfo.regionIdentifier')"
+  [[ "$oci_region" =~ ^[a-z0-9]+(-[a-z0-9]+)+$ ]]
+  printf -- '-%s\n' "$oci_region" > /etc/dnf/vars/ociregion
+fi
+
+dnf config-manager --set-enabled ol10_oci_included
+
+# Install the remaining worker tools and Oracle JDK 25 from the enabled
+# repositories. jdk-25-headful adds GUI components and pulls in jdk-25-headless,
+# which provides the runtime and compiler.
+# - git: Local repository history, diffs, and runner Git operations.
+# - tar, gzip: Extract the Codex archive and JDT LS archive.
+# - unzip: Extracts Maven’s ZIP distribution. The wrapper can alternatively use tar and gzip.
+# - findutils: Provides find and xargs; useful general tools, but our scripts don’t explicitly require them.
+# - util-linux: Provides runuser, used to test the sandbox as agent.
+# - bubblewrap: Supports Codex’s Linux sandbox.
+# - jdk-25-headful: Oracle JDK 25, including the compiler.
+dnf -y install \
+  git \
+  tar \
+  gzip \
+  unzip \
+  findutils \
+  util-linux \
+  bubblewrap \
+  jdk-25-headful
+
+# Preserve the full standalone package layout, including Codex helper binaries.
+download_dir="$(mktemp -d /var/tmp/java-worker-install.XXXXXX)"
+trap 'rm -rf "$download_dir"' EXIT
+curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+  'https://github.com/openai/codex/releases/download/rust-v${codex_version}/codex-package-x86_64-unknown-linux-musl.tar.gz' \
+  --output "$download_dir/codex.tar.gz"
+printf '%s  %s\n' '${codex_sha256}' "$download_dir/codex.tar.gz" | sha256sum --check -
+install -d -m 0755 /opt/codex
+tar --extract --gzip --file "$download_dir/codex.tar.gz" --directory /opt/codex --no-same-owner
+test -x /opt/codex/bin/codex
+ln -sfn /opt/codex/bin/codex /usr/local/bin/codex
+ln -sfn /opt/codex/codex-path/rg /usr/local/bin/rg
+
+# Discover the versioned RPM installation path and provide a stable worker alias.
+mapfile -t jdk_homes < <(rpm -ql jdk-25-headful | sed -n 's|/bin/javac$||p')
+[[ "$${#jdk_homes[@]}" -eq 1 ]]
+test -x "$${jdk_homes[0]}/bin/javac"
+install -d -m 0755 /opt/java-worker
+ln -sfn "$${jdk_homes[0]}" /opt/java-worker/jdk-25
+export JAVA_HOME=/opt/java-worker/jdk-25
+export PATH="$JAVA_HOME/bin:/usr/local/bin:$PATH"
+"$JAVA_HOME/bin/javac" -version 2>&1 | grep -E '^javac 25([.]|$)'
+cat > /etc/profile.d/java-worker.sh <<'PROFILE'
+export JAVA_HOME=/opt/java-worker/jdk-25
+export PATH="$JAVA_HOME/bin:/usr/local/bin:$PATH"
+PROFILE
+
+# Embed the repository installer in cloud-init; no separate SSH upload is needed.
+install -d -m 0755 /usr/local/libexec/java-worker
+printf '%s' '${jdtls_installer_base64}' | base64 --decode \
+  > /usr/local/libexec/java-worker/install-jdtls.sh
+chmod 0755 /usr/local/libexec/java-worker/install-jdtls.sh
+bash /usr/local/libexec/java-worker/install-jdtls.sh '${jdtls_archive_url}' '${jdtls_sha256}'
+printf '%s\n' '${jdtls_archive_url}' '${jdtls_sha256}' > /var/lib/java-worker/jdtls-archive.txt
+
+# Keep the OCI administrator account separate from the account running builds.
+if ! id agent >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash agent
+fi
+chmod 0700 /home/agent
+install -d -o agent -g agent -m 0700 /home/agent/work /home/agent/.codex
+
+# Print installed tool versions for verification and the bootstrap log.
+java --version
+javac --version
+codex --version
+git --version
+jq --version
+
+# Verify native sandbox startup as the worker, without model authentication.
+# Fail rather than silently disabling SELinux or Codex sandbox enforcement.
+runuser -u agent -- /usr/bin/env \
+  HOME=/home/agent JAVA_HOME="$JAVA_HOME" PATH="$PATH" \
+  /bin/bash -c 'cd /home/agent/work && codex sandbox -- /bin/true'
+
+# Record package and configured Codex versions, then mark bootstrap as complete.
+rpm -q jdk-25-headful git jq bubblewrap > /var/lib/java-worker/packages.txt
+printf '%s\n' '${codex_version}' > /var/lib/java-worker/codex-version.txt
+touch /var/lib/java-worker/ready
