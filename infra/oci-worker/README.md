@@ -225,12 +225,21 @@ controller; it is not installed on the VM.
 After authenticating Codex as `agent`, configure the controller from this directory:
 
 ```shell
-export CODEX_MODERNISATION_WORKER_HOST="$(terraform output -raw public_ip)"
-export CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH="$(terraform output -raw ssh_private_key_path)"
+source ./set-scheduled-java-modernisation-env.sh
 # From your personal starter fork checkout:
 CODEX_MODERNISATION_SOURCE_REPOSITORY="$(git remote get-url origin)" \
   ./tools/run-scheduled-java-modernisation.sh
 ```
+
+The helper supports Bash and Zsh and reads `public_ip` and
+`ssh_private_key_path` from this directory's Terraform state, even when sourced
+from another working directory. Source it using its full path in that case.
+It exports `CODEX_MODERNISATION_WORKER_HOST` and
+`CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH` after validating both values and
+checking that the private-key file is readable. A failure returns nonzero and
+leaves the existing variables unchanged. It does not connect to the worker or
+start an assessment. Repository and branch overrides remain optional and are
+left unchanged; the runner supplies their defaults.
 
 Use the private key corresponding to `ssh_public_key_path`. The key variable is
 optional when local SSH configuration or ssh-agent already selects that key.
