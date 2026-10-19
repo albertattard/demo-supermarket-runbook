@@ -36,3 +36,9 @@ point.
 
 This repository maintains the workshop source material and should not be used
 as the application working copy.
+
+## Facilitator infrastructure
+
+[OCI Java modernisation worker](infra/oci-worker/README.md) provisions a dedicated
+Oracle Linux 10 VM with JDK 25, native Codex CLI, and Eclipse JDT LS installed during
+bootstrap. It also documents the remaining LSP integration and controller/worker boundaries.

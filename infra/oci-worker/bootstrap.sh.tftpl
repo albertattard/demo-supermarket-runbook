@@ -99,6 +99,19 @@ if ! id agent >/dev/null 2>&1; then
 fi
 chmod 0700 /home/agent
 install -d -o agent -g agent -m 0700 /home/agent/work /home/agent/.codex
+install -d -o agent -g agent -m 0700 \
+  /home/agent/.m2 /home/agent/.m2/repository /home/agent/.m2/wrapper
+
+# Ownership alone does not grant writes inside Codex's workspace sandbox.
+# Permit the Maven cache explicitly without opening the rest of the agent home.
+cat > /home/agent/.codex/config.toml <<'CONFIG'
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+writable_roots = ["/home/agent/.m2"]
+CONFIG
+chown agent:agent /home/agent/.codex/config.toml
+chmod 0600 /home/agent/.codex/config.toml
 
 # Print installed tool versions for verification and the bootstrap log.
 java --version
@@ -107,11 +120,20 @@ codex --version
 git --version
 jq --version
 
-# Verify native sandbox startup as the worker, without model authentication.
+# Verify cache writes in the native sandbox as the worker, without model
+# authentication or network access for the smoke test.
+# The sandbox subcommand needs the mode explicitly; the config default alone
+# does not select workspace-write for this check in the pinned Codex release.
 # Fail rather than silently disabling SELinux or Codex sandbox enforcement.
 runuser -u agent -- /usr/bin/env \
   HOME=/home/agent JAVA_HOME="$JAVA_HOME" PATH="$PATH" \
-  /bin/bash -c 'cd /home/agent/work && codex sandbox -- /bin/true'
+  /bin/bash -c 'cd /home/agent/work && codex sandbox -c sandbox_mode=\"workspace-write\" -- /bin/bash -euc '\''
+    for cache_dir in /home/agent/.m2/repository /home/agent/.m2/wrapper; do
+      probe="$(mktemp "$cache_dir/bootstrap-write.XXXXXX")"
+      printf "Maven cache write check\n" > "$probe"
+      rm -- "$probe"
+    done
+  '\'''
 
 # Record package and configured Codex versions, then mark bootstrap as complete.
 rpm -q jdk-25-headful git jq bubblewrap > /var/lib/java-worker/packages.txt

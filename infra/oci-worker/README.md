@@ -81,7 +81,9 @@ modernisation runs. Terraform variables and cloud-init contain no credentials.
 `terraform apply` waits for bootstrap through `check-bootstrap.sh`, invoked by
 the `terraform_data.worker_ready` resource. The check retries SSH up to 60 times
 (5-second connection timeout and 5 seconds between attempts), then allows
-cloud-init up to 15 minutes to finish. It requires successful cloud-init status,
+cloud-init up to 15 minutes to finish. The cloud-init check also retries SSH
+transport failures (up to 60 attempts within that wait budget); a reported
+bootstrap failure stops immediately. It requires successful cloud-init status,
 the `ready` marker, and no `failed` marker. On failure it prints the last cloud-init
 log lines and causes Terraform and `deploy.sh` to exit unsuccessfully.
 
@@ -116,6 +118,64 @@ For non-login runners, explicitly set `JAVA_HOME=/opt/java-worker/jdk-25` and in
 `/opt/java-worker/jdk-25/bin:/usr/local/bin:/usr/bin:/bin` in `PATH`. Bootstrap creates
 this stable symlink from the installed RPM's versioned JDK directory. Login shells
 load the same Java path from `/etc/profile.d/java-worker.sh`.
+
+## Maven cache and sandbox access
+
+Bootstrap creates `/home/agent/.m2`, including its `repository` and `wrapper`
+directories, with owner `agent:agent` and mode `0700`. It also writes
+`/home/agent/.codex/config.toml` with:
+
+```toml
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+writable_roots = ["/home/agent/.m2"]
+```
+
+Both are required: filesystem ownership permits the account to write, and the
+Codex setting permits writes outside the current checkout. This grants cache
+access to workspace-write runs using the agent's normal Codex home. Managed
+requirements and higher-priority configuration still apply. See the
+[Codex configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+
+Before creating the ready marker, bootstrap starts a Codex sandbox from
+`/home/agent/work` and verifies writes in both cache directories.
+Any failure prevents readiness. To repeat
+the checks after connecting as `agent`:
+
+```shell
+cd ~/work
+codex sandbox -c 'sandbox_mode="workspace-write"' -- bash -euc '
+  for cache_dir in /home/agent/.m2/repository /home/agent/.m2/wrapper; do
+    probe="$(mktemp "$cache_dir/manual-write.XXXXXX")"
+    printf "Maven cache write check\n" > "$probe"
+    rm -- "$probe"
+  done
+'
+```
+
+Bootstrap prepares cache permissions only. The project's `./mvnw` downloads Maven
+on first use; Maven downloads application dependencies and build plugins as needed.
+The cache permission does not enable sandbox network access. With a
+network-restricted execution policy, these downloads must happen in a trusted
+preparation step before asking Codex to run tests; otherwise they can still be
+blocked.
+
+The scheduled modernisation runner performs this preparation after cloning the
+uploaded bundle: it runs `./mvnw --batch-mode --no-transfer-progress clean package`
+as `agent`, outside the Codex sandbox, before starting Codex. This populates the
+same account's cache and checks the baseline unit tests. A preparation failure
+stops the run, with output retained in the controller's `evidence/worker.log`.
+This covers dependencies through the package phase; later lifecycle phases may
+require additional downloads.
+
+Apply this change through the plan/apply procedure above. The bootstrap hash
+changes, so Terraform replaces an existing disposable VM, including its local
+cache, credentials, and run evidence. Copy needed evidence out first and restore
+Codex authentication after replacement. This repository change alone does not
+update a running VM.
+
+## Codex authentication
 
 Authenticate Codex separately under `agent` using an organisation-approved method
 (for an interactive headless setup, inspect `codex login --help`). Do not put an
@@ -191,8 +251,9 @@ review. Do not schedule overlapping invocations: separate directories isolate
 the checkouts, but concurrent runs can still duplicate assessment work and race
 to publish the same branch.
 
-Changing the bootstrap template, JDT LS installer, or pinned Codex/JDT LS inputs replaces the disposable
-VM. Copy needed evidence out first. Updating cloud-init metadata on a running VM
+Changing the bootstrap template, JDT LS
+installer, or pinned Codex/JDT LS inputs replaces the disposable VM. Copy needed
+evidence out first. Updating cloud-init metadata on a running VM
 is not a reliable software update mechanism. For OS updates requiring a reboot,
 schedule an administrator-controlled reboot before using the worker.
 

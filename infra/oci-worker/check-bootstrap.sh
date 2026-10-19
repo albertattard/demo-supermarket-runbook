@@ -31,9 +31,17 @@ if [[ "$connected" != true ]]; then
 fi
 
 printf 'Waiting for cloud-init and checking bootstrap...\n'
-ssh "${ssh_options[@]}" "$worker" 'sudo -n bash -s' <<'REMOTE'
+# A successful probe does not guarantee the next SSH connection will succeed.
+# Retry transport failures only, sharing one cloud-init wait budget across them.
+bootstrap_deadline=$((SECONDS + 900))
+for ((attempt = 1; attempt <= 60; attempt++)); do
+  remaining_seconds=$((bootstrap_deadline - SECONDS))
+  if ((remaining_seconds <= 0)); then
+    break
+  fi
+  if ssh "${ssh_options[@]}" "$worker" "sudo -n bash -s -- $remaining_seconds" <<'REMOTE'
 set -euo pipefail
-if timeout 900 cloud-init status --wait --long \
+if timeout "$1" cloud-init status --wait --long \
     && test -f /var/lib/java-worker/ready \
     && test ! -f /var/lib/java-worker/failed; then
   printf 'Worker bootstrap succeeded.\n'
@@ -43,3 +51,20 @@ else
   exit 1
 fi
 REMOTE
+  then
+    exit 0
+  else
+    ssh_status=$?
+  fi
+  # SSH uses 255 for connection/transport errors. A remote bootstrap failure
+  # exits 1 and must be reported immediately rather than hidden by retries.
+  if ((ssh_status != 255)); then
+    exit "$ssh_status"
+  fi
+  printf 'SSH connection lost or unavailable during bootstrap check (attempt %s/60).\n' "$attempt" >&2
+  if ((attempt < 60 && SECONDS < bootstrap_deadline)); then
+    sleep 5
+  fi
+done
+printf 'Cannot complete the bootstrap check on %s. Check SSH connectivity and rerun the readiness check.\n' "$worker" >&2
+exit 1
