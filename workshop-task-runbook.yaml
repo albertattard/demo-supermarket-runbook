@@ -6,9 +6,10 @@ entries:
   - type: Markdown
     contents: |
       Learn a practical, evidence-led workflow for using Codex while delivering a
-      small Java change. You will clone `demo-supermarket-starter`, use Codex to
-      inspect the codebase and assess `TASK-004`, establish layered `AGENTS.md`
-      guidance, and implement and verify the task.
+      small Java change. You will clone `demo-supermarket-starter` locally, either
+      directly or from a fork in your GitHub account, use Codex to inspect the
+      codebase and assess `TASK-004`, establish layered `AGENTS.md` guidance, and
+      implement and verify the task.
 
       Codex is a collaborator in this workshop: it can inspect the repository,
       propose changes, help make a task ready, and pass structured findings between
@@ -104,8 +105,6 @@ entries:
             workshop.
         commands: |
           git --version
-        assert:
-          exit_code: 0
         help: Install Git and make sure `git` is available on the PATH.
       - kind: command
         name: curl
@@ -113,8 +112,6 @@ entries:
           - `curl` checks that the application has started successfully.
         commands: |
           curl --version
-        assert:
-          exit_code: 0
         help: Install curl and make sure `curl` is available on the PATH.
       - kind: command
         name: Codex CLI
@@ -143,8 +140,8 @@ entries:
       task briefs, project skills, and structured findings from earlier agent steps.
 
       **Evidence:** Command output, task-readiness records, agent summaries, diffs,
-      Maven verification, and, where the automation exercise is used, a pull request for
-      human review.
+      Maven verification, and, where the automation exercise is used, a pull request
+      for human review.
 
       **Human decision:** Decide whether the instructions, task, proposed change, and
       verification evidence are sufficient to proceed or accept the work.
@@ -191,9 +188,9 @@ entries:
       2. Fork and clone your own workshop repository
 
          Choose this option if you want to complete the GitHub publication exercises,
-         including the scheduled modernisation runner. It creates a personal fork named
-         `demo-supermarket`, then clones it locally. Pull requests created during the
-         workshop will be in your fork.
+         including the scheduled modernisation runner. It creates a personal fork
+         named `demo-supermarket`, then clones it locally. Pull requests created
+         during the workshop will be in your fork.
 
          This option requires the GitHub CLI and an authenticated GitHub account. Run
          `gh auth login` first if needed.
@@ -226,6 +223,16 @@ entries:
       caption: |
         The five most recent commits in the starter repository. Stop and seek help if
         this does not look like the expected Demo Supermarket history.
+
+  - type: Markdown
+    contents: |
+      The two most recent commits, `Add repository-local agent skills` and
+      `Add scheduled Java modernisation runner`, prepare tooling for later workshop
+      exercises. They are included for convenience so you can focus on inspecting and
+      using these workflows without first creating the supporting files. They do not
+      add AI features to the supermarket application. We will explain these skills and
+      the optional Java modernisation workflow in later exercises; you do not need to
+      understand them at this stage.
 
   - type: Heading
     level: H2
@@ -298,7 +305,7 @@ entries:
 
   - type: Command
     commands: |
-      until curl --silent --fail http://localhost:8080/ >/dev/null; do sleep 1; done
+      until curl --silent --fail 'http://localhost:8080/' >/dev/null; do sleep 1; done
     indent: 3
 
   - type: Markdown
@@ -416,7 +423,7 @@ entries:
         --model 'gpt-6-luna' \
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-onboarding-guide.md' \
-        - <<'EOF' > '/tmp/codex-onboarding-guide.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-onboarding-guide.log' 2>&1
       Goal:
       Build a practical mental model of this Java application before making changes.
 
@@ -442,7 +449,7 @@ entries:
       7. **Observed conventions**
       8. **Questions only the team can answer**
       9. **Evidence and limits**: inspected areas and anything unverified.
-      EOF
+      PROMPT
     cleanup: |
       rm -f '/tmp/codex-onboarding-guide.md'
       rm -f '/tmp/codex-onboarding-guide.log'
@@ -521,14 +528,11 @@ entries:
       prompt says what you need done now; `AGENTS.md` records working agreements that
       should apply across tasks.
 
-      ```text
-      +-------------+        +-----------------+        +-----------+
-      | User prompt | -----> |                 | -----> |           |
-      +-------------+        |  Codex harness  |        |   Model   |
-                             |                 |        |           |
-      +-------------+        | loads relevant  |        +-----------+
-      |  AGENTS.md  | -----> | project guidance|
-      +-------------+        +-----------------+
+      ```mermaid
+      flowchart LR
+          P["User prompt"] --> H["Codex harness"]
+          A["Applicable AGENTS.md guidance"] --> H
+          H -->|"Task and instruction context"| M["Model"]
       ```
 
       Think of `AGENTS.md` as a concise operational README for coding agents. It
@@ -569,9 +573,9 @@ entries:
         --model 'gpt-6-luna' \
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-agents-before.md' \
-        - <<'EOF' > '/tmp/codex-agents-before.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-agents-before.log' 2>&1
       Describe this project’s framework and technology stack for a new contributor in a paragraph or two.
-      EOF
+      PROMPT
     cleanup: |
       rm -f '/tmp/codex-agents-before.md'
       rm -f '/tmp/codex-agents-before.log'
@@ -682,9 +686,9 @@ entries:
         --model 'gpt-6-luna' \
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-agents-after.md' \
-        - <<'EOF' > '/tmp/codex-agents-after.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-agents-after.log' 2>&1
       Describe this project’s framework and technology stack for a new contributor in a paragraph or two.
-      EOF
+      PROMPT
     cleanup: |
       rm -f '/tmp/codex-agents-after.md'
       rm -f '/tmp/codex-agents-after.log'
@@ -733,11 +737,15 @@ entries:
          of distinct browser journeys, move combinations and validation cases to
          lower-scope tests, and identify product decisions that remain open.
 
-         The runs used `@{agents_before_tokens}` tokens without `AGENTS.md` and `@{agents_after_tokens}` tokens with
-         it. Treat this as one observation, not a verdict: the file adds context, so
-         one run can use the same number of tokens or more. Its more important benefit
-         is faster, more consistent use of the team’s guidance across future sessions
-         and tasks.
+         | Approach             | Tokens Used               |
+         | -------------------- | ------------------------: |
+         | Without  `AGENTS.md` | `@{agents_before_tokens}` |
+         | With  `AGENTS.md`    |  `@{agents_after_tokens}` |
+
+         Treat this as one observation, not a verdict: the file adds context, so one
+         run can use the same number of tokens or more. Its more important benefit is
+         faster, more consistent use of the team’s guidance across future sessions and
+         tasks.
 
   - type: Markdown
     contents: |
@@ -806,6 +814,22 @@ entries:
     output:
       caption: |
         Repository-local skills
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      The repository includes skills for reviewing task readiness and committing
+      changes, alongside an experimental group illustrating how agents can
+      coordinate implementation and review.
+
+      - **`review-task-readiness`** — Checks whether a task is clear enough to
+        implement and identifies unresolved requirements or decisions.
+      - **`commit-changes`** — Reviews the current changes and creates a focused,
+        coherent Git commit.
+      - **`orchestrate-issue-implementations`**, **`implement-issue`**, and
+        **`review-implementation`** are an experimental example of coordinating
+        agents to produce and compare two alternative implementations, retained for
+        illustration.
     indent: 3
 
   - type: Markdown
@@ -1000,7 +1024,7 @@ entries:
         --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-review-skill.md' \
-        - <<'EOF' > '/tmp/codex-review-skill.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-review-skill.log' 2>&1
       Goal:
       Assess the named skill’s security posture and produce evidence for a human approval decision. This is not an approval decision.
 
@@ -1047,7 +1071,7 @@ entries:
       4. Assessment limit
 
          End with: `This assessment is static evidence for human review. It does not establish runtime behaviour and is not approval to invoke or install the skill.`
-      EOF
+      PROMPT
     cleanup: |
       rm -f '/tmp/codex-review-skill.md'
       rm -f '/tmp/codex-review-skill.log'
@@ -1061,11 +1085,13 @@ entries:
 
   - type: DisplayFile
     path: /tmp/codex-review-skill.md
+    line_count: 12
     indent: 3
 
   - type: Markdown
     contents: |
-      Check every cited file and line yourself.
+      The aboce example was truncated for brevity. Check every cited file and line
+      yourself.
 
       Do not treat the model’s analysis as a stamp of approval. It may help confirm
       your understanding or reveal an issue you missed, but the human reviewer
@@ -1218,7 +1244,7 @@ entries:
         --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-review-next-task-readiness.md' \
-        - <<'EOF' > '/tmp/codex-review-next-task-readiness.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-review-next-task-readiness.log' 2>&1
       I am the task owner. Use $review-task-readiness on `docs/tasks/TASK-004-guest-checkout-and-order-confirmation.md` and update it to record my settled decisions.
 
       Treat every decision below as settled. Do not re-ask these questions or replace them with implementation assumptions.
@@ -1232,7 +1258,7 @@ entries:
       - Checked-out cart routes retain the established cart-not-found behaviour. The exception is a repeated checkout POST, which redirects to the existing confirmation without creating another order.
       - The confirmation page displays the immutable order snapshot: order reference, placed time, fulfilment, customer data, purchased lines, and all totals.
       </readiness-decisions>
-      EOF
+      PROMPT
     cleanup: |
       rm -f '/tmp/codex-review-next-task-readiness.md'
       rm -f '/tmp/codex-review-next-task-readiness.log'
@@ -1383,10 +1409,10 @@ entries:
          The agent returns one of three outcomes:
 
          - `no-improvement`: no focused change is worth making;
-         - `blocked`: a worthwhile change was identified, but an engineer must prepare
-           the required local Git branch; or
-         - `modernised`: the agent implemented and verified the change, ready for an
-           engineer to review and commit on the prepared branch.
+         - `blocked`: a worthwhile change could not be completed safely and needs
+           the engineer action described in `required_action`; or
+         - `modernised`: the agent implemented the change, ready for an engineer to
+           review, independently verify, and commit on the prepared branch.
 
          **Local Git side effect:** the agent may modify files on the existing
          `codex/modernisation` branch. It must not create or switch branches, stage
@@ -1400,44 +1426,49 @@ entries:
         --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-modernisation-handoff.json' \
-        - <<'EOF' > '/tmp/codex-modernisation-handoff.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-modernisation-handoff.log' 2>&1
       Goal:
-      Identify at most one worthwhile Java 25 modernisation opportunity and, only when an appropriate local branch already exists, implement it as a focused, uncommitted change.
+      Identify at most one worthwhile Java 25 modernisation opportunity and implement it as a focused, uncommitted change on the already-prepared branch.
 
       Constraints:
       - Keep the project on Java 25. Do not alter the runtime or toolchain baseline.
-      - Consider unnecessarily Java-8-era code, such as mutable value objects, boilerplate `equals`, `hashCode`, or `toString`, manual collection processing, avoidable nullable control flow, and verbose conditional logic.
+      - Consider unnecessarily Java-8-era code, such as mutable value objects, boilerplate equals, hashCode, or toString, manual collection processing, avoidable nullable control flow, and verbose conditional logic.
       - Choose one cohesive opportunity only. Do not perform a broad refactor or mix unrelated cleanup into the change.
       - Preserve observable behaviour, public routes, persistence behaviour, and test intent.
       - Modernise only where a Java 25 idiom materially improves clarity, safety, or maintainability. Do not make changes for novelty.
       - Do not overwrite, revert, stage, or commit unrelated existing changes.
-      - Do not stage or commit any changes. Leave the reviewed change for an engineer to commit.
-      - Do not run `./mvnw verify` in this restricted sandbox. The engineer runs the full verification after this command completes.
-      - Do not create or switch branches. Do not run `git push` or `gh pr create`.
+      - Do not create or switch branches. Do not stage, commit, push, or create a pull request.
+      - Do not write the hand-off into the repository. Your final response is captured separately by the caller.
+      - Do not modify pom.xml files, .mvn, mvnw, or mvnw.cmd.
+      - Do not run Maven verify, including ./mvnw clean verify. The controller runs the authoritative verification independently.
+      - Respect the existing execution and network policy. Do not request approval or attempt to bypass restrictions in this unattended run.
 
       Process:
       1. Inspect the codebase and relevant tests. Select the strongest single candidate, if one exists.
-      2. If no candidate provides a material benefit, do not change source files or commit. Return the `no-improvement` hand-off below.
-      3. If a candidate is justified but the current branch does not match `codex/modernisation`, do not change source files or commit. Return the `blocked` hand-off below, including a suggested branch name.
-      4. Otherwise, implement only the selected change. Add or adjust tests where necessary to demonstrate that behaviour remains correct.
-      5. Run `./mvnw test`. Resolve failures caused by the change.
-      6. Review the final diff for scope and correctness. Leave the change unstaged.
+      2. If no candidate provides a material benefit, do not change source files. Return the no-improvement hand-off below.
+      3. Otherwise, implement only the selected change. Add or adjust tests where necessary to demonstrate that behaviour remains correct.
+      4. Run ./mvnw test. Resolve failures caused by the change. If execution or dependency downloads are blocked, record validation as blocked; if tests cannot be attempted, record not-run. Do not claim tests passed unless they did.
+      5. Review the final unstaged diff for scope and correctness.
+      6. If a worthwhile change cannot be safely implemented within these constraints, stop and return the blocked hand-off with a concrete action for an engineer. Report any partial changes in the summary. Blocked or unattempted worker tests alone do not require a blocked outcome: the controller verifies implemented changes independently.
 
       Final response:
-      Your final response is the machine-readable hand-off. Output only valid JSON: no Markdown fences, explanation, or surrounding text.
+      Output only valid JSON: no Markdown fences, explanation, or surrounding text.
 
       If no improvement is justified:
 
       {"outcome":"no-improvement","summary":"<why no candidate justified a change>"}
 
-      If an engineer must prepare a branch:
+      If a worthwhile change requires engineer action before implementation can be completed:
 
-      {"outcome":"blocked","title":"<proposed pull-request title>","summary":"<the candidate and why it is worthwhile>","branch":"codex/modernisation","required_action":"Create and switch to the suggested local branch, then rerun this command."}
+      {"outcome":"blocked","summary":"<what prevented completion, including any partial changes>","required_action":"<concrete action for an engineer before rerunning>"}
 
-      If you implemented a modernisation and `./mvnw test` passed:
+      If you implemented a modernisation (the controller will independently verify it):
 
-      {"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"}],"review_focus":"<compatibility risks or review considerations>"}
-      EOF
+      {"outcome":"modernised","title":"<concise pull-request title>","commit_message":"<imperative commit subject>","summary":"<what changed and why it is worthwhile>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"<passed|blocked|not-run>"}],"review_focus":"<compatibility risks or review considerations>"}
+      PROMPT
+    cleanup: |
+      rm -f '/tmp/codex-modernisation-handoff.md'
+      rm -f '/tmp/codex-modernisation-handoff.log'
     timeout: 5 minutes
     indent: 3
 
@@ -1503,7 +1534,125 @@ entries:
 
   - type: Markdown
     contents: |
-      4. Commit the reviewed changes
+      4. Review and refine the changes
+
+         Inspect the diff, the model’s hand-off, and any added tests. Passing tests
+         are evidence for review; they do not establish that the change meets your
+         intended requirements.
+    indent: 3
+
+  - type: Command
+    commands: |
+      git status --short
+      git diff
+    output:
+      caption: |
+        Review the working-tree status and unstaged changes
+      content_type: diff
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      New, untracked files appear in `git status` but are not included in
+      `git diff`. Open those files separately, including any newly added tests.
+
+      In this example run, the model converted `CatalogView` to a record,
+      retaining explicit `hashCode()` and `toString()` implementations while
+      relying on the generated `equals()`. Your run may produce different changes.
+
+      This combination does not itself violate the equality/hash-code contract.
+      The generated `equals()` compares the record components, and the retained
+      `hashCode()` hashes those same components. Records supply implementations
+      of these methods when they are not explicitly declared.
+      See the [Java 25 Record documentation](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Record.html).
+
+      Joshua Bloch discusses these contracts in *Effective Java* (3rd Edition),
+      Chapter 3, “Methods Common to All Objects”:
+
+      - Item 10: Obey the general contract when overriding equals.
+      - Item 11: Always override hashCode when you override equals.
+
+      These principles still apply to records. However, removing an explicit
+      method does not mean the record lacks an implementation: the compiler
+      supplies it. Review whether the generated and explicit implementations
+      satisfy the contracts together, rather than simply checking whether both
+      methods appear in the source.
+
+      The retained methods preserve the previous hash calculation and string
+      representation. This is consistent with a strict interpretation of the
+      instruction to preserve observable behaviour: the generated implementations
+      need not produce the same hash values or string format.
+
+      Review the implementation and tests together:
+
+      - Does the application require the previous hash calculation or string format?
+      - Do the tests protect required behaviour, or preserve implementation details
+        that you are willing to change?
+      - Does the hand-off explain the compatibility decisions sufficiently?
+
+      Static analysis can supplement this review. For conventional classes,
+      tools provide checks for missing equality/hash-code implementations and
+      related defects:
+
+      | Tool        | Check                                                                                                                                                                    |
+      | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+      | Checkstyle  | [EqualsHashCode](https://checkstyle.org/checks/coding/equalshashcode.html): checks that classes overriding either method also override the other.                        |
+      | Error Prone | [EqualsHashCode](https://errorprone.info/bugpattern/EqualsHashCode): detects classes overriding `equals()` without `hashCode()`.                                         |
+      | SpotBugs    | [Equality/hash-code bug patterns](https://spotbugs.readthedocs.io/en/stable/bugDescriptions.html): detect missing implementations and related mistakes in compiled code. |
+
+      These checks do not establish that the retained methods in this record are
+      defective. Static analysis can identify coding problems; deciding which
+      compatibility guarantees matter still requires engineering judgement.
+
+      Use the review findings to improve the modernisation workflow before
+      converting it into a script in the next step.
+
+      In this example, “preserve observable behaviour” leaves an important
+      decision unclear: must the modernisation preserve exact hash values and
+      string formatting, or may it adopt the record-generated implementations?
+
+      We can use the model to improve our original prompt. Use the following prompt to ask the model to assess the review findings
+      and recommend the next action before automating the workflow:
+    indent: 3
+
+  - type: Command
+    commands: |
+      codex exec \
+        --ephemeral \
+        --sandbox read-only \
+        --model 'gpt-6.1-sol' \
+        --config 'model_reasoning_effort="medium"' \
+        --output-last-message '/tmp/codex-modernisation-review.md' \
+        - <<'PROMPT' > '/tmp/codex-modernisation-review.log' 2>&1
+      Review the current modernisation diff, added tests, hand-off, and the original prompt in workshop-task-runbook.yaml. We will turn this workflow into a reusable script in the next step.
+
+      Assess whether the result reveals a correctness defect, an ambiguous requirement, a justified compatibility decision, or a verification gap. In particular, explain whether any explicit equals(), hashCode(), or toString() implementations retained in a record are necessary and consistent with the generated methods. Do not assume that retaining these methods is a defect.
+
+      Recommend the next action and explain the evidence supporting it. Where appropriate, propose concrete revisions to the original prompt, tests, or verification tools that would improve future runs. Distinguish problems tools can detect from decisions that require engineering judgement. Avoid instructions tailored only to this particular class.
+
+      Do not modify files or run commands that change the working tree. Present your assessment and proposed changes for review.
+      PROMPT
+    cleanup: |
+      rm -f '/tmp/codex-modernisation-review.md'
+      rm -f '/tmp/codex-modernisation-review.log'
+    timeout: 5 minutes
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      Evaluate the recommendation against the code and intended requirements.
+      Agree on the workflow changes before implementing and evaluating them.
+    indent: 3
+
+  - type: DisplayFile
+    path: /tmp/codex-modernisation-review.md
+    indent: 3
+
+  - type: Breakpoint
+
+  - type: Markdown
+    contents: |
+      5. Commit the reviewed changes
 
          The hand-off names the files the agent changed and provides the proposed
          commit subject. This command stages only those files and creates the local
@@ -1553,7 +1702,7 @@ entries:
 
   - type: Markdown
     contents: |
-      5. Optional: Create a pull request
+      6. Optional: Create a pull request
 
          This step works only when you chose the fork-and-clone option at the start. A
          clone of the shared starter repository is suitable for the local exercises
@@ -1566,50 +1715,75 @@ entries:
 
          The commands use the `modernised` hand-off to build a pull-request body.
          Review the generated title and body before creating the pull request.
+         Continue only when the hand-off reports a verified modernisation ready for
+         publication.
 
-         ```shell
-         handoff_file='/tmp/codex-modernisation-handoff.json'
+  - type: Command
+    commands: |
+      handoff_file='/tmp/codex-modernisation-handoff.json'
+      if [[ "$(jq --raw-output '.outcome' "$handoff_file")" != 'modernised' ]]; then
+        jq . "$handoff_file"
+        echo 'The hand-off does not describe a modernisation ready for publication.' >&2
+        exit 1
+      fi
+    indent: 3
 
-         # Continue only when the hand-off reports a verified modernisation ready for publication.
-         if [[ "$(jq --raw-output '.outcome' "$handoff_file")" != 'modernised' ]]; then
-           jq . "$handoff_file"
-           echo 'The hand-off does not describe a modernisation ready for publication.' >&2
-           exit 1
-         fi
+  - type: Markdown
+    contents: |
+      Build a pull-request body from the hand-off and write it to a temporary file.
+    indent: 3
 
-         # Build a pull-request body from the hand-off and write it to a temporary file.
-         pr_body_file="$(mktemp /tmp/codex-modernisation-pr.XXXXXX.md)"
-         {
-           printf '%s\n\n' '## Summary'
-           jq --raw-output '.summary' "$handoff_file"
-           printf '\n%s\n' '## Files changed'
-           jq --raw-output '.files_changed[] | "- `\(.)`"' "$handoff_file"
-           printf '\n%s\n' '## Validation'
-           jq --raw-output '.validation[] | "- `\(.command)`: \(.result)"' "$handoff_file"
-           printf '\n%s\n\n' '## Review focus'
-           jq --raw-output '.review_focus' "$handoff_file"
-         } > "$pr_body_file"
+  - type: Command
+    commands: |
+      handoff_file='/tmp/codex-modernisation-handoff.json'
+      pr_body_file='/tmp/codex-modernisation-pr.md'
+      {
+        printf '%s\n\n' '## Summary'
+        jq --raw-output '.summary' "$handoff_file"
+        printf '\n%s\n' '## Files changed'
+        jq --raw-output '.files_changed[] | "- `\(.)`"' "$handoff_file"
+        printf '\n%s\n' '## Validation'
+        jq --raw-output '.validation[] | "- `\(.command)`: \(.result)"' "$handoff_file"
+        printf '\n%s\n\n' '## Review focus'
+        jq --raw-output '.review_focus' "$handoff_file"
+      } > "$pr_body_file"
+    indent: 3
 
-         # Push the current branch to GitHub and configure it to track the remote branch.
-         git push --set-upstream origin "$(git branch --show-current)"
+  - type: Markdown
+    contents: |
+      Review the pull request and its evidence before deciding whether to merge it.
+    indent: 3
 
-         # Create a pull request using the title and body generated from the hand-off.
-         gh pr create \
-           --draft \
-           --title "$(jq --raw-output '.title' "$handoff_file")" \
-           --body-file "$pr_body_file"
-         ```
+  - type: DisplayFile
+    path: /tmp/codex-modernisation-pr.md
+    indent: 3
 
-         Review the pull request and its evidence before deciding whether to merge it.
+  - type: Markdown
+    contents: |
+      Confirm that the change is focused, preserves the intended behaviour, and
+      that the reported validation results support the change. A passing build and
+      a well-formed hand-off are evidence, not approval.
 
-         Confirm that the change is focused, preserves the intended behaviour, and
-         that the reported validation results support the change. A passing build and
-         a well-formed hand-off are evidence, not approval.
+      ```shell
+      handoff_file='/tmp/codex-modernisation-handoff.json'
 
-         Once this workflow has proved useful, the same hand-off and publication steps
-         can be packaged in a script and scheduled. A scheduled workflow should retain
-         its guardrails, such as avoiding duplicate open pull requests, and should
-         still require human review before merge.
+      # Push the current branch to GitHub and configure it to track the remote branch.
+      git push --set-upstream origin "$(git branch --show-current)"
+
+      # Create a pull request using the title and body generated from the hand-off.
+      gh pr create \
+        --draft \
+        --title "$(jq --raw-output '.title' "$handoff_file")" \
+        --body-file "$pr_body_file"
+      ```
+
+      Once this workflow has proved useful, the same hand-off and publication steps
+      can be packaged in a script and scheduled. A scheduled workflow should retain
+      its guardrails, such as avoiding duplicate open pull requests, and should
+      still require human review before merge.
+    indent: 3
+
+  - type: Breakpoint
 
   - type: Heading
     level: H2
@@ -1865,7 +2039,7 @@ entries:
         --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-orchestration-modernisation/finder.json' \
-        - <<'EOF' > '/tmp/codex-orchestration-modernisation/finder.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-orchestration-modernisation/finder.log' 2>&1
       Goal:
       Identify at most one worthwhile Java 25 modernisation opportunity. Do not change files.
 
@@ -1886,7 +2060,10 @@ entries:
       If you found a candidate:
 
       {"outcome":"candidate","title":"<concise title>","summary":"<what should change and why>","expected_files":["<repository-relative path>"],"implementation_plan":"<bounded implementation guidance>","test_focus":"<relevant tests or behaviours>","review_focus":"<compatibility risks>"}
-      EOF
+      PROMPT
+    cleanup: |
+      rm -f '/tmp/codex-orchestration-modernisation/finder.json'
+      rm -f '/tmp/codex-orchestration-modernisation/finder.log'
     timeout: 5 minutes
     indent: 3
 
@@ -1925,7 +2102,7 @@ entries:
         --config 'model_reasoning_effort="medium"' \
         --add-dir '/tmp/codex-orchestration-modernisation' \
         --output-last-message '/tmp/codex-orchestration-modernisation/implementer.json' \
-        - <<'EOF' > '/tmp/codex-orchestration-modernisation/implementer.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-orchestration-modernisation/implementer.log' 2>&1
       Goal:
       Implement at most one Java 25 modernisation proposed by the finder.
 
@@ -1957,7 +2134,10 @@ entries:
       If you implemented a modernisation and `./mvnw test` passed:
 
       {"outcome":"implemented","summary":"<what changed and why>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"}]}
-      EOF
+      PROMPT
+    cleanup: |
+      rm -f '/tmp/codex-orchestration-modernisation/implementer.json'
+      rm -f '/tmp/codex-orchestration-modernisation/implementer.log'
     timeout: 10 minutes
     indent: 3
 
@@ -1992,7 +2172,7 @@ entries:
         --config 'model_reasoning_effort="medium"' \
         --add-dir '/tmp/codex-orchestration-modernisation' \
         --output-last-message '/tmp/codex-orchestration-modernisation/reviewer.json' \
-        - <<'EOF' > '/tmp/codex-orchestration-modernisation/reviewer.log' 2>&1
+        - <<'PROMPT' > '/tmp/codex-orchestration-modernisation/reviewer.log' 2>&1
       Goal:
       Independently review the current unstaged diff for the Java 25 modernisation. Do not modify files.
 
@@ -2019,7 +2199,10 @@ entries:
       If the candidate should not proceed:
 
       {"outcome":"blocked","summary":"<why it must not proceed>"}
-      EOF
+      PROMPT
+    cleanup: |
+      rm -f '/tmp/codex-orchestration-modernisation/reviewer.json'
+      rm -f '/tmp/codex-orchestration-modernisation/reviewer.log'
     timeout: 5 minutes
     indent: 3
 
