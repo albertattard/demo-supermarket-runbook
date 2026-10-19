@@ -155,6 +155,10 @@ The prompt prohibits changing the Java baseline, Maven definitions or wrappers,
 Git branches, staging, commits, pushes, and PR creation. It also prohibits Maven
 `verify`, approval requests, and attempts to bypass execution/network policy.
 Worker test results must be reported honestly as passed, blocked, or not-run.
+If implementation cannot be completed safely, Codex returns a `blocked` outcome
+with a concrete `required_action` and a summary of any partial changes. Blocked
+worker tests alone do not require a blocked outcome because the controller
+independently verifies implemented changes.
 These instructions guide the model; they are not themselves a security boundary.
 
 ### 6. Export and retrieve the results
@@ -180,6 +184,7 @@ own repository integrity and validates the hand-off's outcome.
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `no-improvement`                           | Codex supplies a summary. The controller requires a clean checkout and exits successfully without publication.                                                 |
 | `modernised`                               | Codex supplies `title`, `commit_message`, `summary`, `files_changed`, `validation`, and `review_focus`. The controller proceeds through its publication gates. |
+| `blocked` | Codex supplies a nonblank `summary` and `required_action`. The controller reports both, retains evidence and any partial changes for inspection, and exits with status 1 without verification or publication. |
 | Missing, malformed, or unsupported outcome | The run fails.                                                                                                                                                 |
 
 The metadata validator does not fully enforce the prompt's response contract.
@@ -240,6 +245,9 @@ flowchart TD
     Outcome -- No improvement --> Clean{"Checkout unchanged?"}
     Clean -- Yes --> NoChange([Stop successfully: no worthwhile change])
     Clean -- No --> Fail
+
+    Outcome -- Blocked --> Action["Validate summary and required_action<br/>Report engineer action and evidence location"]
+    Action --> Fail
 
     Outcome -- Modernised --> Gates["Validate publication metadata<br/>Reject staged changes and Maven build-file changes"]
     Gates --> Build["Controller runs<br/>./mvnw clean verify"]

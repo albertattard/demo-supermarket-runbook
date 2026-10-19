@@ -266,6 +266,7 @@ Process:
 3. Otherwise, implement only the selected change. Add or adjust tests where necessary to demonstrate that behaviour remains correct.
 4. Run ./mvnw test. Resolve failures caused by the change. If execution or dependency downloads are blocked, record validation as blocked; if tests cannot be attempted, record not-run. Do not claim tests passed unless they did.
 5. Review the final unstaged diff for scope and correctness.
+6. If a worthwhile change cannot be safely implemented within these constraints, stop and return the blocked hand-off with a concrete action for an engineer. Report any partial changes in the summary. Blocked or unattempted worker tests alone do not require a blocked outcome: the controller verifies implemented changes independently.
 
 Final response:
 Output only valid JSON: no Markdown fences, explanation, or surrounding text.
@@ -273,6 +274,10 @@ Output only valid JSON: no Markdown fences, explanation, or surrounding text.
 If no improvement is justified:
 
 {"outcome":"no-improvement","summary":"<why no candidate justified a change>"}
+
+If a worthwhile change requires engineer action before implementation can be completed:
+
+{"outcome":"blocked","summary":"<what prevented completion, including any partial changes>","required_action":"<concrete action for an engineer before rerunning>"}
 
 If you implemented a modernisation (the controller will independently verify it):
 
@@ -336,7 +341,7 @@ assert_repository_integrity "$base_commit"
 
 # Reject a missing, malformed, or unsupported agent hand-off before making any
 # Git or publication decision based on it.
-jq -e 'type == "object" and (.outcome == "no-improvement" or .outcome == "modernised")' "$handoff_file" >/dev/null \
+jq -e 'type == "object" and (.outcome == "no-improvement" or .outcome == "blocked" or .outcome == "modernised")' "$handoff_file" >/dev/null \
   || fail "The agent hand-off is missing or invalid: $handoff_file"
 
 # A no-improvement result must leave no tracked or non-ignored untracked
@@ -349,6 +354,20 @@ if [[ "$outcome" == 'no-improvement' ]]; then
     fail "The agent reported no improvement but changed the repository. Inspect $evidence_dir before continuing."
   fi
   stop "No worthwhile modernisation was found. Evidence: $handoff_file"
+fi
+
+# A blocked assessment requires engineer action. Retain any partial changes
+# and evidence for inspection, and exit with failure so unattended callers can
+# distinguish an actionable blockage from a successful no-improvement run.
+if [[ "$outcome" == 'blocked' ]]; then
+  jq -e '
+    (.summary | type == "string" and test("\\S")) and
+    (.required_action | type == "string" and test("\\S"))
+  ' "$handoff_file" >/dev/null \
+    || fail "The blocked hand-off is incomplete: $handoff_file"
+  fail "Modernisation blocked: $(jq -r '.summary' "$handoff_file")
+Required action: $(jq -r '.required_action' "$handoff_file")
+Evidence: $evidence_dir"
 fi
 
 # A modernised result needs complete, minimally valid metadata before the
