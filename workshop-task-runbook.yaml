@@ -182,7 +182,8 @@ entries:
 
   - type: Command
     commands: |
-      git clone https://github.com/albertattard/demo-supermarket-starter.git demo-supermarket
+      git clone 'https://github.com/albertattard/demo-supermarket-starter.git' 'demo-supermarket'
+    timeout: 10 minutes
     indent: 3
 
   - type: Markdown
@@ -198,8 +199,8 @@ entries:
          `gh auth login` first if needed.
 
          ```shell
-         gh repo fork albertattard/demo-supermarket-starter \
-           --fork-name demo-supermarket \
+         gh repo fork 'albertattard/demo-supermarket-starter' \
+           --fork-name 'demo-supermarket' \
            --clone
          ```
 
@@ -391,17 +392,16 @@ entries:
            model-generated shell commands from modifying it. This is an enforced
            guardrail: it protects the repository even if a prompt mistakenly asks
            Codex to create or edit files.
-         - `--model 'gpt-5.6-luna'` selects an efficient model suited to
-           cost-sensitive, high-volume work. `model_reasoning_effort="low"` asks it to
-           spend less time reasoning before responding. For this bounded, read-only
-           onboarding exercise, that is a deliberate trade-off: we need a useful
-           starting map of the repository, not an exhaustive architectural assessment.
-           A more capable model or higher reasoning effort can be appropriate for
-           difficult implementation, investigation, or review work. They can also
-           increase latency and cost without improving a straightforward task. Start
-           with the least expensive configuration that produces useful evidence, then
-           increase capability or reasoning effort only when the task and results
-           justify it.
+         - `--model 'gpt-6-luna'` selects an efficient model suited to cost-sensitive,
+           high-volume work. `model_reasoning_effort="low"` asks it to spend less time
+           reasoning before responding. For this bounded, read-only onboarding
+           exercise, that is a deliberate trade-off: we need a useful starting map of
+           the repository, not an exhaustive architectural assessment. A more capable
+           model or higher reasoning effort can be appropriate for difficult
+           implementation, investigation, or review work. They can also increase
+           latency and cost without improving a straightforward task. Start with the
+           least expensive configuration that produces useful evidence, then increase
+           capability or reasoning effort only when the task and results justify it.
          - `--output-last-message` tells the Codex harness, not the model, to save
            Codex’s final response to a file. This does not give the model permission
            to modify the repository; the read-only sandbox still prevents
@@ -413,7 +413,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox read-only \
-        --model 'gpt-5.6-luna' \
+        --model 'gpt-6-luna' \
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-onboarding-guide.md' \
         - <<'EOF' > '/tmp/codex-onboarding-guide.log' 2>&1
@@ -469,13 +469,13 @@ entries:
 
   - type: Markdown
     contents: |
-      Verify the response yourself. Open the files Codex identifies as necessary to
-      substantiate these answers:
+      The above output is truncated for brevity. Verify the response yourself. Open
+      the files Codex identifies as necessary to substantiate these answers:
 
       - Which class and method form the application entry point, and which local
         command starts it?
-      - Trace either the catalogue or order workflow from its HTTP entry point to its
-        domain logic. Which files implement that path?
+      - Trace either the catalogue or order workflow from its HTTP entry point to
+        its domain logic. Which files implement that path?
       - Before changing `TASK-004`, which task brief, application code, and tests
         would you inspect first, and why?
 
@@ -566,7 +566,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox read-only \
-        --model 'gpt-5.6-luna' \
+        --model 'gpt-6-luna' \
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-agents-before.md' \
         - <<'EOF' > '/tmp/codex-agents-before.log' 2>&1
@@ -679,7 +679,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox read-only \
-        --model 'gpt-5.6-luna' \
+        --model 'gpt-6-luna' \
         --config 'model_reasoning_effort="low"' \
         --output-last-message '/tmp/codex-agents-after.md' \
         - <<'EOF' > '/tmp/codex-agents-after.log' 2>&1
@@ -810,13 +810,19 @@ entries:
 
   - type: Markdown
     contents: |
-      2. Read the `review-task-readiness` skill. Notice that it gathers evidence,
-         separates product decisions from engineering decisions, and pauses for the
-         task owner when a material question remains.
+      2. Read the `review-task-readiness` skill.
 
   - type: DisplayFile
     path: demo-supermarket/.agents/skills/review-task-readiness/SKILL.md
     line_count: 12
+    indent: 3
+
+  - type: Markdown
+    contents: |
+      The above example is truncated for brevity. You can view the full example
+      from: `.agents/skills/review-task-readiness/SKILL.md`. Notice that it gathers
+      evidence, separates product decisions from engineering decisions, and pauses
+      for the task owner when a material question remains.
     indent: 3
 
   - type: Markdown
@@ -991,7 +997,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox read-only \
-        --model 'gpt-5.6-terra' \
+        --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-review-skill.md' \
         - <<'EOF' > '/tmp/codex-review-skill.log' 2>&1
@@ -1209,7 +1215,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox workspace-write \
-        --model 'gpt-5.6-terra' \
+        --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-review-next-task-readiness.md' \
         - <<'EOF' > '/tmp/codex-review-next-task-readiness.log' 2>&1
@@ -1230,7 +1236,7 @@ entries:
     cleanup: |
       rm -f '/tmp/codex-review-next-task-readiness.md'
       rm -f '/tmp/codex-review-next-task-readiness.log'
-    timeout: 5 minutes
+    timeout: 10 minutes
     indent: 3
 
   - type: Markdown
@@ -1391,7 +1397,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox workspace-write \
-        --model 'gpt-5.6-terra' \
+        --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-modernisation-handoff.json' \
         - <<'EOF' > '/tmp/codex-modernisation-handoff.log' 2>&1
@@ -1635,8 +1641,8 @@ entries:
 
   - type: DisplayFile
     path: demo-supermarket/tools/run-scheduled-java-modernisation.sh
-    start_line: 105
-    line_count: 51
+    start_line: 144
+    line_count: 47
     show_trim_markers: false
     indent: 3
 
@@ -1648,12 +1654,16 @@ entries:
          choose at most one worthwhile Java 25 modernisation, implement it as an
          unstaged change, and return a JSON hand-off. The agent does not create
          branches, stage, commit, push, or create pull requests. Those GitHub-visible
-         decisions stay with the deterministic runner.
+         decisions stay with the deterministic runner. The controller sends repository
+         history to the OCI worker as a Git bundle and runs Codex as the unprivileged
+         `agent` account, without forwarding controller credentials. Codex must not
+         run Maven `verify`; it may run tests permitted by the existing policy and
+         must report blocked or unattempted tests accurately.
 
   - type: DisplayFile
     path: demo-supermarket/tools/run-scheduled-java-modernisation.sh
-    start_line: 157
-    line_count: 40
+    start_line: 232
+    line_count: 39
     show_trim_markers: false
     indent: 3
 
@@ -1669,13 +1679,15 @@ entries:
          not a sufficient safety boundary.
 
          The agent’s `./mvnw test` result is useful evidence, but it is not the
-         publication gate. The runner independently runs `./mvnw clean verify` only
-         after these checks pass.
+         publication gate. The worker returns a patch, hand-off, and Git-state
+         observations. The controller independently validates these and the Maven
+         inputs, then runs `./mvnw clean verify` before committing or publishing.
+         Worker tests may be blocked by policy; they never replace this build.
 
   - type: DisplayFile
     path: demo-supermarket/tools/run-scheduled-java-modernisation.sh
-    start_line: 198
-    line_count: 49
+    start_line: 305
+    line_count: 63
     show_trim_markers: false
     indent: 3
 
@@ -1689,6 +1701,10 @@ entries:
          pull request. An existing remote branch acts as back-pressure, so a later run
          stops while the current candidate awaits review.
 
+         Each invocation uses fresh directories on the controller and worker, so
+         earlier checkouts are not reused. All run files remain for inspection;
+         remove old run directories manually when no longer needed.
+
          Human review and an explicit merge decision remain outside the automated
          workflow. Do not schedule overlapping invocations: the branch prevents
          duplicate publication, but concurrent runs can still duplicate assessment
@@ -1696,19 +1712,27 @@ entries:
 
   - type: DisplayFile
     path: demo-supermarket/tools/run-scheduled-java-modernisation.sh
-    start_line: 248
-    line_count: 63
+    start_line: 368
+    line_count: 64
     show_trim_markers: false
     indent: 3
 
   - type: Markdown
     contents: |
-      5. Run one scheduled-workflow candidate locally.
+      5. Run one scheduled-workflow candidate using the OCI worker.
 
          This step requires the fork-and-clone option at the start. A clone of the
          shared starter repository is suitable for the local exercises but does not
          give you permission to push branches or create pull requests; this workflow
          publishes the pull request in your personal fork.
+
+         Provision the facilitator's `infra/oci-worker` VM and authenticate Codex as
+         `agent` first. Export `CODEX_MODERNISATION_WORKER_HOST` using its Terraform
+         `public_ip` output, and `CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH` using the
+         matching local SSH private-key path (optional with SSH configuration or
+         ssh-agent). The controller needs `ssh`, `git`, `gh`, `jq`, JDK 25, and
+         network access for the Maven verification build. Codex runs on the VM.
+         Keep GitHub publication credentials on the controller.
 
          Redirecting output to a log mirrors unattended operation; inspect that log
          after the command completes. On a successful draft pull request, the final
@@ -1838,7 +1862,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox read-only \
-        --model 'gpt-5.6-terra' \
+        --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --output-last-message '/tmp/codex-orchestration-modernisation/finder.json' \
         - <<'EOF' > '/tmp/codex-orchestration-modernisation/finder.log' 2>&1
@@ -1897,7 +1921,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox workspace-write \
-        --model 'gpt-5.6-terra' \
+        --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --add-dir '/tmp/codex-orchestration-modernisation' \
         --output-last-message '/tmp/codex-orchestration-modernisation/implementer.json' \
@@ -1934,7 +1958,7 @@ entries:
 
       {"outcome":"implemented","summary":"<what changed and why>","files_changed":["<repository-relative path>"],"validation":[{"command":"./mvnw test","result":"passed"}]}
       EOF
-    timeout: 5 minutes
+    timeout: 10 minutes
     indent: 3
 
   - type: Markdown
@@ -1964,7 +1988,7 @@ entries:
       codex exec \
         --ephemeral \
         --sandbox read-only \
-        --model 'gpt-5.6-terra' \
+        --model 'gpt-6.1-sol' \
         --config 'model_reasoning_effort="medium"' \
         --add-dir '/tmp/codex-orchestration-modernisation' \
         --output-last-message '/tmp/codex-orchestration-modernisation/reviewer.json' \
