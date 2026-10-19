@@ -24,11 +24,11 @@ umask 077
 branch_name="${CODEX_MODERNISATION_BRANCH_NAME:-codex/modernisation}"
 base_branch="${CODEX_MODERNISATION_BASE_BRANCH:-main}"
 source_repository="${CODEX_MODERNISATION_SOURCE_REPOSITORY:-https://github.com/albertattard/demo-supermarket-starter.git}"
-worker_host="${CODEX_MODERNISATION_WORKER_HOST:-92.5.173.118}"
+worker_host="${CODEX_MODERNISATION_WORKER_HOST:-}"
 ssh_options=(-o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1
   -o StrictHostKeyChecking=accept-new -o ForwardAgent=no -o ClearAllForwardings=yes
   -o ServerAliveInterval=15 -o ServerAliveCountMax=3)
-ssh_private_key_path="${CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH:-$HOME/.ssh/oracle_id_ed25519}"
+ssh_private_key_path="${CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH:-}"
 if [[ -n "$ssh_private_key_path" ]]; then
   ssh_options+=(-i "$ssh_private_key_path" -o IdentitiesOnly=yes)
 fi
@@ -200,7 +200,7 @@ worker_ssh "sudo -n -iu agent tee '$worker_directory/input.bundle' >/dev/null" \
   < "$working_directory/input.bundle"
 
 # Build the worker script for checkout preparation, Codex, and result export.
-# Validation, the authoritative build, and publication stay on the controller.
+# The authoritative verification and publication stay on the controller.
 {
   printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' 'umask 077'
   printf 'branch_name=%q\n' "$branch_name"
@@ -228,6 +228,14 @@ command -v codex >/dev/null
 cd "$1"
 git clone --quiet --branch "$branch_name" input.bundle repository
 cd repository
+
+# Populate the agent account's Maven distribution and dependency caches before
+# entering Codex's network-restricted sandbox. Run tests on the unchanged base
+# as well; a preparation failure stops the run before any agent edits.
+# Output is captured in the controller's worker.log.
+./mvnw --batch-mode --no-transfer-progress clean package
+[[ -z "$(git status --porcelain)" ]] \
+  || { printf '%s\n' 'Maven preparation changed the checkout; refusing to start Codex.' >&2; exit 1; }
 
 codex exec \
   --ephemeral \

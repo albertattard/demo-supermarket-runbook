@@ -49,16 +49,15 @@ All configuration values below are environment variables:
 | `CODEX_MODERNISATION_SOURCE_REPOSITORY`    | `https://github.com/albertattard/demo-supermarket-starter.git` | Repository to clone and publish to. Set this to your own fork when appropriate. |
 | `CODEX_MODERNISATION_BASE_BRANCH`          | `main`                                                         | Branch to assess and target with the draft PR.                                  |
 | `CODEX_MODERNISATION_BRANCH_NAME`          | `codex/modernisation`                                          | Candidate branch and remote marker for outstanding work.                        |
-| `CODEX_MODERNISATION_WORKER_HOST`          | `92.5.173.118`                                                 | Worker IPv4 address or hostname; set it explicitly for your worker.             |
-| `CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH` | `$HOME/.ssh/oracle_id_ed25519`                                 | Controller SSH private key used to connect as `opc`.                            |
+| `CODEX_MODERNISATION_WORKER_HOST`          | None (required)                                               | Worker IPv4 address or hostname; set it explicitly for your worker.             |
+| `CODEX_MODERNISATION_SSH_PRIVATE_KEY_PATH` | None (optional)                                               | Controller SSH private key used to connect as `opc`; otherwise use SSH configuration or ssh-agent. |
 | `TMPDIR`                                   | `/tmp`                                                         | Parent directory for the controller's temporary workspace.                      |
 
 The script uses `${VARIABLE:-default}` expansion: both an unset variable and an
-empty value select the default. In particular, an empty SSH key variable does
-**not** disable the explicit key: the script still passes the default path with
-`IdentitiesOnly=yes`. The comments suggesting an automatic fallback to ordinary
-SSH key selection do not match the current assignments. Supply the appropriate
-key path explicitly.
+empty value select the default. The worker host has no default and must be set
+explicitly. If the SSH key variable is unset or empty, the script uses ordinary
+SSH key selection through local SSH configuration or ssh-agent. If a key path
+is supplied, the script passes it with `IdentitiesOnly=yes`.
 
 For example, from your starter repository checkout:
 
@@ -130,6 +129,14 @@ It creates `input.bundle` for the prepared candidate branch, uploads it over
 SSH, and generates a per-run `worker.sh` on the controller. That script executes
 on the worker as `agent`, checks worker readiness, Codex availability, and JDK
 25, then clones the bundle into a fresh `repository/` directory.
+
+Before starting Codex, the script runs
+`./mvnw --batch-mode --no-transfer-progress clean package` as `agent`, outside
+the Codex sandbox. This downloads Maven and the dependencies and plugins needed
+through the package phase into the same account's cache, and runs the baseline
+unit tests. Preparation output is captured in `evidence/worker.log`. A build
+failure or a non-clean Git checkout stops the run before Codex starts.
+Dependencies used only by later lifecycle phases are not necessarily cached.
 
 ### 5. Run the bounded Codex task
 
