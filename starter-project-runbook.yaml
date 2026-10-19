@@ -15,7 +15,10 @@ entries:
 
   - type: Markdown
     contents: |
-      Run this only from a clean, disposable working directory. It deletes and recreates the `demo-supermarket-starter` GitHub repository. You need Java 25 or newer, Git, and an authenticated GitHub CLI session with permission to create and delete repositories.
+      Run this only from a clean, disposable working directory. It deletes and
+      recreates the `demo-supermarket-starter` GitHub repository. You need Java 25 or
+      newer, Git, and an authenticated GitHub CLI session with permission to create
+      and delete repositories.
 
   - type: Prerequisite
     checks:
@@ -51,7 +54,8 @@ entries:
 
   - type: Markdown
     contents: |
-      The generated repository receives application files and normal project documentation only; runbook sources remain outside it.
+      The generated repository receives application files and normal project
+      documentation only; runbook sources remain outside it.
 
   - type: Command
     commands: |
@@ -66,7 +70,9 @@ entries:
 
   - type: Markdown
     contents: |
-      Apply each overlay directly on the local default branch. Each commit is a verified, coherent starter state. These are facilitator provisioning actions, not attendee instructions.
+      Apply each overlay directly on the local default branch. Each commit is a
+      verified, coherent starter state. These are facilitator provisioning actions,
+      not attendee instructions.
 
   - type: Command
     commands: |
@@ -80,18 +86,8 @@ entries:
 
   - type: Command
     commands: |
-      rsync --archive '../fixtures/repository-overlays/002-repository-local-agent-skills/' .
-
-      git add .agents
-      git diff --cached --check
-      git commit \
-        --message 'Add repository-local agent skills' \
-        --message 'Provide version-controlled local skills that support the workshop workflow and can be reviewed before use.'
-
-  - type: Command
-    commands: |
-      rsync --archive '../fixtures/repository-overlays/003-seed-catalog-and-product-listing/' .
-      rm -f src/main/java/demo/supermarket/home/HomeController.java src/main/resources/templates/home.html
+      rsync --archive '../fixtures/repository-overlays/002-seed-catalog-and-product-listing/' .
+      rm -f 'src/main/java/demo/supermarket/home/HomeController.java' 'src/main/resources/templates/home.html'
 
       git add .
       git diff --cached --check
@@ -101,13 +97,33 @@ entries:
 
   - type: Command
     commands: |
-      rsync --archive '../fixtures/repository-overlays/004-persisted-guest-cart/' .
+      rsync --archive '../fixtures/repository-overlays/003-persisted-guest-cart/' .
 
       git add .
       git diff --cached --check
       git commit \
         --message 'Implement persisted guest carts' \
         --message 'Preserve a guest shopper’s selected items across requests so they can continue toward checkout without losing their basket.'
+
+  - type: Command
+    commands: |
+      rsync --archive '../fixtures/repository-overlays/004-repository-local-agent-skills/' .
+
+      git add .agents
+      git diff --cached --check
+      git commit \
+        --message 'Add repository-local agent skills' \
+        --message 'Provide version-controlled local skills that support the workshop workflow and can be reviewed before use.'
+
+  - type: Command
+    commands: |
+      rsync --archive '../fixtures/repository-overlays/005-scheduled-java-modernisation/' .
+
+      git add tools
+      git diff --cached --check
+      git commit \
+        --message 'Add scheduled Java modernisation runner' \
+        --message 'Provide an optional Codex workflow that assesses Java modernisation opportunities and opens a verified draft pull request for human review.'
 
   - type: Command
     commands: |
